@@ -4,18 +4,13 @@
     <meta charset="UTF-8">
 </head>
 <body>
-    <a href="javascript:loadSHO()">Simple Harmonic Oscillator Potential</a>
-    <p>
-    <svg width="800" height="600" id="test">
-    </svg>
+    <pre id="phitable">
+    </pre>
     <script type="text/javascript" src="js/d3.v3.min.js"></script>
     <script type="text/javascript" src="js/algorithms.js"></script>
     <script type="text/javascript" src="js/visualizer.js"></script>
-    <script>
-        var Vis = new visualizing.Visualizer('#test');
-        function loadSHO() {
-            Vis.loadSHO()
-        }
-    </script>
+    <script type="text/javascript">
+        document.getElementById("phitable").textContent = algorithmTest()
+     </script>
 </body>
 </html>
