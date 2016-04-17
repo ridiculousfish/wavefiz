@@ -17,7 +17,6 @@ function normalize(vals:number[], dx:number) {
     for (let i=0; i < vals.length; i++) {
         vals[i] *= normRecip
     }
-    console.log("norm " + norm + " dx " + dx)
 }
 
 interface IntegratorInput {
