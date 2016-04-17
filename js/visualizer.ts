@@ -10,7 +10,10 @@ module visualizing {
         public width : number = 800
         public height : number = 600
         public meshDivision : number = 1025 // how many points are in our mesh. Must be odd.
-        public phiScale: number = 150 // how much scale we apply to the wavefunction
+        public psiScale: number = 150 // how much scale we apply to the wavefunction
+        
+        public showPsi = true
+        public showPsi2 = false
         
         public centerForMeshIndex(idx:number):number {
             assert(idx >= 0 && idx < this.meshDivision, "idx out of range")
@@ -198,27 +201,35 @@ module visualizing {
     class WavefunctionVisualizer {
         private wavefunction_: Wavefunction = null
         private resolvedWavefunction_ : ResolvedWavefunction = null
-        private phiGraph_ : d3.Selection<any>
-        private phiBaseline_ : d3.Selection<any>
+        private psiGraph_ : d3.Selection<any>
+        private psi2Graph_ : d3.Selection<any>
+        private psiBaseline_ : d3.Selection<any>
                 
         constructor(container: d3.Selection<any>, public params: Parameters, public color: string) {                                             
-            this.phiGraph_ = container.append("path")
-                                .attr("id", "phi")
+            this.psiGraph_ = container.append("path")
+                                .attr("id", "psi")
                                 .attr("stroke", this.color)
                                 .attr("stroke-width", 5)
                                 .attr("fill", "none")
+                                
+            this.psi2Graph_ = container.append("path")
+                                .attr("id", "psi2")
+                                .attr("stroke", this.color)
+                                .attr("stroke-width", 8)
+                                .attr("stroke-opacity", .75)
+                                .attr("fill", "none")
                                  
-            this.phiBaseline_ = container.append("line")
-                                 .attr("id", "phiBaseline")
+            this.psiBaseline_ = container.append("line")
+                                 .attr("id", "psiBaseline")
                                  .attr("stroke", this.color)
                                  .attr("stroke-width", .5)
                                  .attr("fill", "none")
 
         }
         
-        setWavefunction(phi:Wavefunction) {
-            this.wavefunction_ = phi
-            this.resolvedWavefunction_ = phi.resolveAtClassicalTurningPoints()
+        setWavefunction(psi:Wavefunction) {
+            this.wavefunction_ = psi
+            this.resolvedWavefunction_ = psi.resolveAtClassicalTurningPoints()
             this.redraw()
         }
         
@@ -230,8 +241,8 @@ module visualizing {
                 
         redraw() {
             if (this.wavefunction_ === null) {
-                this.phiGraph_.attr("d", [] as any)
-                this.phiBaseline_.attr("visibility", "hidden")
+                this.psiGraph_.attr("d", [] as any)
+                this.psiBaseline_.attr("visibility", "hidden")
                 return
             }
             
@@ -248,15 +259,25 @@ module visualizing {
                 return Math.max(-limit, Math.min(limit, value))
             }
 
-            const phiScale = this.params.phiScale
-            const phi = this.resolvedWavefunction_.values
-            let points : [number, number][] = phi.map((value, index) => {
-                let result :[number, number] = [this.params.centerForMeshIndex(index), cleanValue(phiScale * value)]
+            const psiScale = this.params.psiScale
+            const psi = this.resolvedWavefunction_.values
+            let points : [number, number][] = psi.map((value, index) => {
+                let result :[number, number] = [this.params.centerForMeshIndex(index), cleanValue(psiScale * value)]
+                return result
+            })
+            this.psiGraph_
+                .attr("d", lineFunction(points))
+                .attr("visibility", this.params.showPsi ? "visible" : "hidden")
+
+            let points2 : [number, number][] = psi.map((value, index) => {
+                let result:[number, number] = [this.params.centerForMeshIndex(index), cleanValue(psiScale * -(value * value))]
                 return result
             })            
-            this.phiGraph_.attr("d", lineFunction(points))
+            this.psi2Graph_
+                .attr("d", lineFunction(points2))
+                .attr("visibility", this.params.showPsi2 ? "visible" : "hidden")
             
-            this.phiBaseline_.attr("x1", 0)
+            this.psiBaseline_.attr("x1", 0)
                              .attr("y1", 0)
                              .attr("x2", this.params.width)
                              .attr("y2", 0)
@@ -275,8 +296,7 @@ module visualizing {
         
         private leftTurningPoint_: d3.Selection<any>
         private rightTurningPoint_: d3.Selection<any>
-
-        
+                
         public maxX : number = 20
         public params  = new Parameters()
         
@@ -312,13 +332,13 @@ module visualizing {
             
             // Wavefunction Visualizer
             const centerY = this.params.height / 2
-            let phiGroup = group.append('g')
-                                .attr("transform", "translate(0, " + (centerY - 100) + ")")
-            this.wavefunction_ = new WavefunctionVisualizer(phiGroup, this.params, "orange")
+            let psiGroup = group.append('g')
+                                .attr("transform", "translate(0, " + (centerY - 125) + ")")
+            this.wavefunction_ = new WavefunctionVisualizer(psiGroup, this.params, "orange")
 
-            let phiGroup2 = group.append('g')
-                                .attr("transform", "translate(0, " + (centerY + 100) + ")")            
-            this.wavefunction2_ = new WavefunctionVisualizer(phiGroup2, this.params, "yellow")
+            let psiGroup2 = group.append('g')
+                                .attr("transform", "translate(0, " + (centerY + 125) + ")")            
+            this.wavefunction2_ = new WavefunctionVisualizer(psiGroup2, this.params, "yellow")
             
             // Turning points
             this.leftTurningPoint_ = group.append("line").attr("class", "turningpoint")
@@ -359,16 +379,16 @@ module visualizing {
                 return
             }
             // update wavefunctions
-            const phiInputs = {
+            const psiInputs = {
                 potentialMesh:this.state.potential,
                 energy:this.state.energy,
                 xMax: this.maxX
             }
-            let phi = NumerovIntegrator(true).computeWavefunction(phiInputs)
-            this.wavefunction_.setWavefunction(phi)
+            let psi = NumerovIntegrator(true).computeWavefunction(psiInputs)
+            this.wavefunction_.setWavefunction(psi)
             
-            let phi2 = NumerovIntegrator(false).computeWavefunction(phiInputs)
-            this.wavefunction2_.setWavefunction(phi2)
+            let psi2 = NumerovIntegrator(false).computeWavefunction(psiInputs)
+            this.wavefunction2_.setWavefunction(psi2)
             
             // update energy
             const visEnergy = this.params.convertYToVisualCoordinate(this.state.energy)
@@ -376,22 +396,60 @@ module visualizing {
             this.energyDragger_.attr({visibility: "visible"})
             
             // update turning points
-            const turningPoints = phi.classicalTurningPoints()
+            const turningPoints = psi.classicalTurningPoints()
             const leftV = this.params.convertXToVisualCoordinate(turningPoints.left)
             const rightV = this.params.convertXToVisualCoordinate(turningPoints.right)
             this.leftTurningPoint_.attr({x1:leftV, x2:leftV, visibility:"visible"})
             this.rightTurningPoint_.attr({x1:rightV, x2:rightV, visibility:"visible"})
         }
         
+        public setShowPsi(flag:boolean) {
+            this.params.showPsi = flag
+            this.computeAndShowWavefunction()
+        }
+        
+        public setShowPsi2(flag:boolean) {
+            this.params.showPsi2 = flag
+            this.computeAndShowWavefunction()
+        }
+        
         public loadSHO() {
-            // Load the simple harmonic oscillator potential
-            this.params.yScale = 300 / 25
+            // Simple Harmonic Oscillator
+            this.params.yScale = 400 / 25
             this.potential_.loadFrom((x:number) => {
                 // x is a value in [0, this.potential_.width)
                 // we have a value of 0 at x = width/2
                 const offsetX = this.params.width / 2
                 const scaledX =  (x - offsetX) * this.maxX / this.params.width
-                return scaledX * scaledX / 2.0 
+                return (scaledX * scaledX / 2.0) 
+            })
+        }
+        
+        public loadISW() {
+            // Infinite square well
+            this.params.yScale = 50
+            const widthRatio = 1.0 / 5.0
+            this.potential_.loadFrom((x:number) => {
+                // x is a value in [0, this.params.width)
+                const width = this.params.width
+                if (x < width * widthRatio || x > width - (width * widthRatio)) {
+                    return 1000
+                }
+                return 1
+            })
+        }
+        
+        public loadFSW() {
+            // Finite square well
+            this.params.yScale = 50
+            const widthRatio = 1.0 / 5.0
+            this.potential_.loadFrom((x:number) => {
+                // x is a value in [0, this.params.width)
+                const width = this.params.width
+                if (x < width * widthRatio || x > width - (width * widthRatio)) {
+                    return 7
+                }
+                return 1
             })
         }
     }

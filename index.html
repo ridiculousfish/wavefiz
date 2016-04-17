@@ -2,12 +2,27 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <style>
+        .options {
+            font-size: 15pt;
+        }
+        .options sup {
+            font-size: 10pt;
+        }
+    </style>
 </head>
 <body>
-    <a href="javascript:loadSHO()">Simple Harmonic Oscillator Potential</a>
+    <a href="javascript:loadSHO()">Simple Harmonic Oscillator</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <a href="javascript:loadFSW()">Finite Square Well</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <a href="javascript:loadISW()">Infinite Square Well</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
     <p>
-    <svg width="950" height="650" id="test" style="background-color: inherit">
+    <svg width="950" height="600" id="test" style="background-color: inherit">
     </svg>
+    </p>
+    <p class="options">
+        <input type="checkbox" name="psi" onClick="togglePsi(this)" checked><i>&psi;</i>&nbsp;&nbsp;&nbsp;
+        <input type="checkbox" name="psi2" onClick="togglePsi2(this)">|<i>&psi;</i>|<sup>2</sup>
+    </p> 
     <script type="text/javascript" src="js/d3.v3.min.js"></script>
     <script type="text/javascript" src="js/algorithms.js"></script>
     <script type="text/javascript" src="js/dragging.js"></script>
@@ -17,7 +32,21 @@
         function loadSHO() {
             Vis.loadSHO()
         }
+        function loadISW() {
+            Vis.loadISW()
+        }
+        function loadFSW() {
+            Vis.loadFSW()
+        }
         loadSHO()
+        
+        function togglePsi(cb) {
+            Vis.setShowPsi(cb.checked)
+            console.log("Derp")
+        }
+        function togglePsi2(cb) {
+            Vis.setShowPsi2(cb.checked)
+        }
     </script>
 </body>
 </html>

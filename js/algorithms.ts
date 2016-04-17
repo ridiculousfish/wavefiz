@@ -74,20 +74,20 @@ class Wavefunction {
         const rightScale = this.valuesFromCenter[right] / this.valuesFromEdge[right]
         
         // build our wavefunction piecewise: edge, center, edge
-        let phi = zeros(length)
+        let psi = zeros(length)
         let i = 0
         for (; i < left; i++) {
-            phi[i] = leftScale * this.valuesFromEdge[i]
+            psi[i] = leftScale * this.valuesFromEdge[i]
         }
         for (; i < right; i++) {
-            phi[i] = this.valuesFromCenter[i]
+            psi[i] = this.valuesFromCenter[i]
         }
         for (; i < length; i++) {
-            phi[i] = rightScale * this.valuesFromEdge[i]
+            psi[i] = rightScale * this.valuesFromEdge[i]
         }
         const dx = this.xMax / length
-        normalize(phi, dx)
-        return new ResolvedWavefunction(phi)
+        normalize(psi, dx)
+        return new ResolvedWavefunction(psi)
     }
     
     resolveAtClassicalTurningPoints() : ResolvedWavefunction {
@@ -137,52 +137,52 @@ function numerov(input:IntegratorInput, even:boolean) {
     const F = (x:number) => 1.0 - ddx12 * 2. * (potential[x] - energy)
     
     // Numerov integrator formula
-    // given that we have set phi[index], compute and set phi[index+1] if rightwards,
-    // or phi[index-1] if leftwards
+    // given that we have set psi[index], compute and set psi[index+1] if rightwards,
+    // or psi[index-1] if leftwards
     const GoingLeft = false, GoingRight = true
-    const step = (phi:number[], index:number, rightwards:boolean) => {
+    const step = (psi:number[], index:number, rightwards:boolean) => {
         const targetX = rightwards ? index+1 : index-1 // point we're setting
         const prev1X = index // previous x
         const prev2X = rightwards ? index-1 : index+1 // previous previous x
-        phi[targetX] = (((12. - F(prev1X) * 10.) * phi[prev1X] - F(prev2X) * phi[prev2X])) / F(targetX)
+        psi[targetX] = (((12. - F(prev1X) * 10.) * psi[prev1X] - F(prev2X) * psi[prev2X])) / F(targetX)
     }
     
     // integrate outwards
-    // In the reference code, f is the potential, y is phi
-    let phi = wavefunction.valuesFromCenter
+    // In the reference code, f is the potential, y is psi
+    let psi = wavefunction.valuesFromCenter
     if (even) {
-        phi[c] = 1
-        phi[c+1] = 0.5 * (12. - F(c) * 10.) * phi[c] / F(c+1)
-        phi[c-1] = 0.5 * (12. - F(c) * 10.) * phi[c] / F(c-1)
+        psi[c] = 1
+        psi[c+1] = 0.5 * (12. - F(c) * 10.) * psi[c] / F(c+1)
+        psi[c-1] = 0.5 * (12. - F(c) * 10.) * psi[c] / F(c-1)
     } else {
-        phi[c] = 0
-        phi[c-1] = -dx
-        phi[c+1] = dx
+        psi[c] = 0
+        psi[c-1] = -dx
+        psi[c+1] = dx
     }
     
     // rightwards integration
     for (let i = c+1; i+1 < length; i++) {
         //y[i + 1] = ((12. - f[i] * 10.) * y[i] - f[i - 1] * y[i - 1]) / f[i + 1];
-        step(phi, i, GoingRight)
+        step(psi, i, GoingRight)
     }
     // leftwards integration
     for (let i = c-1; i > 0; i--) {
-        step(phi, i, GoingLeft)
+        step(psi, i, GoingLeft)
     }
     
     // integrate inwards
-    // we assume phi is 0 outside the mesh
-    phi = wavefunction.valuesFromEdge
-    phi[0] = even ? dx : -dx;
-    phi[1] = (12. - 10.*F(0)) * phi[0] / F(1);
+    // we assume psi is 0 outside the mesh
+    psi = wavefunction.valuesFromEdge
+    psi[0] = even ? dx : -dx;
+    psi[1] = (12. - 10.*F(0)) * psi[0] / F(1);
     for (let i=1; i < c; i++) {
-        step(phi, i, GoingRight)
+        step(psi, i, GoingRight)
     }
     
-    phi[length-1] = dx;
-    phi[length-2] = (12. - 10.*F(length-1)) * phi[length-1] / F(length-2);
+    psi[length-1] = dx;
+    psi[length-2] = (12. - 10.*F(length-1)) * psi[length-1] / F(length-2);
     for (let i=length-2; i > c; i--) {
-        step(phi, i, GoingLeft)
+        step(psi, i, GoingLeft)
     }
     
     return wavefunction
@@ -208,12 +208,12 @@ function algorithmTest() {
         energy: 2.5,
         xMax:xMax
     }
-    let phi = numerov(input, true).resolveAtClassicalTurningPoints()
+    let psi = numerov(input, true).resolveAtClassicalTurningPoints()
 
-    lines.push("x\tphi\tV")    
+    lines.push("x\tpsi\tV")    
     for (let i=0; i < width; i++) {
         let x = i / width * xMax - (xMax / 2)
-        lines.push(formatFloat(x) + "\t" + formatFloat(phi[i]) + "\t" + formatFloat(potential[i]))
+        lines.push(formatFloat(x) + "\t" + formatFloat(psi[i]) + "\t" + formatFloat(potential[i]))
     }
     
     

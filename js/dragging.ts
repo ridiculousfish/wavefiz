@@ -13,16 +13,20 @@ module dragger {
             this.element = container.append('g')
             this.positionUpdated = (_:number) => {}
             
-            this.element.append('defs')
+            let grippy = this.element.append('defs')
                 .append('pattern')
                 .attr('id', 'grippy')
                 .attr('patternUnits', 'userSpaceOnUse')
                 .attr('width', 4)
                 .attr('height', 4)
-                .append('line')
-                    .attr({x1: 0, x2:4, y1:0, y2:0})
-                    .attr('stroke', '#000000')
-                    .attr('stroke-width', 1);
+
+            grippy.append('rect')
+                  .attr({width: 4, height:4})
+                  .attr('fill', '#999')                
+             grippy.append('line')
+                   .attr({x1: 0, x2:4, y1:0, y2:0})
+                   .attr('stroke', '#000000')
+                   .attr('stroke-width', 1)
 
             
             this.element.append("line")
@@ -52,7 +56,7 @@ module dragger {
           this.element.append("text")
                       .attr("id", "label")
                       .attr("x", this.params.width + handleWidth + textPadding)
-                      .attr("y", 0)
+                      .attr("y", 2)
                       .attr("alignment-baseline", "middle")
                       .attr("font-size", "19")
                       .attr("font-family", "Helvetica")
