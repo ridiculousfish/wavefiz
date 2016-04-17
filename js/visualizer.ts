@@ -10,7 +10,7 @@ module visualizing {
         public width : number = 800
         public height : number = 600
         public meshDivision : number = 1025 // how many points are in our mesh. Must be odd.
-        public phiScale: number = 100 // how much scale we apply to the wavefunction
+        public phiScale: number = 150 // how much scale we apply to the wavefunction
         
         public centerForMeshIndex(idx:number):number {
             assert(idx >= 0 && idx < this.meshDivision, "idx out of range")
@@ -24,6 +24,10 @@ module visualizing {
         
         public convertYFromVisualCoordinate(y:number) {
             return (this.height - y) / this.yScale
+        }
+        
+        public convertXToVisualCoordinate(x:number) {
+            return (x / this.meshDivision) * this.width
         }
     }
     
@@ -50,7 +54,7 @@ module visualizing {
         }
     }
 
-    class Potential {
+    class PotentialVisualizer {
         private container_: d3.Selection<any>
         private dragLocations_ : Point[] = []
         private lineGraph_ : d3.Selection<any>
@@ -153,10 +157,14 @@ module visualizing {
                 .on("dragstart", () => {
                     // clear last drag
                     _this.dragLocations_.length = 0
+                    _this.potentialMesh_ = []
+                    _this.redrawPotentialMesh()
+                    _this.announceNewPotential()
                 })
                 .on("dragend", () => {
                     // smooth points
                     _this.potentialMesh_ = _this.buildMeshFromDragPoints(_this.dragLocations_)
+                    _this.dragLocations_.length = 0
                     _this.redrawPotentialMesh()
                     _this.announceNewPotential()
                 })
@@ -164,7 +172,7 @@ module visualizing {
             this.container_.call(drag)         
             
             _this.lineGraph_ = this.container_.append("path")
-                              .attr("stroke", "yellow")
+                              .attr("stroke", "cyan")
                               .attr("stroke-width", 5)
                               .attr("fill", "none")
                               
@@ -188,27 +196,23 @@ module visualizing {
     }
     
     class WavefunctionVisualizer {
-        private wavefunction_: Wavefunction = undefined
-        private resolvedWavefunction_ : ResolvedWavefunction = undefined
-        private container_: d3.Selection<any>
+        private wavefunction_: Wavefunction = null
+        private resolvedWavefunction_ : ResolvedWavefunction = null
         private phiGraph_ : d3.Selection<any>
         private phiBaseline_ : d3.Selection<any>
                 
-        constructor(container: d3.Selection<any>, public params: Parameters) {
-            this.container_ = container
-                                             
-            this.phiGraph_ = this.container_.append("path")
+        constructor(container: d3.Selection<any>, public params: Parameters, public color: string) {                                             
+            this.phiGraph_ = container.append("path")
                                 .attr("id", "phi")
-                                .attr("stroke", "orange")
+                                .attr("stroke", this.color)
                                 .attr("stroke-width", 5)
                                 .attr("fill", "none")
                                  
-            this.phiBaseline_ = this.container_.append("line")
+            this.phiBaseline_ = container.append("line")
                                  .attr("id", "phiBaseline")
-                                 .attr("stroke", "yellow")
+                                 .attr("stroke", this.color)
                                  .attr("stroke-width", .5)
                                  .attr("fill", "none")
-
 
         }
         
@@ -217,8 +221,19 @@ module visualizing {
             this.resolvedWavefunction_ = phi.resolveAtClassicalTurningPoints()
             this.redraw()
         }
+        
+        clear() {
+            this.wavefunction_ = null
+            this.resolvedWavefunction_ = null
+            this.redraw()
+        }
                 
         redraw() {
+            if (this.wavefunction_ === null) {
+                this.phiGraph_.attr("d", [] as any)
+                this.phiBaseline_.attr("visibility", "hidden")
+                return
+            }
             
             let lineFunction = d3.svg.line()
                           .x(function(d) { return d[0] })
@@ -233,32 +248,34 @@ module visualizing {
                 return Math.max(-limit, Math.min(limit, value))
             }
 
-            const centerY = this.params.height / 2
             const phiScale = this.params.phiScale
             const phi = this.resolvedWavefunction_.values
             let points : [number, number][] = phi.map((value, index) => {
-                let result :[number, number] = [this.params.centerForMeshIndex(index), centerY + cleanValue(phiScale * value)]
+                let result :[number, number] = [this.params.centerForMeshIndex(index), cleanValue(phiScale * value)]
                 return result
             })            
             this.phiGraph_.attr("d", lineFunction(points))
             
             this.phiBaseline_.attr("x1", 0)
-                             .attr("y1", centerY)
+                             .attr("y1", 0)
                              .attr("x2", this.params.width)
-                             .attr("y2", centerY)                             
+                             .attr("y2", 0)
+                             .attr("visibility", "visible")
         }
     }
 
     export class Visualizer {
-        private container_: string
-        private group_: d3.Selection<any>
-        private potentialGroup_: d3.Selection<any>
-        private potential_ : Potential
+        private container_: d3.Selection<any>
+        private potential_ : PotentialVisualizer
         
-        private wavefunctionGroup_: d3.Selection<any>
         private wavefunction_ : WavefunctionVisualizer
+        private wavefunction2_ : WavefunctionVisualizer
         
         private energyDragger_ : dragger.Dragger
+        
+        private leftTurningPoint_: d3.Selection<any>
+        private rightTurningPoint_: d3.Selection<any>
+
         
         public maxX : number = 20
         public params  = new Parameters()
@@ -269,52 +286,101 @@ module visualizing {
             this.init(container)
         }
 
-        private init(container: string) {
+        private init(containerName: string) {
             
             this.params.width = 800
             this.params.height = 600
             this.params.meshDivision = 1025
             
-            this.container_ = container
-            this.potentialGroup_ = d3.select(this.container_).append('g')
-            this.potentialGroup_.append('rect')
-                                .attr({"width": 800,
-                                       "height": 600,
-                                       "fill": "steelblue"})
-            this.potential_ = new Potential(this.potentialGroup_, this.params)
+            this.container_ = d3.select(containerName)
+            let group = this.container_
+                            .append('g')
+                            .attr("id", "Group")
+                    
+            // background
+            group.append('rect')
+                  .attr({"width": 800,
+                         "height": 600,
+                          "fill": "steelblue"})
+                          
+            // Potential Visualizer
+            this.potential_ = new PotentialVisualizer(group, this.params)
             this.potential_.potentialUpdatedCallback = (v:number[]) => { 
                 this.state.potential = v.slice()
                 this.computeAndShowWavefunction()
             }
             
-            this.wavefunctionGroup_ = d3.select(this.container_).append('g')
-            this.wavefunction_ = new WavefunctionVisualizer(this.potentialGroup_, this.params)
+            // Wavefunction Visualizer
+            const centerY = this.params.height / 2
+            let phiGroup = group.append('g')
+                                .attr("transform", "translate(0, " + (centerY - 100) + ")")
+            this.wavefunction_ = new WavefunctionVisualizer(phiGroup, this.params, "orange")
 
-            this.energyDragger_ = new dragger.Dragger("Energy", false,  d3.select(this.container_), this.params)
-            this.energyDragger_.attr({visibility: "hidden"})
+            let phiGroup2 = group.append('g')
+                                .attr("transform", "translate(0, " + (centerY + 100) + ")")            
+            this.wavefunction2_ = new WavefunctionVisualizer(phiGroup2, this.params, "yellow")
             
+            // Turning points
+            this.leftTurningPoint_ = group.append("line").attr("class", "turningpoint")
+            this.rightTurningPoint_ = group.append("line").attr("class", "turningpoint")
+            group.selectAll(".turningpoint").attr({
+                x1:-1,
+                x2:-1,
+                y1:0,
+                y2:this.params.height,
+                "stroke-width": 1,
+                stroke:"black",
+                "stroke-opacity": .3,
+                visibility: "hidden",
+            })
+            
+            // Energy dragger
+            this.energyDragger_ = new dragger.Dragger("Energy", false,  this.container_, this.params)
+            this.energyDragger_.attr({visibility: "hidden"})
             this.energyDragger_.positionUpdated = (proposedY:number) => {
                 // the user dragged the energy to a new value, expressed our "height" coordinate system
                 // compute a new wavefunction
                 const proposedE = this.params.convertYFromVisualCoordinate(proposedY)
                 this.state.energy = proposedE 
                 this.computeAndShowWavefunction()
-            }
-            
-            this.group_ = d3.select(this.container_).append('g')
+            }            
         }
         
         private computeAndShowWavefunction() {
-            const integrator = NumerovIntegrator(true)
-            let phi = integrator.computeWavefunction({
+            if (this.state.potential.length == 0) {
+                // clear everything
+                this.wavefunction_.clear()
+                this.wavefunction2_.clear()
+                this.energyDragger_.attr({visibility: "hidden"})
+                this.container_.selectAll(".turningpoint").attr({
+                    x1:-1,
+                    x2:-1
+                })
+                return
+            }
+            // update wavefunctions
+            const phiInputs = {
                 potentialMesh:this.state.potential,
                 energy:this.state.energy,
                 xMax: this.maxX
-            })
+            }
+            let phi = NumerovIntegrator(true).computeWavefunction(phiInputs)
             this.wavefunction_.setWavefunction(phi)
-            const visEnergy = this.params.convertYToVisualCoordinate(phi.energy)
-            this.energyDragger_.update(visEnergy, phi.energy)
+            
+            let phi2 = NumerovIntegrator(false).computeWavefunction(phiInputs)
+            this.wavefunction2_.setWavefunction(phi2)
+            
+            // update energy
+            const visEnergy = this.params.convertYToVisualCoordinate(this.state.energy)
+            this.energyDragger_.update(visEnergy, this.state.energy)
             this.energyDragger_.attr({visibility: "visible"})
+            
+            // update turning points
+            const turningPoints = phi.classicalTurningPoints()
+            const leftV = this.params.convertXToVisualCoordinate(turningPoints.left)
+            const rightV = this.params.convertXToVisualCoordinate(turningPoints.right)
+            this.leftTurningPoint_.attr({x1:leftV, x2:leftV, visibility:"visible"})
+            this.rightTurningPoint_.attr({x1:rightV, x2:rightV, visibility:"visible"})
         }
         
         public loadSHO() {
@@ -327,17 +393,6 @@ module visualizing {
                 const scaledX =  (x - offsetX) * this.maxX / this.params.width
                 return scaledX * scaledX / 2.0 
             })
-        }
-
-        draw() {
-            return
-            let scale = d3.scale.linear();
-
-            scale.domain([0, 1])
-            scale.range([0, 800])
-            var axis = d3.svg.axis()
-            axis.scale(scale)
-            this.group_.call(axis)
         }
     }
 }

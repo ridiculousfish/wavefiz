@@ -4,6 +4,22 @@ function assert(condition, message) {
     }
 }
 
+function normalize(vals:number[], dx:number) {
+    // norm is sum of dx * vals**2
+    let norm = 0
+    for (let i=0; i < vals.length; i++) {
+        norm += vals[i] * vals[i]
+    }
+    norm *= dx
+    norm = Math.sqrt(norm)
+    if (norm == 0) norm = 1 // gross
+    const normRecip = 1.0 / norm
+    for (let i=0; i < vals.length; i++) {
+        vals[i] *= normRecip
+    }
+    console.log("norm " + norm + " dx " + dx)
+}
+
 interface IntegratorInput {
     potentialMesh: number[]
     energy: number
@@ -23,7 +39,7 @@ class Wavefunction {
     valuesFromCenter: number[] = []
     valuesFromEdge: number[] = []
     
-    constructor(public potential: number[], public energy:number) {}
+    constructor(public potential: number[], public energy:number, public xMax:number) {}
     
     length() : number {
         assert(this.valuesFromCenter.length == this.valuesFromEdge.length, "Wavefunction does not have a consistent length")
@@ -39,7 +55,7 @@ class Wavefunction {
                 break
             }
         }
-        for (right = length-1; right > length/2; right--) {
+        for (right = length-1; right > (length+1)/2; right--) {
             if (this.energy > this.potential[right]) {
                 break
             }
@@ -69,6 +85,8 @@ class Wavefunction {
         for (; i < length; i++) {
             phi[i] = rightScale * this.valuesFromEdge[i]
         }
+        const dx = this.xMax / length
+        normalize(phi, dx)
         return new ResolvedWavefunction(phi)
     }
     
@@ -85,7 +103,7 @@ interface Integrator {
 
 function NumerovIntegrator(even:boolean) : Integrator {
     return {
-        computeWavefunction: numerovEven
+        computeWavefunction: (input) => numerov(input, even)
     }
 }
 
@@ -95,7 +113,7 @@ function zeros(amt:number) : number[] {
     return result
 }
 
-function numerovEven(input:IntegratorInput) {
+function numerov(input:IntegratorInput, even:boolean) {
     // we start at the center of the potential mesh
     // and integrate left and right
     // we require that the potential mesh have an ODD number of values,
@@ -107,7 +125,7 @@ function numerovEven(input:IntegratorInput) {
     const c = (length + 1)/2 // center
     
     // Fill wavefunction with all 0s
-    let wavefunction = new Wavefunction(potential.slice(), input.energy)
+    let wavefunction = new Wavefunction(potential.slice(), input.energy, input.xMax)
     wavefunction.valuesFromCenter = zeros(length)
     wavefunction.valuesFromEdge = zeros(length)
      
@@ -132,9 +150,15 @@ function numerovEven(input:IntegratorInput) {
     // integrate outwards
     // In the reference code, f is the potential, y is phi
     let phi = wavefunction.valuesFromCenter
-    phi[c] = 1
-    phi[c+1] = 0.5 * (12. - F(c) * 10.) * phi[c] / F(c+1)
-    phi[c-1] = 0.5 * (12. - F(c) * 10.) * phi[c] / F(c-1)
+    if (even) {
+        phi[c] = 1
+        phi[c+1] = 0.5 * (12. - F(c) * 10.) * phi[c] / F(c+1)
+        phi[c-1] = 0.5 * (12. - F(c) * 10.) * phi[c] / F(c-1)
+    } else {
+        phi[c] = 0
+        phi[c-1] = -dx
+        phi[c+1] = dx
+    }
     
     // rightwards integration
     for (let i = c+1; i+1 < length; i++) {
@@ -149,7 +173,7 @@ function numerovEven(input:IntegratorInput) {
     // integrate inwards
     // we assume phi is 0 outside the mesh
     phi = wavefunction.valuesFromEdge
-    phi[0] = dx;
+    phi[0] = even ? dx : -dx;
     phi[1] = (12. - 10.*F(0)) * phi[0] / F(1);
     for (let i=1; i < c; i++) {
         step(phi, i, GoingRight)
@@ -184,7 +208,7 @@ function algorithmTest() {
         energy: 2.5,
         xMax:xMax
     }
-    let phi = numerovEven(input).resolveAtClassicalTurningPoints()
+    let phi = numerov(input, true).resolveAtClassicalTurningPoints()
 
     lines.push("x\tphi\tV")    
     for (let i=0; i < width; i++) {

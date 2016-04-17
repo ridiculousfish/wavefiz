@@ -54,7 +54,7 @@ module dragger {
                       .attr("x", this.params.width + handleWidth + textPadding)
                       .attr("y", 0)
                       .attr("alignment-baseline", "middle")
-                      .attr("font-size", "20")
+                      .attr("font-size", "19")
                       .attr("font-family", "Helvetica")
                       .text(this.annotatedLabel())
                       
@@ -69,7 +69,8 @@ module dragger {
         }
         
         private annotatedLabel() : string {
-            return this.label + ": " + this.value
+            const formattedValue = this.value.toFixed(2)
+            return this.label + ": " + formattedValue
         }
         
         update(position: number, value:number) {
