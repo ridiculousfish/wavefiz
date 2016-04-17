@@ -1,9 +1,10 @@
 /// <reference path="../typings/d3/d3.d.ts"/>
 /// <reference path='./algorithms.ts'/>
+/// <reference path='./dragging.ts'/>
 
 module visualizing {
     
-    class Parameters {
+    export class Parameters {
         public xScale = 1
         public yScale = 1 // multiply to go from potential to graphical point
         public width : number = 800
@@ -16,6 +17,19 @@ module visualizing {
             let meshWidth = this.width / this.meshDivision
             return idx * meshWidth + meshWidth / 2.0
         }
+        
+        public convertYToVisualCoordinate(y:number) {
+            return this.height - this.yScale * y
+        }
+        
+        public convertYFromVisualCoordinate(y:number) {
+            return (this.height - y) / this.yScale
+        }
+    }
+    
+    interface InputState {
+        potential: number[],
+        energy: number
     }
 
     function assert(condition, message) {
@@ -113,9 +127,8 @@ module visualizing {
         }
         
         private redrawPotentialMesh() {
-            const flip = (v:number) => this.params.height - v
             let points : [number, number][] = this.potentialMesh_.map((value, index) => {
-                let result :[number, number] =  [this.params.centerForMeshIndex(index), flip(this.params.yScale * value)]
+                let result :[number, number] =  [this.params.centerForMeshIndex(index), this.params.convertYToVisualCoordinate(value)]
                 return result
             })
             let lineFunction = d3.svg.line()
@@ -180,20 +193,13 @@ module visualizing {
         private container_: d3.Selection<any>
         private phiGraph_ : d3.Selection<any>
         private phiBaseline_ : d3.Selection<any>
-        private energyGraph_ : d3.Selection<any>
                 
         constructor(container: d3.Selection<any>, public params: Parameters) {
             this.container_ = container
                                              
-            this.energyGraph_ = this.container_.append("line")
-                                 .attr("id", "energy")
-                                 .attr("stroke", "red")
-                                 .attr("stroke-width", 1.5)
-                                 .attr("fill", "none")
-
             this.phiGraph_ = this.container_.append("path")
                                 .attr("id", "phi")
-                                .attr("stroke", "green")
+                                .attr("stroke", "orange")
                                 .attr("stroke-width", 5)
                                 .attr("fill", "none")
                                  
@@ -213,8 +219,6 @@ module visualizing {
         }
                 
         redraw() {
-            
-            const flip = (y:number) => this.params.height - y
             
             let lineFunction = d3.svg.line()
                           .x(function(d) { return d[0] })
@@ -241,14 +245,7 @@ module visualizing {
             this.phiBaseline_.attr("x1", 0)
                              .attr("y1", centerY)
                              .attr("x2", this.params.width)
-                             .attr("y2", centerY)
-            
-            const visEnergy = flip(this.wavefunction_.energy * this.params.yScale)
-            this.energyGraph_.attr("x1", 0)
-                             .attr("y1", visEnergy)
-                             .attr("x2", this.params.width)
-                             .attr("y2", visEnergy)
-                             
+                             .attr("y2", centerY)                             
         }
     }
 
@@ -261,8 +258,12 @@ module visualizing {
         private wavefunctionGroup_: d3.Selection<any>
         private wavefunction_ : WavefunctionVisualizer
         
+        private energyDragger_ : dragger.Dragger
+        
         public maxX : number = 20
         public params  = new Parameters()
+        
+        public state : InputState = {potential: [], energy: 2.5} 
 
         constructor(container: string) {
             this.init(container)
@@ -282,24 +283,38 @@ module visualizing {
                                        "fill": "steelblue"})
             this.potential_ = new Potential(this.potentialGroup_, this.params)
             this.potential_.potentialUpdatedCallback = (v:number[]) => { 
-                this.computeAndShowWavefunction(v)
+                this.state.potential = v.slice()
+                this.computeAndShowWavefunction()
             }
             
             this.wavefunctionGroup_ = d3.select(this.container_).append('g')
             this.wavefunction_ = new WavefunctionVisualizer(this.potentialGroup_, this.params)
 
+            this.energyDragger_ = new dragger.Dragger("Energy", false,  d3.select(this.container_), this.params)
+            this.energyDragger_.attr({visibility: "hidden"})
+            
+            this.energyDragger_.positionUpdated = (proposedY:number) => {
+                // the user dragged the energy to a new value, expressed our "height" coordinate system
+                // compute a new wavefunction
+                const proposedE = this.params.convertYFromVisualCoordinate(proposedY)
+                this.state.energy = proposedE 
+                this.computeAndShowWavefunction()
+            }
             
             this.group_ = d3.select(this.container_).append('g')
         }
         
-        private computeAndShowWavefunction(potential:number[]) {
+        private computeAndShowWavefunction() {
             const integrator = NumerovIntegrator(true)
             let phi = integrator.computeWavefunction({
-                potentialMesh:potential,
-                energy:2.5,
+                potentialMesh:this.state.potential,
+                energy:this.state.energy,
                 xMax: this.maxX
             })
             this.wavefunction_.setWavefunction(phi)
+            const visEnergy = this.params.convertYToVisualCoordinate(phi.energy)
+            this.energyDragger_.update(visEnergy, phi.energy)
+            this.energyDragger_.attr({visibility: "visible"})
         }
         
         public loadSHO() {
