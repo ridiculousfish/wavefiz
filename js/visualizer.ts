@@ -4,6 +4,10 @@
 
 module visualizing {
     
+    function roundForSVG(val:number) : number {
+        return Math.round(val * 100) / 100
+    }
+    
     export class Parameters {
         public xScale = 1
         public yScale = 1 // multiply to go from potential to graphical point
@@ -62,6 +66,7 @@ module visualizing {
         private dragLocations_ : Point[] = []
         private lineGraph_ : d3.Selection<any>
         private potentialGraph_ : d3.Selection<any>
+        private DRAG_STROKE_WIDTH = 5
         
         // callback for when the potential is updated
         public potentialUpdatedCallback : ((n:number[]) => void) = undefined
@@ -126,11 +131,21 @@ module visualizing {
             this.dragLocations_.push(where)
             
             let lineFunction = d3.svg.line()
-                          .x(function(d) { return (d as any).x })
-                          .y(function(d) { return (d as any).y })
+                          .x(function(d) { return roundForSVG((d as any).x) })
+                          .y(function(d) { return roundForSVG((d as any).y) })
                           .interpolate("linear")
 
             _this.lineGraph_.attr("d", lineFunction(this.dragLocations_ as any))
+        }
+        
+        private clearDragLocations(animate:boolean) {
+            this.dragLocations_.length = 0
+            //this.lineGraph_.transition().duration(5000).attr("d", d3.svg.line()([]))
+            if (animate) {
+                this.lineGraph_.transition().delay(0).duration(1000).attr("stroke-width", 0).each("end", ()=>{
+                    this.lineGraph_.attr("d", d3.svg.line()([])).attr("stroke-width", this.DRAG_STROKE_WIDTH)
+                })
+            }
         }
         
         private redrawPotentialMesh() {
@@ -139,9 +154,8 @@ module visualizing {
                 return result
             })
             let lineFunction = d3.svg.line()
-                          .x(function(d) { return d[0] })
-                          .y(function(d) { return d[1] })
-                          .interpolate("basis-open")
+                          .x((d) => roundForSVG(d[0]) )
+                          .y((d) => roundForSVG(d[1]) )
             this.potentialGraph_.attr("d", lineFunction(points))
         }
         
@@ -159,7 +173,7 @@ module visualizing {
                 .on("drag", dragHandler)
                 .on("dragstart", () => {
                     // clear last drag
-                    _this.dragLocations_.length = 0
+                    _this.clearDragLocations(false)
                     _this.potentialMesh_ = []
                     _this.redrawPotentialMesh()
                     _this.announceNewPotential()
@@ -167,21 +181,21 @@ module visualizing {
                 .on("dragend", () => {
                     // smooth points
                     _this.potentialMesh_ = _this.buildMeshFromDragPoints(_this.dragLocations_)
-                    _this.dragLocations_.length = 0
+                    _this.clearDragLocations(true)
                     _this.redrawPotentialMesh()
                     _this.announceNewPotential()
                 })
               
             this.container_.call(drag)         
-            
-            _this.lineGraph_ = this.container_.append("path")
-                              .attr("stroke", "cyan")
-                              .attr("stroke-width", 5)
-                              .attr("fill", "none")
-                              
+
             _this.potentialGraph_ = this.container_.append("path")
                               .attr("stroke", "purple")
                               .attr("stroke-width", 2)
+                              .attr("fill", "none")
+            
+            _this.lineGraph_ = this.container_.append("path")
+                              .attr("stroke", "cyan")
+                              .attr("stroke-width", this.DRAG_STROKE_WIDTH)
                               .attr("fill", "none")
         }
         
@@ -203,9 +217,10 @@ module visualizing {
         private resolvedWavefunction_ : ResolvedWavefunction = null
         private psiGraph_ : d3.Selection<any>
         private psi2Graph_ : d3.Selection<any>
+        private psiComplexGraph_ : d3.Selection<any>
         private psiBaseline_ : d3.Selection<any>
                 
-        constructor(container: d3.Selection<any>, public params: Parameters, public color: string) {                                             
+        constructor(container: d3.Selection<any>, public params: Parameters, public color: string) {                                   
             this.psiGraph_ = container.append("path")
                                 .attr("id", "psi")
                                 .attr("stroke", this.color)
@@ -310,7 +325,6 @@ module visualizing {
             
             this.params.width = 800
             this.params.height = 600
-            this.params.meshDivision = 1025
             
             this.container_ = d3.select(containerName)
             let group = this.container_
