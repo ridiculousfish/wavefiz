@@ -25,6 +25,18 @@ interface IntegratorInput {
     xMax:number
 }
 
+// represents a complex number with fields re and im
+class Complex {
+    constructor(public re:number, public im:number) {}
+}
+
+// Computes the time-dependent part of the Schrodinger equation at an energy eigenvalue
+function computeTimeDependence(energy:number, time:number): Complex {
+    // e^(-iEt) -> cos(-eT) + i * sin(-Et)
+    const nEt = - energy * time
+    return new Complex(Math.cos(nEt), Math.sin(nEt))
+}
+
 class ResolvedWavefunction {
     constructor(public values:number[]) {}
 }

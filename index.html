@@ -9,44 +9,82 @@
         .options sup {
             font-size: 10pt;
         }
+        #vis_container {
+            width: 950px;
+            height: 600px;
+        }
+        .options input {
+            display: inline-block;
+            margin-left: 30px;
+        }
+        .options input:first-child {
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
-    <a href="javascript:loadSHO()">Simple Harmonic Oscillator</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-    <a href="javascript:loadFSW()">Finite Square Well</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-    <a href="javascript:loadISW()">Infinite Square Well</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <a href="javascript:loadSHO()">Simple Harmonic Oscillator</a>
+    <a href="javascript:loadFSW()">Finite Square Well</a>
+    <a href="javascript:loadISW()">Infinite Square Well</a>
     <p>
-    <svg width="950" height="600" id="test" style="background-color: inherit">
-    </svg>
+        <div id="vis_container">
+        </div>
     </p>
     <p class="options">
-        <input type="checkbox" name="psi" onClick="togglePsi(this)" checked><i>&psi;</i>&nbsp;&nbsp;&nbsp;
-        <input type="checkbox" name="psi2" onClick="togglePsi2(this)">|<i>&psi;</i>|<sup>2</sup>
+        <input type="checkbox" name="psi" onClick="togglePsi(this)" checked><i>&psi;(x)</i>&nbsp;&nbsp;&nbsp;
+        <input type="checkbox" name="psi2" onClick="togglePsi2(this)">|<i>&psi;(x)</i>|<sup>2</sup>
+        <input type="checkbox" name="psiT" onClick="togglePsiT(this)"><i>&psi;(x,t)</i>
     </p> 
-    <script type="text/javascript" src="js/d3.v3.min.js"></script>
+    <script src="js/three.min.js"></script>
     <script type="text/javascript" src="js/algorithms.js"></script>
     <script type="text/javascript" src="js/dragging.js"></script>
     <script type="text/javascript" src="js/visualizer.js"></script>
     <script>
-        var Vis = new visualizing.Visualizer('#test');
-        function loadSHO() {
-            Vis.loadSHO()
+        if (1) {
+            var Vis = new visualizing.Visualizer(document.getElementById("vis_container"));
+            function loadSHO() {
+                Vis.loadSHO()
+            }
+            function loadISW() {
+                Vis.loadISW()
+            }
+            function loadFSW() {
+                Vis.loadFSW()
+            }
+            loadSHO()
+            
+            function togglePsi(cb) {
+                Vis.setShowPsi(cb.checked)
+            }
+            function togglePsi2(cb) {
+                Vis.setShowPsi2(cb.checked)
+            }
+            
+            function togglePsiT(cb) {
+                Vis.setShowPsiT(cb.checked)
+            }
         }
-        function loadISW() {
-            Vis.loadISW()
-        }
-        function loadFSW() {
-            Vis.loadFSW()
-        }
-        loadSHO()
         
-        function togglePsi(cb) {
-            Vis.setShowPsi(cb.checked)
-            console.log("Derp")
+        if (0) {
+            var renderer = new THREE.WebGLRenderer();
+            renderer.setSize(950, 600);
+            document.body.appendChild(renderer.domElement);
+            var camera = new THREE.OrthographicCamera(0, 800, 0, 600, 0.1, 1000);
+            camera.position.set(0, 0, 100);
+            camera.lookAt(new THREE.Vector3(0, 0, 1));
+            var scene = new THREE.Scene();
+            var material = new THREE.LineBasicMaterial({
+                color: 0x0000ff
+            });
+            var geometry = new THREE.Geometry();
+            geometry.vertices.push(new THREE.Vector3(100, 100, 10));
+            geometry.vertices.push(new THREE.Vector3(110, 120, 10));
+            geometry.vertices.push(new THREE.Vector3(120, 130, 10));
+            var line = new THREE.Line(geometry, material);
+            scene.add(line);
+            renderer.render(scene, camera);
         }
-        function togglePsi2(cb) {
-            Vis.setShowPsi2(cb.checked)
-        }
+
     </script>
 </body>
 </html>
