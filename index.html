@@ -9,16 +9,89 @@
         .options sup {
             font-size: 10pt;
         }
-        #vis_container {
-            width: 800px;
-            height: 600px;
-        }
         .options input {
             display: inline-block;
             margin-left: 30px;
         }
         .options input:first-child {
             margin-left: 10px;
+        }
+        #vis_container {
+            width: 800px;
+            height: 600px;
+            display: inline-block;
+        }        
+        #energy_dragging_container {
+            width: 250px;
+            height: 600px;
+            display: inline-block;
+            margin: 0;
+            vertical-align: top;
+            position: relative;
+        }
+        #outer_container {
+            white-space: nowrap;
+        }
+        .energy_dragger, #outer_container {            
+            /* Defeat text selection */
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        .energy_dragger {
+            display: inline-block;
+            position: absolute;
+            cursor: ns-resize;
+        }
+        
+        .energy_dragger div {
+            display: inline-block;
+            vertical-align: top;
+        }
+        
+        .energy_dragger .grip {
+            border-top-right-radius: 5px;
+            border-bottom-right-radius: 5px;
+            width: 20px;
+            height: 21px;
+            background-image: linear-gradient(180deg, #AAA 80%, black);
+            background-size:100% 6px;
+            background-position: 0 5px;
+            border-style: solid;
+            border-width: 1px 11px 1px 7px; /* top right bottom left */
+            border-color:#AAA;
+        }
+        .energy_dragger .value_text {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 16pt;
+            user-select: none;
+        }
+        
+        /* Center us vertically */
+        .energy_dragger > .centerer {
+            position: relative;
+            bottom: 11px;
+        }
+        
+        .square_button {
+            border: 1px solid #CCC;
+            background-color: #DDD;
+            width: 25px;
+            height: 25px;
+            padding: 0;
+            display: inline-block;
+        }
+        .square_button > div {
+            text-align: center;
+            font-size: 16pt;
+            font-family: Georgia, 'Times New Roman', Times, serif;
+            font-weight: bold;
+            position: relative;
+            bottom: 1px;
+            left: 1px;
         }
     </style>
 </head>
@@ -27,7 +100,22 @@
     <a href="javascript:loadFSW()">Finite Square Well</a>&nbsp;&nbsp;&nbsp;
     <a href="javascript:loadISW()">Infinite Square Well</a>
     <p>
-        <div id="vis_container">
+        <div id="outer_container">
+            <div id="vis_container">
+            </div><div id="energy_dragging_container">
+                <!-- Energy dragger prototype div -->
+                <div class="energy_dragger" id="energy_dragger_prototype" style="display: none">
+                    <div class="centerer">
+                        <div class="grip"></div>
+                        <div class="value_text">12345</div>
+                    </div>
+                </div>
+                <!-- Add/Remove buttons -->
+                <div style="position: absolute; bottom: -45px; left: 5px;">
+                    <button class="square_button" onClick="addEnergySlider()"><div>+</div></button>
+                    <button class="square_button"><div>-</div></button>
+                </div>
+            </div>
         </div>
     </p>
     <p class="options">
@@ -38,31 +126,39 @@
     <script src="js/three.min.js"></script>
     <script type="text/javascript" src="js/algorithms.js"></script>
     <script type="text/javascript" src="js/dragging.js"></script>
+    <script type="text/javascript" src="js/energy.js"></script>
     <script type="text/javascript" src="js/visualizer.js"></script>
     <script>
-        if (1) {
-            var Vis = new visualizing.Visualizer(document.getElementById("vis_container"));
-            function loadSHO() {
-                Vis.loadSHO()
-            }
-            function loadISW() {
-                Vis.loadISW()
-            }
-            function loadFSW() {
-                Vis.loadFSW()
-            }
-            loadSHO()
-            
-            function togglePsi(cb) {
-                Vis.setShowPsi(cb.checked)
-            }
-            function togglePsi2(cb) {
-                Vis.setShowPsi2(cb.checked)
-            }
-            
-            function togglePsiT(cb) {
-                Vis.setShowPsiT(cb.checked)
-            }
+        var vis_container = document.getElementById("vis_container")
+        var energy_container = document.getElementById("energy_dragging_container")
+        var energy_dragger_prototype = document.getElementById("energy_dragger_prototype")
+        
+        var Vis = new visualizing.Visualizer(vis_container, energy_container, energy_dragger_prototype);
+        function loadSHO() {
+            Vis.loadSHO()
+        }
+        function loadISW() {
+            Vis.loadISW()
+        }
+        function loadFSW() {
+            Vis.loadFSW()
+        }        
+        function addEnergySlider() {
+            Vis.addEnergySlider()
+        }
+        loadSHO()
+        addEnergySlider()
+
+        
+        function togglePsi(cb) {
+            Vis.setShowPsi(cb.checked)
+        }
+        function togglePsi2(cb) {
+            Vis.setShowPsi2(cb.checked)
+        }
+        
+        function togglePsiT(cb) {
+            Vis.setShowPsiT(cb.checked)
         }
         </script>
 </body>

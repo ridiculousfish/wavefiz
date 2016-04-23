@@ -1,6 +1,7 @@
 /// <reference path="../typings/threejs/three.d.ts"/>
 /// <reference path='./algorithms.ts'/>
 /// <reference path='./dragging.ts'/>
+/// <reference path='./energy.ts'/>
 
 module visualizing {
     
@@ -497,6 +498,7 @@ module visualizing {
         private wavefunction_ : WavefunctionVisualizer
         private wavefunction2_ : WavefunctionVisualizer
         
+        private energyVisualizer_ : energy.EnergyVisualizer
         private energyDragger_ : dragger.Dragger
         
         private leftTurningPoint_: VisLine
@@ -507,11 +509,7 @@ module visualizing {
         
         public state : InputState = {potential: [], energy: 2.5} 
 
-        constructor(container: HTMLElement) {
-            this.init(container)
-        }
-
-        private init(container: HTMLElement) {
+        constructor(container: HTMLElement, energyContainer: HTMLElement, energyDraggerPrototype: HTMLElement) {
             
             this.params.width = 800
             this.params.height = 600
@@ -576,13 +574,15 @@ module visualizing {
             
             // Energy dragger
             this.energyDragger_ = new dragger.Dragger("Energy", false, this.params)
+            this.energyVisualizer_ = new energy.EnergyVisualizer(energyContainer, energyDraggerPrototype, this.params)
 
-            this.energyDragger_.positionUpdated = (proposedY:number) => {
+            this.energyVisualizer_.positionUpdated = (proposedY:number) => {
                 // the user dragged the energy to a new value, expressed our "height" coordinate system
                 // compute a new wavefunction
                 const proposedE = this.params.convertYFromVisualCoordinate(proposedY)
                 this.state.energy = proposedE 
                 this.computeAndShowWavefunction()
+                return proposedE
             }
             this.energyDragger_.addToScene(this.scene_)
                         
@@ -650,13 +650,8 @@ module visualizing {
             this.renderer_.render(this.scene_, this.camera_);
         }
         
-        private tryStuff() {
-            var geometry = new THREE.BoxGeometry( 100, 100, 100 );
-            var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-            var cube = new THREE.Mesh( geometry, material );
-            cube.position.x = this.params.width / 2
-            cube.position.y = this.params.height / 2
-            this.scene_.add( cube );
+        public addEnergySlider() {
+            this.energyVisualizer_.addSlider(10, 10)
         }
         
         private computeAndShowWavefunction() {
