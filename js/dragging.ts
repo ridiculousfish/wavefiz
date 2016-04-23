@@ -3,7 +3,9 @@
 
 module dragger {
     export interface Draggable {
-        dragged(dx:number, dy:number): void
+        dragStart(dx:number, dy:number) : void
+        dragEnd() : void
+        dragged(x:number, y:number, dx:number, dy:number): void
         hitTestDraggable(x:number, y:number): Draggable // or null
     }
     
@@ -54,7 +56,10 @@ module dragger {
             }
         }
         
-        public dragged(dx:number, dy:number) {
+        public dragStart(dx:number, dy:number) {}
+        public dragEnd() {}
+        
+        public dragged(x:number, y:number, dx:number, dy:number) {
             this.positionUpdated(this.position+dy)
         }
         

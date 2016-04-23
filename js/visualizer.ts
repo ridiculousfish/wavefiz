@@ -206,20 +206,8 @@ module visualizing {
         }
     }
 
-    class Point { 
-        constructor(public x: number, public y: number) { }
-        
-        toString() : string {
-            return "x: " + this.x + ", y: " + this.y
-        }
-        
-        copy() : Point {
-            return new Point(this.x, this.y)
-        }
-    }
-
     class PotentialVisualizer {
-        private dragLocations_ : Point[] = []
+        private dragLocations_ : Point3[] = []
         private dragLine_ : VisLine
         private potentialLine_ : VisLine
         private DRAG_STROKE_WIDTH = 5
@@ -233,7 +221,7 @@ module visualizing {
             this.init()
         }
         
-        private interpolateY(p1:Point, p2:Point, x:number) {
+        private interpolateY(p1:Point3, p2:Point3, x:number) : number {
             let d1 = Math.abs(p1.x - x)
             let d2 = Math.abs(p2.x - x)
             let distance = d1 + d2
@@ -243,7 +231,7 @@ module visualizing {
         
         // builds a potential mesh of size meshDivision_
         // locs is relative to upper left: smaller values are more north
-        private buildMeshFromDragPoints(locs:Point[]) : number[] {
+        private buildMeshFromDragPoints(locs:Point3[]) : number[] {
             let potentialMesh : number[] = []
                                     
             for (let meshIdx = 0; meshIdx < this.params.meshDivision; meshIdx++) {
@@ -279,22 +267,45 @@ module visualizing {
             return potentialMesh
         }
         
-        private doDrag() {
-            // let _this = this
-            // let pos = d3.mouse(this.container_.node())
-            // let where = new Point(pos[0], pos[1])
-            // this.dragLocations_.push(where)
-            
-            // let lineFunction = d3.svg.line()
-            //               .x(function(d) { return roundForSVG((d as any).x) })
-            //               .y(function(d) { return roundForSVG((d as any).y) })
-            //               .interpolate("linear")
-
-            // _this.lineGraph_.attr("d", lineFunction(this.dragLocations_ as any))
+        // Draggable implementations
+        dragStart(dx:number, dy:number) {
+            this.clearDragLocations(false)
+        }
+        
+        dragEnd() {
+            this.potentialMesh_ = this.buildMeshFromDragPoints(this.dragLocations_)
+            this.clearDragLocations(true)
+            this.redrawPotentialMesh()
+            this.announceNewPotential()
+        }
+        
+        dragged(x:number, y:number, dx:number, dy:number) {
+            this.dragLocations_.push({x:x, y:y, z:0})
+            this.redrawDragLine()
+        }
+        
+        hitTestDraggable(x:number, y:number): dragger.Draggable {
+            if (x >= 0 && x < this.params.width && y >= 0 && y < this.params.height) {
+                return this
+            }
+            return null
         }
         
         private clearDragLocations(animate:boolean) {
-            this.dragLocations_.length = 0
+            if (this.dragLocations_.length > 0) {
+                this.dragLocations_.length = 0
+                this.redrawDragLine()                
+            }
+        }
+        
+        private redrawDragLine() {
+            const hasPoints = this.dragLocations_.length > 0
+            this.dragLine_.line.visible = hasPoints
+            if (hasPoints) { 
+                this.dragLine_.update((i:number) => {
+                    return this.dragLocations_[Math.min(i, this.dragLocations_.length - 1)]                
+                })
+            }
         }
         
         private redrawPotentialMesh() {
@@ -315,46 +326,19 @@ module visualizing {
 
         private init() {
             // note line geometries cannot be resized            
-            this.dragLine_ = new VisLine(this.params.meshDivision, {})
+            this.dragLine_ = new VisLine(this.params.meshDivision, {
+                color: 0x00FFFF,
+                linewidth: 8
+            })
             this.potentialLine_ = new VisLine(this.params.meshDivision, {
                 color: 0xFF00FF,
                 linewidth: 5
-            })
-                        
-            // let dragHandler = () => _this.doDrag() 
-            
-            // let drag = d3.behavior.drag()
-            //     .on("drag", dragHandler)
-            //     .on("dragstart", () => {
-            //         // clear last drag
-            //         _this.clearDragLocations(false)
-            //         _this.potentialMesh_ = []
-            //         _this.redrawPotentialMesh()
-            //         _this.announceNewPotential()
-            //     })
-            //     .on("dragend", () => {
-            //         // smooth points
-            //         _this.potentialMesh_ = _this.buildMeshFromDragPoints(_this.dragLocations_)
-            //         _this.clearDragLocations(true)
-            //         _this.redrawPotentialMesh()
-            //         _this.announceNewPotential()
-            //     })
-              
-            // this.container_.call(drag)         
-
-            // _this.potentialGraph_ = this.container_.append("path")
-            //                   .attr("stroke", "purple")
-            //                   .attr("stroke-width", 2)
-            //                   .attr("fill", "none")
-            
-            // _this.lineGraph_ = this.container_.append("path")
-            //                   .attr("stroke", "cyan")
-            //                   .attr("stroke-width", this.DRAG_STROKE_WIDTH)
-            //                   .attr("fill", "none")
+            })                        
         }
         
         public addToScene(scene:THREE.Scene) {
             scene.add(this.potentialLine_.line)
+            scene.add(this.dragLine_.line)
         }
         
         loadFrom(f:((x:number) => number)) {
@@ -451,7 +435,8 @@ module visualizing {
             this.psi2Graph_.geometry.verticesNeedUpdate = true
             
             this.psiGraph_.line.visible = this.params.showPsi
-            this.psi2Graph_.line.visible = this.params.showPsi2            
+            this.psi2Graph_.line.visible = this.params.showPsi2
+            this.psiTGraph_.line.visible = this.params.showPsiT            
             this.psiBaseline_.update((i:number) => {
                 return {x:i*this.params.width, y:0, z:0}
             })
@@ -619,10 +604,11 @@ module visualizing {
                 const y = getY(evt)
                 if (mouseIsDown) {
                     if (dragSelection) {
-                        dragSelection.dragged(x - lastX, y - lastY)
+                        dragSelection.dragged(x, y, x - lastX, y - lastY)
                     }
                     lastX = x
                     lastY = y
+                    this.render()
                 } else {
                     if (this.energyDragger_.hitTestDraggable(x, y)) {
                         this.container_.style.cursor = 'ns-resize'
@@ -634,15 +620,29 @@ module visualizing {
             element.addEventListener('mousedown', (evt) => {
                 lastX = getX(evt)
                 lastY = getY(evt)
-                dragSelection = this.energyDragger_.hitTestDraggable(lastX, lastY)
+                
+                dragSelection = null
+                const draggables : dragger.Draggable[] = [this.energyDragger_, this.potential_]
+                for (let i=0; i < draggables.length && dragSelection == null; i++) {
+                    dragSelection = draggables[i].hitTestDraggable(lastX, lastY)
+                }
+                
+                if (dragSelection) {
+                    dragSelection.dragStart(lastX, lastY)
+                }
                 mouseIsDown = true
+                this.render()
 //                this.animator_.clock.stop()
             })
             element.addEventListener('mouseup', () => {
-                dragSelection = null
+                if (dragSelection) {
+                    dragSelection.dragEnd()
+                    dragSelection = null   
+                }
                 lastX = -1
                 lastY = -1
                 mouseIsDown = false
+                this.render()
 //                this.animator_.clock.start()
             })
 
