@@ -167,8 +167,6 @@ module visualizing {
         public yScale = 1 // multiply to go from potential to graphical point
         public width : number = 800
         public height : number = 600
-        public fullWidth : number = 950
-        public fullHeight : number = 600
         public meshDivision : number = 1025 // how many points are in our mesh. Must be odd.
         public psiScale: number = 150 // how much scale we apply to the wavefunction
         
@@ -531,7 +529,7 @@ module visualizing {
             
             this.scene_ = new THREE.Scene();
             //this.camera_ = new THREE.PerspectiveCamera( 75, this.params.width / this.params.height, 0.1, 1000 );
-            this.camera_ = new THREE.OrthographicCamera(0, this.params.fullWidth, 0, this.params.fullHeight, 0.1, 10000)
+            this.camera_ = new THREE.OrthographicCamera(0, this.params.width, 0, this.params.height, 0.1, 10000)
             this.camera_.position.set(0, 0, 1000)
             this.camera_.lookAt(new THREE.Vector3(0, 0, 0))
             

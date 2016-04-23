@@ -10,7 +10,7 @@
             font-size: 10pt;
         }
         #vis_container {
-            width: 950px;
+            width: 800px;
             height: 600px;
         }
         .options input {
@@ -64,27 +64,6 @@
                 Vis.setShowPsiT(cb.checked)
             }
         }
-        
-        if (0) {
-            var renderer = new THREE.WebGLRenderer();
-            renderer.setSize(950, 600);
-            document.body.appendChild(renderer.domElement);
-            var camera = new THREE.OrthographicCamera(0, 800, 0, 600, 0.1, 1000);
-            camera.position.set(0, 0, 100);
-            camera.lookAt(new THREE.Vector3(0, 0, 1));
-            var scene = new THREE.Scene();
-            var material = new THREE.LineBasicMaterial({
-                color: 0x0000ff
-            });
-            var geometry = new THREE.Geometry();
-            geometry.vertices.push(new THREE.Vector3(100, 100, 10));
-            geometry.vertices.push(new THREE.Vector3(110, 120, 10));
-            geometry.vertices.push(new THREE.Vector3(120, 130, 10));
-            var line = new THREE.Line(geometry, material);
-            scene.add(line);
-            renderer.render(scene, camera);
-        }
-
-    </script>
+        </script>
 </body>
 </html>
