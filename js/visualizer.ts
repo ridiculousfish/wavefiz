@@ -1,6 +1,5 @@
 /// <reference path="../typings/threejs/three.d.ts"/>
 /// <reference path='./algorithms.ts'/>
-/// <reference path='./dragging.ts'/>
 /// <reference path='./energy.ts'/>
 
 module visualizing {
@@ -15,6 +14,14 @@ module visualizing {
         y:number,
         z:number
     }
+    
+    export interface Draggable {
+        dragStart(dx:number, dy:number) : void
+        dragEnd() : void
+        dragged(x:number, y:number, dx:number, dy:number): void
+        hitTestDraggable(x:number, y:number): Draggable // or null
+    }
+
     
     /* A class to help with animations. Adds callbacks (which trigger requestAnimationFrame) */
     interface AnimatorClient {
@@ -283,7 +290,7 @@ module visualizing {
             this.redrawDragLine()
         }
         
-        hitTestDraggable(x:number, y:number): dragger.Draggable {
+        hitTestDraggable(x:number, y:number): Draggable {
             if (x >= 0 && x < this.params.width && y >= 0 && y < this.params.height) {
                 return this
             }
@@ -499,7 +506,6 @@ module visualizing {
         private wavefunction2_ : WavefunctionVisualizer
         
         private energyVisualizer_ : energy.EnergyVisualizer
-        private energyDragger_ : dragger.Dragger
         
         private leftTurningPoint_: VisLine
         private rightTurningPoint_: VisLine
@@ -573,7 +579,6 @@ module visualizing {
             }
             
             // Energy dragger
-            this.energyDragger_ = new dragger.Dragger("Energy", false, this.params)
             this.energyVisualizer_ = new energy.EnergyVisualizer(energyContainer, energyDraggerPrototype, this.params)
 
             this.energyVisualizer_.positionUpdated = (proposedY:number) => {
@@ -584,7 +589,6 @@ module visualizing {
                 this.computeAndShowWavefunction()
                 return proposedE
             }
-            this.energyDragger_.addToScene(this.scene_)
                         
             // Start listening to events
             this.initEvents()
@@ -592,7 +596,7 @@ module visualizing {
         
         private initEvents() {
             let mouseIsDown = false
-            let dragSelection : dragger.Draggable = null
+            let dragSelection : Draggable = null
             let lastX = -1, lastY = -1
             const element = this.container_
             const getX = (evt:MouseEvent) => evt.pageX - element.offsetLeft
@@ -607,12 +611,6 @@ module visualizing {
                     lastX = x
                     lastY = y
                     this.render()
-                } else {
-                    if (this.energyDragger_.hitTestDraggable(x, y)) {
-                        this.container_.style.cursor = 'ns-resize'
-                    } else {
-                        this.container_.style.cursor = 'auto'
-                    }
                 }
             })
             element.addEventListener('mousedown', (evt) => {
@@ -620,7 +618,7 @@ module visualizing {
                 lastY = getY(evt)
                 
                 dragSelection = null
-                const draggables : dragger.Draggable[] = [this.energyDragger_, this.potential_]
+                const draggables : Draggable[] = [this.potential_]
                 for (let i=0; i < draggables.length && dragSelection == null; i++) {
                     dragSelection = draggables[i].hitTestDraggable(lastX, lastY)
                 }
@@ -659,7 +657,6 @@ module visualizing {
                 // clear everything
                 this.wavefunction_.clear()
                 this.wavefunction2_.clear()
-                this.energyDragger_.attr({visibility: "hidden"})
                 this.container_.selectAll(".turningpoint").attr({
                     x1:-1,
                     x2:-1
@@ -687,7 +684,7 @@ module visualizing {
                         
             // update energy
             const visEnergy = this.params.convertYToVisualCoordinate(this.state.energy)
-            this.energyDragger_.update(visEnergy, this.state.energy)
+            //this.energyDragger_.update(visEnergy, this.state.energy)
             //this.energyDragger_.attr({visibility: "visible"})
             this.render()            
         }
