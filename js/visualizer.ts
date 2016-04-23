@@ -211,6 +211,17 @@ module visualizing {
             throw message || "Assertion failed"
         }
     }
+    
+    class EnergyBar {
+        line: VisLine
+        constructor(public slider:energy.EnergySlider, public energy:number, public params:Parameters) {
+            this.line = new VisLine(2, {color: 0xFF0000})
+        }
+        setPositionAndEnergy(position: number, energy:number) {
+            this.energy = energy
+            this.line.update((idx:number) => ({x:idx * this.params.width, y:position, z:0}))
+        }
+    }
 
     class PotentialVisualizer {
         private dragLocations_ : Point3[] = []
@@ -506,6 +517,7 @@ module visualizing {
         private wavefunction2_ : WavefunctionVisualizer
         
         private energyVisualizer_ : energy.EnergyVisualizer
+        private energyBars_ : EnergyBar[] = []
         
         private leftTurningPoint_: VisLine
         private rightTurningPoint_: VisLine
@@ -549,7 +561,7 @@ module visualizing {
             this.potential_ = new PotentialVisualizer(this.params)
             this.potential_.potentialUpdatedCallback = (v:number[]) => { 
                 this.state.potential = v.slice()
-                this.computeAndShowWavefunction()
+                this.computeAndShowWavefunctions()
             }
             this.potential_.addToScene(this.scene_)
 
@@ -581,15 +593,20 @@ module visualizing {
             // Energy dragger
             this.energyVisualizer_ = new energy.EnergyVisualizer(energyContainer, energyDraggerPrototype, this.params)
 
-            this.energyVisualizer_.positionUpdated = (proposedY:number) => {
+            this.energyVisualizer_.positionUpdated = (slider:energy.EnergySlider, position:number) => {
                 // the user dragged the energy to a new value, expressed our "height" coordinate system
                 // compute a new wavefunction
-                const proposedE = this.params.convertYFromVisualCoordinate(proposedY)
-                this.state.energy = proposedE 
-                this.computeAndShowWavefunction()
-                return proposedE
+                const energy = this.params.convertYFromVisualCoordinate(position)
+                this.energyBars_.forEach((bar:EnergyBar) => {
+                    if (bar.slider == slider) {
+                        bar.setPositionAndEnergy(position, energy)
+                        this.state.energy = energy 
+                    }
+                })
+                this.computeAndShowWavefunctions()
+                return energy
             }
-                        
+            
             // Start listening to events
             this.initEvents()
         }
@@ -649,10 +666,15 @@ module visualizing {
         }
         
         public addEnergySlider() {
-            this.energyVisualizer_.addSlider(10, 10)
+            const energy = this.state.energy
+            const position = this.params.convertYToVisualCoordinate(energy)
+            const slider = this.energyVisualizer_.addSlider(position, energy)
+            const bar = new EnergyBar(slider, energy, this.params)
+            this.energyBars_.push(bar)
+            this.scene_.add(bar.line.line)
         }
         
-        private computeAndShowWavefunction() {
+        private computeAndShowWavefunctions() {
             if (0 && this.state.potential.length == 0) {
                 // clear everything
                 this.wavefunction_.clear()
@@ -663,6 +685,7 @@ module visualizing {
                 })
                 return
             }
+            
             // update wavefunctions
             const psiInputs = {
                 potentialMesh:this.state.potential,
@@ -681,7 +704,7 @@ module visualizing {
             const rightV = this.params.convertXToVisualCoordinate(turningPoints.right)
             this.leftTurningPoint_.update((i:number) => ({x:leftV, y:i*this.params.height, z:0}))
             this.rightTurningPoint_.update((i:number) => ({x:rightV, y:i*this.params.height, z:0}))
-                        
+
             // update energy
             const visEnergy = this.params.convertYToVisualCoordinate(this.state.energy)
             //this.energyDragger_.update(visEnergy, this.state.energy)
@@ -691,17 +714,17 @@ module visualizing {
         
         public setShowPsi(flag:boolean) {
             this.params.showPsi = flag
-            this.computeAndShowWavefunction()
+            this.computeAndShowWavefunctions()
         }
         
         public setShowPsi2(flag:boolean) {
             this.params.showPsi2 = flag
-            this.computeAndShowWavefunction()
+            this.computeAndShowWavefunctions()
         }
         
         public setShowPsiT(flag:boolean) {
             this.params.showPsiT = flag
-            this.computeAndShowWavefunction()            
+            this.computeAndShowWavefunctions()            
         }
         
         public loadSHO() {

@@ -8,7 +8,7 @@ module energy {
         }
     }
     
-    class EnergySlider {
+    export class EnergySlider {
         public position:number
         public value:number
         constructor(public element:HTMLElement, position:number, value:number) {
@@ -29,7 +29,7 @@ module energy {
     
     export class EnergyVisualizer {
         // Function property. Given a position, returns the value
-        public positionUpdated : (position:number) => number
+        public positionUpdated : (slider:EnergySlider, position:number) => number
         
         sliders: EnergySlider[] = []
         private draggedSlider: EnergySlider = null
@@ -38,7 +38,7 @@ module energy {
         
         constructor(public container: HTMLElement, public sliderPrototype: HTMLElement, public params:visualizing.Parameters) {
             // Default position update handler
-            this.positionUpdated = (pos:number) => pos
+            this.positionUpdated = (slider:EnergySlider, pos:number) => pos
             assert(this.container != null, "Energy slider could not find container")
             assert(this.sliderPrototype != null, "Energy slider could not find prototype")
             
@@ -46,13 +46,14 @@ module energy {
             document.addEventListener('mouseup', () => this.stopDragging())
         }
         
-        public addSlider(position, value) {
+        public addSlider(position, value) : EnergySlider {
             const sliderElem = this.sliderPrototype.cloneNode(true) as HTMLElement
             const slider = new EnergySlider(sliderElem, position, value)
             this.sliders.push(slider)
             this.container.appendChild(sliderElem)
             this.beginWatching(slider)
             sliderElem.style.display = "inline-block"
+            return slider
         }
         
         private beginWatching(slider:EnergySlider) {
@@ -85,7 +86,7 @@ module energy {
                 this.lastY = y
                 this.unconstrainedPosition += dy
                 const position = Math.min(Math.max(this.unconstrainedPosition, 0), this.params.height)
-                const value = this.positionUpdated(position)
+                const value = this.positionUpdated(slider, position)
                 slider.update(position, value)
             }
         }
