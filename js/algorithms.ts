@@ -19,12 +19,12 @@ function normalize(vals:number[], dx:number) {
     }
 }
 
-function normalizeSign(vals:number[]) {
+function normalizeSign(vals:number[], leftTurningPoint:number) {
     // make it negative on the left
     // negative is upwards in our visualizer
     let wantsSignFlip = false
     const eps = 1.0E-16
-    for (let i=0; i < vals.length; i++) {
+    for (let i=leftTurningPoint; i + 1 < vals.length; i++) {
         if (Math.abs(vals[i]) > eps) {
             wantsSignFlip = vals[i] > 0
             break
@@ -135,7 +135,7 @@ function averageResolvedWavefunctions(first:ResolvedWavefunction, second:Resolve
         }
         normalize(values, first.dx)
     }
-    normalizeSign(values)
+    normalizeSign(values, first.leftTurningPoint)
     return new ResolvedWavefunction(values, first.energy, first.dx, first.leftTurningPoint, first.rightTurningPoint, 0, 0)
 }
 
@@ -163,15 +163,21 @@ class Wavefunction {
     classicalTurningPoints() : TurningPoints {
         const length = this.length()
         let left, right
-        for (left = 0; left < length/2; left++) {
+        for (left = 0; left < length; left++) {
             if (this.energy > this.potential[left]) {
                 break
             }
         }
-        for (right = length-1; right > (length+1)/2; right--) {
+        for (right = length-1; right >= left; right--) {
             if (this.energy > this.potential[right]) {
                 break
             }
+        }
+        // if we meet, it means the energy is above the potential: scattering state
+        // assume we have an infinite square well box in that case 
+        if (left == right) {
+            left = 0
+            right = length - 1
         }
         return {left: left, right: right}
     }
@@ -244,16 +250,35 @@ function zeros(amt:number) : number[] {
     return result
 }
 
+function indexOfMinimum(potential:number[]) : number {
+    assert(potential.length > 0, "No minimum for empty potential")
+    let minIdx = 0, minCount = 1
+    for (let i=1; i < potential.length; i++) {
+        if (potential[i] < potential[minIdx]) {
+            minIdx = i
+            minCount = 1
+        } else if (potential[i] == potential[minIdx]) {
+            minCount += 1
+        }
+    }
+    let result = (minIdx + minCount/2) | 0
+    // must not be on the edge
+    result = Math.max(1, result)
+    result = Math.min(potential.length - 2, result)
+    return result
+}
+
 function numerov(input:IntegratorInput, even:boolean) : Wavefunction {
-    // we start at the center of the potential mesh
+    // we start at the point of minimum energy
     // and integrate left and right
     // we require that the potential mesh have an ODD number of values,
     // and assume that the wavefunction takes on the same value in the two adjacent to the center
-    const potential = input.potentialMesh 
+    const potential = input.potentialMesh
     const length = potential.length 
     assert(length % 2 == 1, "PotentialMesh does not have odd count")
     assert(length >= 3, "PotentialMesh is too small")
-    const c = (length + 1)/2 // center
+    const c = indexOfMinimum(potential) // minimum
+    console.log("C: " + c)
     
     // Fill wavefunction with all 0s
     let wavefunction = new Wavefunction(potential.slice(), input.energy, input.xMax)

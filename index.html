@@ -97,8 +97,9 @@
 </head>
 <body>
     <a href="javascript:loadSHO()">Simple Harmonic Oscillator</a>&nbsp;&nbsp;&nbsp;
+    <a href="javascript:loadISW()">Infinite Square Well</a>&nbsp;&nbsp;&nbsp;
     <a href="javascript:loadFSW()">Finite Square Well</a>&nbsp;&nbsp;&nbsp;
-    <a href="javascript:loadISW()">Infinite Square Well</a>
+    <a href="javascript:load2SW()">Two Square Wells</a>&nbsp;&nbsp;&nbsp;
     <p>
         <div id="outer_container">
             <div id="vis_container">
@@ -143,7 +144,10 @@
         }
         function loadFSW() {
             Vis.loadFSW()
-        }        
+        }
+        function load2SW() {
+            Vis.load2SW()
+        }
         function addEnergySlider() {
             Vis.addEnergySlider()
         }

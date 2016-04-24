@@ -853,5 +853,27 @@ module visualizing {
                 return .5
             })
         }
+        
+        public load2SW() {
+            // Two adjacent square wells
+            this.params.yScale = 100
+            this.params.timescale = 1.0
+            const leftBarrierEnd = 1.0 / 5.0
+            const rightBarrierStart = 1.0 - 1.0 / 5.0
+            const centerBarrierStart = 1.7 / 5.0
+            const centerBarrierEnd = 1.85 / 5.0
+            this.potential_.loadFrom((x:number) => {
+                // x is a value in [0, this.params.width)
+                const sx = x / this.params.width
+                if (sx < leftBarrierEnd || sx > rightBarrierStart) {
+                    return 5.0
+                } else if (sx >= centerBarrierStart && sx < centerBarrierEnd) {
+                    return 4.0
+                } else {
+                    return .5
+                }
+            })
+
+        }
     }
 }
