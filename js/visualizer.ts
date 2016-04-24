@@ -38,15 +38,37 @@ module visualizing {
         
         constructor(public timescale:number, rerender:() => void) {
             this.rerender_ = rerender
-            this.elapsed_ = this.clock.getElapsedTime()
-            this.clock.start() 
+            this.elapsed_ = this.clock.getElapsedTime() 
         }
         
         schedule(client: AnimatorClient) {
-            if (this.clients_.length == 0) {
+            if (this.clients_.length == 0 && ! this.paused()) {
                 window.requestAnimationFrame(() => this.fireClients())
             }
             this.clients_.push(client)
+        }
+        
+        setPaused(flag:boolean) {
+            if (flag) {
+                this.clock.stop()
+            } else {
+                this.clock.start()
+                if (this.clients_.length > 0) {
+                    window.requestAnimationFrame(() => this.fireClients())
+                }
+            }
+        }
+        
+        reset() {
+            this.elapsed_ = 0
+        }
+        
+        paused() : boolean {
+            return !this.clock.running
+        }
+        
+        lastTime() : number {
+            return this.elapsed_
         }
         
         fireClients() {
@@ -185,6 +207,8 @@ module visualizing {
         public showEven = false
         public showOdd = false
         public showAvg = true
+        
+        public paused = false
         
         public centerForMeshIndex(idx:number):number {
             assert(idx >= 0 && idx < this.meshDivision, "idx out of range")
@@ -380,7 +404,6 @@ module visualizing {
         private group_ : THREE.Group = new THREE.Group()
         private psiGraph_ : VisLine
         private psi2Graph_ : VisLine
-        private psiTGraph_: VisLine
         private psiBaseline_ : VisLine
         
         constructor(public params: Parameters, public color: number, public animator:Animator) {
@@ -410,7 +433,6 @@ module visualizing {
             
             this.psiGraph_ = new VisLine(this.params.meshDivision, psiMaterial)
             this.psi2Graph_ = new VisLine(this.params.meshDivision, psi2Material)
-            this.psiTGraph_ = new VisLine(this.params.meshDivision, psiTMaterial)
             this.psiBaseline_ = new VisLine(2, baselineMaterial)            
         }
         
@@ -425,14 +447,18 @@ module visualizing {
         
         clear() {
             this.wavefunction_ = null
-            this.redraw()
+            this.redraw(0)
         }
                 
-        redraw() {
+        redraw(time:number = null) {
             if (this.wavefunction_ === null) {
                 return
             }
-                        
+            
+            if (time === null) {
+                time = this.animator.lastTime()
+            }
+            
             const cleanValue = (value:number) => {
                 const limit = this.params.height/2
                 if (isNaN(value)) {
@@ -442,56 +468,36 @@ module visualizing {
             }
 
             const psiScale = this.params.psiScale
-            const psi = this.wavefunction_.valuesAtTime0()
             
-            psi.forEach((value, index) => {
+            for (let index=0; index < this.wavefunction_.length; index++) {
                 const x = this.params.centerForMeshIndex(index)
-                let y = cleanValue(psiScale * value)
-                let ysq = cleanValue(psiScale * -(value * value))
-                const z = 0
+                const yz = this.wavefunction_.valueAt(index, time)
+                const y = cleanValue(psiScale * yz.re)
+                const z = cleanValue(psiScale * yz.im)
+                const magnitude = -psiScale * Math.sqrt(yz.re * yz.re + yz.im * yz.im)
                 
                 this.psiGraph_.geometry.vertices[index] = new THREE.Vector3(x, y, z)
-                this.psi2Graph_.geometry.vertices[index] = new THREE.Vector3(x, ysq, z)
-            })            
+                this.psi2Graph_.geometry.vertices[index] = new THREE.Vector3(x, magnitude, 0)
+            }
             this.psiGraph_.geometry.verticesNeedUpdate = true
             this.psi2Graph_.geometry.verticesNeedUpdate = true
             
             this.psiGraph_.line.visible = this.params.showPsi
-            this.psi2Graph_.line.visible = this.params.showPsi2
-            this.psiTGraph_.line.visible = this.params.showPsiT            
+            this.psi2Graph_.line.visible = this.params.showPsi2     
             this.psiBaseline_.update((i:number) => {
                 return {x:i*this.params.width, y:0, z:0}
             })
             
-            if (this.params.showPsiT) {
-                this.animator.schedule(this)
-            }
-        }
-        
-        renderAndReschedulePsiT(when:number) {
-            if (!this.wavefunction_) {
-                return
-            }
-            const t = when
-            const psiScale = this.params.psiScale
-            this.psiTGraph_.update((index:number) => {
-                let yz:Complex = this.wavefunction_.valueAt(index, t)
-                const x = this.params.centerForMeshIndex(index)
-                return {x:x, y:yz.re * psiScale, z:yz.im * psiScale}
-            })
             this.animator.schedule(this)
         }
         
         advanceAnimation(when:number) {
-            if (this.params.showPsiT) {
-                this.renderAndReschedulePsiT(when)
-            }
+            this.redraw(when)
         }
         
         addToScene(scene:THREE.Scene, yOffset:number) {
             [this.psiGraph_,
              this.psi2Graph_,
-             this.psiTGraph_,
              this.psiBaseline_].forEach((vl:VisLine) => {
                  this.group_.add(vl.line)
              })
@@ -663,13 +669,35 @@ module visualizing {
             this.renderer_.render(this.scene_, this.camera_);
         }
         
+        private nextInterestingEnergy() {
+            const usedEnergies = this.energyBars_.map((eb:EnergyBar) => eb.energy)
+            const energyIsUsed = (proposedE:number) => {
+                const eps = .25
+                return usedEnergies.some((energy:number) => Math.abs(proposedE - energy) <= eps)
+            }
+            
+            const maxEnergy = this.params.height / this.params.yScale
+            const startingPoints = [3.0, 1.5, 2.0, 2.5, 1.0, 0.5]
+            const offset = 1.3
+            for (let i=0; i < startingPoints.length; i++) {
+                for (let proposal = startingPoints[i]; proposal < maxEnergy; proposal += offset) {
+                    if (! energyIsUsed(proposal)) {
+                        return proposal
+                    }
+                }
+            }
+            return maxEnergy / 3; // give up!
+        }
+        
         public addEnergySlider() {
-            const energy = this.state.energy
+            const energy = this.nextInterestingEnergy()
             const position = this.params.convertYToVisualCoordinate(energy)
             const slider = this.energyVisualizer_.addSlider(position, energy)
             const bar = new EnergyBar(slider, energy, this.params)
             this.energyBars_.push(bar)
+            bar.setPositionAndEnergy(position, energy) // hack, we shouldn't need to do this
             this.scene_.add(bar.line.line)
+            this.computeAndShowWavefunctions()
         }
         
         public removeEnergySlider() {
@@ -680,6 +708,7 @@ module visualizing {
             const bar = this.energyBars_.pop()
             this.scene_.remove(bar.line.line)
             this.energyVisualizer_.removeSlider(bar.slider)
+            this.computeAndShowWavefunctions()
         }
         
         private computeAndShowWavefunctions() {
@@ -761,9 +790,17 @@ module visualizing {
             this.computeAndShowWavefunctions()            
         }
         
+        public setPaused(flag:boolean) {
+            this.params.paused = flag
+            this.animator_.setPaused(flag)
+            if (flag) {
+                this.animator_.reset()
+            }
+        }
+        
         public loadSHO() {
             // Simple Harmonic Oscillator
-            this.params.yScale = 500 / 25
+            this.params.yScale = 20
             this.potential_.loadFrom((x:number) => {
                 // x is a value in [0, this.potential_.width)
                 // we have a value of 1 at x = width/2
@@ -775,7 +812,7 @@ module visualizing {
         
         public loadISW() {
             // Infinite square well
-            this.params.yScale = 50
+            this.params.yScale = 100
             const widthRatio = 1.0 / 5.0
             this.potential_.loadFrom((x:number) => {
                 // x is a value in [0, this.params.width)
@@ -783,21 +820,21 @@ module visualizing {
                 if (x < width * widthRatio || x > width - (width * widthRatio)) {
                     return 1000
                 }
-                return 1
+                return .5
             })
         }
         
         public loadFSW() {
             // Finite square well
-            this.params.yScale = 50
+            this.params.yScale = 100
             const widthRatio = 1.0 / 5.0
             this.potential_.loadFrom((x:number) => {
                 // x is a value in [0, this.params.width)
                 const width = this.params.width
                 if (x < width * widthRatio || x > width - (width * widthRatio)) {
-                    return 7
+                    return 5.0
                 }
-                return 1
+                return .5
             })
         }
     }

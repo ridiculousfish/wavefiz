@@ -68,12 +68,15 @@ class ResolvedWavefunction {
                 public leftTurningPoint:number,
                 public rightTurningPoint:number,
                 public leftDerivativeDiscontinuity:number,
-                public rightDerivativeDiscontinuity:number) {}
-    
-    discontinuity():number {
-        return Math.abs(this.leftDerivativeDiscontinuity * this.rightDerivativeDiscontinuity)
-    }
-    
+                public rightDerivativeDiscontinuity:number) {
+     
+     
+     assert(isFinite(energy), "Non-finite energy: " + energy)
+     assert(isFinite(dx), "Non-finite dx: " + dx)
+     assert(isFinite(leftDerivativeDiscontinuity), "Non-finite leftDerivativeDiscontinuity: " + leftDerivativeDiscontinuity)
+     assert(isFinite(rightDerivativeDiscontinuity), "Non-finite rightDerivativeDiscontinuity: " + rightDerivativeDiscontinuity)
+   }
+       
     valueAt(x:number, time:number) {
      // e^(-iEt) -> cos(-eT) + i * sin(-Et)
         const nEt = - this.energy * time
@@ -99,20 +102,13 @@ class GeneralizedWavefunction {
     }
     
     valueAt(x:number, time:number) {
+        assert(x === +x && x === (x|0), "Non-integer passed to valueAt")
         let result = new Complex(0, 0)
         this.components.forEach((psi:ResolvedWavefunction) => {
             result.add(psi.valueAt(x, time))
         })
         result.re /= this.components.length
         result.im /= this.components.length
-        return result
-    }
-    
-    valuesAtTime0() : number[] {
-        let result = zeros(this.length)
-        for (let i=0; i < this.length; i++) {
-            result[i] = this.valueAt(i, 0).re
-        }
         return result
     }
 }
@@ -183,6 +179,11 @@ class Wavefunction {
     // computes the discontinuity in the two derivatives at the given location
     // we don't actually care if it's right or left
     private derivativeDiscontinuity(psi:number[], x:number, dx:number, onRight:boolean):number {
+        if (x == 0 || x + 1 == psi.length) {
+            // this indicates the turning points are at the very edges
+            // don't try to be clever here
+            return 0
+        }
         return (psi[x+1] + psi[x-1] - (14. - 12 * this.F(x)) * psi[x]) / dx
     }
     
