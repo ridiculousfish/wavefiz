@@ -38,7 +38,39 @@ function computeTimeDependence(energy:number, time:number): Complex {
 }
 
 class ResolvedWavefunction {
-    constructor(public values:number[]) {}
+    constructor(public values:number[], public energy:number, public leftDerivativeDiscontinuity:number, public rightDerivativeDiscontinuity:number) {}
+    
+    discontinuity():number {
+        return Math.abs(this.leftDerivativeDiscontinuity * this.rightDerivativeDiscontinuity)
+    }
+}
+
+// Given two ResolvedWavefunction, computes an average weighted by the discontinuities in their derivatives
+function averageResolvedWavefunctions(first:ResolvedWavefunction, second:ResolvedWavefunction) : ResolvedWavefunction {
+    assert(first.values.length == second.values.length, "Wavefunctions have different lengths")
+    const bad1 = first.discontinuity()
+    const bad2 = second.discontinuity()
+    if (bad1 < bad2) {
+        return first
+    } else {
+        return second
+    }
+    if (bad1 == 0) {
+        return first
+    } else if (bad2 == 0) {
+        return second
+    } else {
+        const badSum = bad1 + bad2
+        const weight1 = 1.0 - (bad1 / badSum)
+        const weight2 = 1.0 - (bad2 / badSum)
+        
+        const length = first.values.length
+        let values = zeros(length)
+        for (let i=0; i < length; i++) {
+            values[i] = weight1 * first.values[i] + weight2 * second.values[i]
+        }
+        return new ResolvedWavefunction(values, first.energy, 0, 0)
+    }
 }
 
 interface TurningPoints {
@@ -49,8 +81,12 @@ interface TurningPoints {
 class Wavefunction {
     valuesFromCenter: number[] = []
     valuesFromEdge: number[] = []
+    // F function used in Numerov
+    F:  (x:number) => number = null
     
-    constructor(public potential: number[], public energy:number, public xMax:number) {}
+    constructor(public potential: number[], public energy:number, public xMax:number) {
+        this.potential = this.potential.slice()
+    }
     
     length() : number {
         assert(this.valuesFromCenter.length == this.valuesFromEdge.length, "Wavefunction does not have a consistent length")
@@ -74,12 +110,18 @@ class Wavefunction {
         return {left: left, right: right}
     }
     
+    // computes the discontinuity in the two derivatives at the given location
+    // we don't actually care if it's right or left
+    private derivativeDiscontinuity(psi:number[], x:number, dx:number, onRight:boolean):number {
+        return (psi[x+1] + psi[x-1] - (14. - 12 * this.F(x)) * psi[x]) / dx
+    }
+    
     // scale the valuesFromEdge to match the valuesFromCenter at the given turning points,
     // then normalize the whole thing
     resolveAtTurningPoints(tp:TurningPoints) : ResolvedWavefunction {
         const left = Math.round(tp.left), right = Math.round(tp.right)
         const length = this.length()
-        assert(left <= right, "left is not <= right") 
+        assert(left <= right, "left is not <= right")
         assert(left >= 0 && left < length && right >= 0 && right < length, "left or right out of bounds")
         const leftScale = this.valuesFromCenter[left] / this.valuesFromEdge[left]
         const rightScale = this.valuesFromCenter[right] / this.valuesFromEdge[right]
@@ -96,9 +138,16 @@ class Wavefunction {
         for (; i < length; i++) {
             psi[i] = rightScale * this.valuesFromEdge[i]
         }
+        
+        // normalize
         const dx = this.xMax / length
         normalize(psi, dx)
-        return new ResolvedWavefunction(psi)
+        
+        // compute discontinuities
+        const leftDiscont = this.derivativeDiscontinuity(psi, left, dx, false)
+        const rightDiscont = this.derivativeDiscontinuity(psi, right, dx, true) 
+
+        return new ResolvedWavefunction(psi, this.energy, leftDiscont, rightDiscont)
     }
     
     resolveAtClassicalTurningPoints() : ResolvedWavefunction {
@@ -124,7 +173,7 @@ function zeros(amt:number) : number[] {
     return result
 }
 
-function numerov(input:IntegratorInput, even:boolean) {
+function numerov(input:IntegratorInput, even:boolean) : Wavefunction {
     // we start at the center of the potential mesh
     // and integrate left and right
     // we require that the potential mesh have an ODD number of values,
@@ -146,6 +195,7 @@ function numerov(input:IntegratorInput, even:boolean) {
     
     // F function used by Numerov
     const F = (x:number) => 1.0 - ddx12 * 2. * (potential[x] - energy)
+    wavefunction.F = F
     
     // Numerov integrator formula
     // given that we have set psi[index], compute and set psi[index+1] if rightwards,
@@ -164,10 +214,8 @@ function numerov(input:IntegratorInput, even:boolean) {
     if (even) {
         psi[c] = 1
         psi[c+1] = 0.5 * (12. - F(c) * 10.) * psi[c] / F(c+1)
-        psi[c-1] = 0.5 * (12. - F(c) * 10.) * psi[c] / F(c-1)
     } else {
         psi[c] = 0
-        psi[c-1] = -dx
         psi[c+1] = dx
     }
     
@@ -177,7 +225,8 @@ function numerov(input:IntegratorInput, even:boolean) {
         step(psi, i, GoingRight)
     }
     // leftwards integration
-    for (let i = c-1; i > 0; i--) {
+    // note we "start at" c+1
+    for (let i = c; i > 0; i--) {
         step(psi, i, GoingLeft)
     }
     
@@ -200,7 +249,7 @@ function numerov(input:IntegratorInput, even:boolean) {
 }
 
 function formatFloat(x:number) : string {
-    return "" + Math.round(x*1000)/1000
+    return x.toFixed(2)
 }
 
 function algorithmTest() {
@@ -220,11 +269,14 @@ function algorithmTest() {
         xMax:xMax
     }
     let psi = numerov(input, true).resolveAtClassicalTurningPoints()
+    
+    lines.push("left discontinuity: " + psi.leftDerivativeDiscontinuity.toFixed(4))
+    lines.push("right discontinuity: " + psi.rightDerivativeDiscontinuity.toFixed(4))
 
     lines.push("x\tpsi\tV")    
     for (let i=0; i < width; i++) {
         let x = i / width * xMax - (xMax / 2)
-        lines.push(formatFloat(x) + "\t" + formatFloat(psi[i]) + "\t" + formatFloat(potential[i]))
+        lines.push(formatFloat(x) + "\t" + formatFloat(psi.values[i]) + "\t" + formatFloat(potential[i]))
     }
     
     

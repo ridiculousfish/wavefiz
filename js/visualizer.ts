@@ -178,9 +178,9 @@ module visualizing {
         public meshDivision : number = 1025 // how many points are in our mesh. Must be odd.
         public psiScale: number = 150 // how much scale we apply to the wavefunction
         
-        public showPsi = false // show psi(x)
+        public showPsi = !false // show psi(x)
         public showPsi2 = false // show |psi(x)|^2
-        public showPsiT = !false // show psi(x,t)
+        public showPsiT = false // show psi(x,t)
         
         public centerForMeshIndex(idx:number):number {
             assert(idx >= 0 && idx < this.meshDivision, "idx out of range")
@@ -372,8 +372,7 @@ module visualizing {
     }
     
     class WavefunctionVisualizer {
-        private wavefunction_: Wavefunction = null
-        private resolvedWavefunction_ : ResolvedWavefunction = null
+        private wavefunction_: ResolvedWavefunction = null
         private group_ : THREE.Group = new THREE.Group()
         private psiGraph_ : VisLine
         private psi2Graph_ : VisLine
@@ -411,15 +410,13 @@ module visualizing {
             this.psiBaseline_ = new VisLine(2, baselineMaterial)            
         }
         
-        setWavefunction(psi:Wavefunction) {
+        setWavefunction(psi:ResolvedWavefunction) {
             this.wavefunction_ = psi
-            this.resolvedWavefunction_ = psi.resolveAtClassicalTurningPoints()
             this.redraw()
         }
         
         clear() {
             this.wavefunction_ = null
-            this.resolvedWavefunction_ = null
             this.redraw()
         }
                 
@@ -437,7 +434,7 @@ module visualizing {
             }
 
             const psiScale = this.params.psiScale
-            const psi = this.resolvedWavefunction_.values
+            const psi = this.wavefunction_.values
             
             psi.forEach((value, index) => {
                 const x = this.params.centerForMeshIndex(index)
@@ -470,7 +467,7 @@ module visualizing {
             // energy = e^(-iEt/hbar)
             const t = when
             const c = computeTimeDependence(when, this.wavefunction_.energy)
-            let psix = this.resolvedWavefunction_.values
+            let psix = this.wavefunction_.values
             const timeIndependentVertices = this.psiGraph_.geometry.vertices
             this.psiTGraph_.update((i:number) => {
                 const psiVert : THREE.Vector3 = timeIndependentVertices[i]
@@ -515,6 +512,7 @@ module visualizing {
         
         private wavefunction_ : WavefunctionVisualizer
         private wavefunction2_ : WavefunctionVisualizer
+        private wavefunctionAvg_ : WavefunctionVisualizer
         
         private energyVisualizer_ : energy.EnergyVisualizer
         private energyBars_ : EnergyBar[] = []
@@ -569,9 +567,11 @@ module visualizing {
             const centerY = this.params.height / 2
             this.wavefunction_ = new WavefunctionVisualizer(this.params, 0xFFA500, this.animator_) // orange
             this.wavefunction2_ = new WavefunctionVisualizer(this.params, 0xFFFF00, this.animator_) // yellow
+            this.wavefunctionAvg_ = new WavefunctionVisualizer(this.params, 0xFF7777, this.animator_) 
             
             this.wavefunction_.addToScene(this.scene_, centerY - 125)
             this.wavefunction2_.addToScene(this.scene_, centerY + 125)
+            this.wavefunctionAvg_.addToScene(this.scene_, centerY)
             
             // Turning Points
             for (let j=0; j < 2; j++) {
@@ -679,10 +679,6 @@ module visualizing {
                 // clear everything
                 this.wavefunction_.clear()
                 this.wavefunction2_.clear()
-                this.container_.selectAll(".turningpoint").attr({
-                    x1:-1,
-                    x2:-1
-                })
                 return
             }
             
@@ -692,14 +688,26 @@ module visualizing {
                 energy:this.state.energy,
                 xMax: this.maxX
             }
-            let psi = NumerovIntegrator(true).computeWavefunction(psiInputs)
-            this.wavefunction_.setWavefunction(psi)
+            let psi1 = NumerovIntegrator(true).computeWavefunction(psiInputs)
+            let psiR1 = psi1.resolveAtClassicalTurningPoints()
+            this.wavefunction_.setWavefunction(psiR1)
             
             let psi2 = NumerovIntegrator(false).computeWavefunction(psiInputs)
-            this.wavefunction2_.setWavefunction(psi2)
+            let psiR2 = psi2.resolveAtClassicalTurningPoints()
+            this.wavefunction2_.setWavefunction(psiR2)
+            
+            //this.wavefunctionAvg_.setWavefunction(averageResolvedWavefunctions(psiR1, psiR2))
+            
+            {
+                let disContText = ""
+                disContText += "even: " + psiR1.leftDerivativeDiscontinuity.toFixed(3) + "," + psiR1.rightDerivativeDiscontinuity.toFixed(3)
+                disContText += " *** "
+                disContText += "odd: " + psiR2.leftDerivativeDiscontinuity.toFixed(3) + "," + psiR2.rightDerivativeDiscontinuity.toFixed(3)
+                document.getElementById("statusfield").textContent = disContText
+            }
             
             // update turning points
-            const turningPoints = psi.classicalTurningPoints()
+            const turningPoints = psi1.classicalTurningPoints()
             const leftV = this.params.convertXToVisualCoordinate(turningPoints.left)
             const rightV = this.params.convertXToVisualCoordinate(turningPoints.right)
             this.leftTurningPoint_.update((i:number) => ({x:leftV, y:i*this.params.height, z:0}))
