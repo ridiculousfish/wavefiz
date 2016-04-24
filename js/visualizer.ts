@@ -372,7 +372,7 @@ module visualizing {
     }
     
     class WavefunctionVisualizer {
-        private wavefunction_: ResolvedWavefunction = null
+        private wavefunction_: GeneralizedWavefunction = null
         private group_ : THREE.Group = new THREE.Group()
         private psiGraph_ : VisLine
         private psi2Graph_ : VisLine
@@ -410,7 +410,7 @@ module visualizing {
             this.psiBaseline_ = new VisLine(2, baselineMaterial)            
         }
         
-        setWavefunction(psi:ResolvedWavefunction) {
+        setWavefunction(psi:GeneralizedWavefunction) {
             this.wavefunction_ = psi
             this.redraw()
         }
@@ -434,7 +434,7 @@ module visualizing {
             }
 
             const psiScale = this.params.psiScale
-            const psi = this.wavefunction_.values
+            const psi = this.wavefunction_.valuesAtTime0()
             
             psi.forEach((value, index) => {
                 const x = this.params.centerForMeshIndex(index)
@@ -464,22 +464,12 @@ module visualizing {
             if (!this.wavefunction_) {
                 return
             }
-            // energy = e^(-iEt/hbar)
             const t = when
-            const c = computeTimeDependence(when, this.wavefunction_.energy)
-            let psix = this.wavefunction_.values
-            const timeIndependentVertices = this.psiGraph_.geometry.vertices
-            this.psiTGraph_.update((i:number) => {
-                const psiVert : THREE.Vector3 = timeIndependentVertices[i]
-                const psiY = psiVert.y
-                // compute real and imaginary parts of psi(x,t)
-                // real part is on Y axis, imaginary part is on Z axis
-                let re = c.re * psiY
-                let im = c.im * psiY
-                return new THREE.Vector3(psiVert.x, re, im)
-                // convert to polar?
-                //let r = Math.sqrt(re*re + im*im)
-                //let theta = Math.atan2(im, re)   
+            const psiScale = this.params.psiScale
+            this.psiTGraph_.update((index:number) => {
+                let yz:Complex = this.wavefunction_.valueAt(index, t)
+                const x = this.params.centerForMeshIndex(index)
+                return {x:x, y:yz.re * psiScale, z:yz.im * psiScale}
             })
             this.animator.schedule(this)
         }
@@ -690,11 +680,24 @@ module visualizing {
             }
             let psi1 = NumerovIntegrator(true).computeWavefunction(psiInputs)
             let psiR1 = psi1.resolveAtClassicalTurningPoints()
-            this.wavefunction_.setWavefunction(psiR1)
+            this.wavefunction_.setWavefunction(new GeneralizedWavefunction([psiR1]))
             
             let psi2 = NumerovIntegrator(false).computeWavefunction(psiInputs)
             let psiR2 = psi2.resolveAtClassicalTurningPoints()
-            this.wavefunction2_.setWavefunction(psiR2)
+            this.wavefunction2_.setWavefunction(new GeneralizedWavefunction([psiR2]))
+            
+            if (this.energyBars_.length > 0) {
+                let psis = this.energyBars_.map((bar:EnergyBar) => {
+                    const psiInputs = {
+                        potentialMesh:this.state.potential,
+                        energy:bar.energy,
+                        xMax: this.maxX
+                    }
+                    return NumerovIntegrator(false).computeWavefunction(psiInputs).resolveAtClassicalTurningPoints()
+                })
+                let genPsi = new GeneralizedWavefunction(psis)
+                this.wavefunctionAvg_.setWavefunction(genPsi)
+            }
             
             //this.wavefunctionAvg_.setWavefunction(averageResolvedWavefunctions(psiR1, psiR2))
             

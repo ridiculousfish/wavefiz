@@ -28,6 +28,11 @@ interface IntegratorInput {
 // represents a complex number with fields re and im
 class Complex {
     constructor(public re:number, public im:number) {}
+    
+    add(rhs:Complex) {
+        this.re += rhs.re
+        this.im += rhs.im
+    }
 }
 
 // Computes the time-dependent part of the Schrodinger equation at an energy eigenvalue
@@ -37,11 +42,53 @@ function computeTimeDependence(energy:number, time:number): Complex {
     return new Complex(Math.cos(nEt), Math.sin(nEt))
 }
 
+
 class ResolvedWavefunction {
-    constructor(public values:number[], public energy:number, public leftDerivativeDiscontinuity:number, public rightDerivativeDiscontinuity:number) {}
+    constructor(public values:number[],
+                public energy:number,
+                public leftDerivativeDiscontinuity:number,
+                public rightDerivativeDiscontinuity:number) {}
     
     discontinuity():number {
         return Math.abs(this.leftDerivativeDiscontinuity * this.rightDerivativeDiscontinuity)
+    }
+    
+    valueAt(x:number, time:number) {
+     // e^(-iEt) -> cos(-eT) + i * sin(-Et)
+        const nEt = - this.energy * time
+        const y = this.values[x]
+        return new Complex(y * Math.cos(nEt), y * Math.sin(nEt))
+    }
+}
+
+// Represents a generalized solution to the Schrodinger equation as a sum of time-independent solutions
+// Assumes equal weights
+class GeneralizedWavefunction {
+    public length:number
+    constructor(public components:ResolvedWavefunction[]) {
+        assert(components.length > 0, "Empty components in GeneralizedWavefunction")
+        this.length = components[0].values.length 
+        this.components.forEach((psi:ResolvedWavefunction) => {
+            assert(psi.values.length == this.length, "Not all lengths the same")
+        })
+    }
+    
+    valueAt(x:number, time:number) {
+        let result = new Complex(0, 0)
+        this.components.forEach((psi:ResolvedWavefunction) => {
+            result.add(psi.valueAt(x, time))
+        })
+        result.re /= this.components.length
+        result.im /= this.components.length
+        return result
+    }
+    
+    valuesAtTime0() : number[] {
+        let result = zeros(this.length)
+        for (let i=0; i < this.length; i++) {
+            result[i] = this.valueAt(i, 0).re
+        }
+        return result
     }
 }
 
