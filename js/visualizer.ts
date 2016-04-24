@@ -380,9 +380,9 @@ module visualizing {
             })                        
         }
         
-        public addToScene(scene:THREE.Scene) {
-            scene.add(this.potentialLine_.line)
-            scene.add(this.dragLine_.line)
+        public addToGroup(group:THREE.Group) {
+            group.add(this.potentialLine_.line)
+            group.add(this.dragLine_.line)
         }
         
         loadFrom(f:((x:number) => number)) {
@@ -494,22 +494,23 @@ module visualizing {
             this.redraw(when)
         }
         
-        addToScene(scene:THREE.Scene, yOffset:number) {
+        addToGroup(parentGroup:THREE.Group, yOffset:number) {
             [this.psiGraph_,
              this.psiAbsGraph_,
              this.psiBaseline_].forEach((vl:VisLine) => {
                  this.group_.add(vl.line)
              })
             this.group_.position.y = yOffset
-            scene.add(this.group_)
+            parentGroup.add(this.group_)
         }
     }
 
     export class Visualizer {
         private container_: HTMLElement
         private renderer_ : THREE.Renderer
-        private scene_ : THREE.Scene
-        private camera_: THREE.OrthographicCamera
+        private topScene_ : THREE.Scene = new THREE.Scene()
+        private topGroup_ : THREE.Group = new THREE.Group()
+        private camera_: THREE.Camera
         private potential_ : PotentialVisualizer
         private animator_ : Animator
         
@@ -544,11 +545,18 @@ module visualizing {
             this.renderer_ = renderer
             this.container_.appendChild( renderer.domElement )
             
-            this.scene_ = new THREE.Scene();
-            //this.camera_ = new THREE.PerspectiveCamera( 75, this.params.width / this.params.height, 0.1, 1000 );
-            this.camera_ = new THREE.OrthographicCamera(0, this.params.width, 0, this.params.height, 0.1, 10000)
-            this.camera_.position.set(0, 0, 1000)
-            this.camera_.lookAt(new THREE.Vector3(0, 0, 0))
+            const usePerspective = false
+            if (usePerspective) {
+                this.camera_ = new THREE.PerspectiveCamera( -75, this.params.width / this.params.height, 0.1, 1000 );
+                this.topGroup_.position.x = -this.params.width / 2
+                this.topGroup_.position.y = -this.params.height / 2
+                this.camera_.position.set(0, 0, 400)
+                this.camera_.lookAt(new THREE.Vector3(0, 0, 0))
+            } else {
+                this.camera_ = new THREE.OrthographicCamera(0, this.params.width, 0, this.params.height, 0.1, 10000)
+                this.camera_.position.set(0, 0, 1000)
+                this.camera_.lookAt(new THREE.Vector3(0, 0, 0))
+            }
             
             // Background
             let background = new VisRect(this.params.width, this.params.height, 0, {
@@ -556,7 +564,8 @@ module visualizing {
                 side: THREE.DoubleSide
             })
             background.mesh.position.set(0, 0, 0)
-            this.scene_.add(background.mesh)
+            this.topGroup_.add(background.mesh)
+            this.topScene_.add(this.topGroup_)
             
             // Potential Visualizer
             this.potential_ = new PotentialVisualizer(this.params)
@@ -564,7 +573,7 @@ module visualizing {
                 this.state.potential = v.slice()
                 this.computeAndShowWavefunctions()
             }
-            this.potential_.addToScene(this.scene_)
+            this.potential_.addToGroup(this.topGroup_)
 
             // Wavefunction Visualizer
             const centerY = this.params.height / 2
@@ -572,9 +581,9 @@ module visualizing {
             this.wavefunctionEven_ = new WavefunctionVisualizer(this.params, 0xFFFF00, this.animator_) // yellow
             this.wavefunctionAvg_ = new WavefunctionVisualizer(this.params, 0xFF7777, this.animator_) 
             
-            this.wavefunctionOdd_.addToScene(this.scene_, centerY - 125)
-            this.wavefunctionEven_.addToScene(this.scene_, centerY + 125)
-            this.wavefunctionAvg_.addToScene(this.scene_, centerY)
+            this.wavefunctionOdd_.addToGroup(this.topGroup_, centerY - 125)
+            this.wavefunctionEven_.addToGroup(this.topGroup_, centerY + 125)
+            this.wavefunctionAvg_.addToGroup(this.topGroup_, centerY)
             
             // Turning Points
             for (let j=0; j < 2; j++) {
@@ -585,7 +594,7 @@ module visualizing {
                     opacity: .5
                 })
                 tp.update((i:number) => ({x:this.params.width/2, y:i*this.params.height, z:0}))
-                this.scene_.add(tp.line)
+                this.topGroup_.add(tp.line)
                 if (j == 0) {
                     this.leftTurningPoint_ = tp
                 } else {
@@ -665,7 +674,7 @@ module visualizing {
         }
         
         private render() {
-            this.renderer_.render(this.scene_, this.camera_);
+            this.renderer_.render(this.topScene_, this.camera_);
         }
         
         private nextInterestingEnergy() {
@@ -695,7 +704,7 @@ module visualizing {
             const bar = new EnergyBar(slider, energy, this.params)
             this.energyBars_.push(bar)
             bar.setPositionAndEnergy(position, energy) // hack, we shouldn't need to do this
-            this.scene_.add(bar.line.line)
+            this.topGroup_.add(bar.line.line)
             this.computeAndShowWavefunctions()
         }
         
@@ -705,7 +714,7 @@ module visualizing {
                 return
             }
             const bar = this.energyBars_.pop()
-            this.scene_.remove(bar.line.line)
+            this.topGroup_.remove(bar.line.line)
             this.energyVisualizer_.removeSlider(bar.slider)
             this.computeAndShowWavefunctions()
         }
