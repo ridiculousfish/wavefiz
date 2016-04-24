@@ -119,16 +119,9 @@
         </div>
     </p>
     <span id="statusfield"></span>
-    <!--
-    <p class="options">
-        <input type="checkbox" name="psi" onClick="togglePsi(this)" checked><i>&psi;(x)</i>&nbsp;&nbsp;&nbsp;
-        <input type="checkbox" name="psi2" onClick="togglePsi2(this)">|<i>&psi;(x)</i>|<sup>2</sup>
-        <input type="checkbox" name="psiT" onClick="togglePsiT(this)"><i>&psi;(x,t)</i>
-    </p>
-    -->
     <p class="options">
         <input type="checkbox" name="psi" onClick="togglePsi(this)" checked><i>&psi;</i>&nbsp;&nbsp;&nbsp;
-        <input type="checkbox" name="psi2" onClick="togglePsi2(this)">|<i>&psi;</i>|
+        <input type="checkbox" name="psiAbs" onClick="togglePsiAbs(this)">|<i>&psi;</i>|
         <input type="checkbox" name="paused" onClick="togglePaused(this)">&#x25B6;
     </p>
     <script src="js/three.min.js"></script>
@@ -164,13 +157,10 @@
         function togglePsi(cb) {
             Vis.setShowPsi(cb.checked)
         }
-        function togglePsi2(cb) {
-            Vis.setShowPsi2(cb.checked)
+        function togglePsiAbs(cb) {
+            Vis.setShowPsiAbs(cb.checked)
         }
         
-        function togglePsiT(cb) {
-            Vis.setShowPsiT(cb.checked)
-        }
         function togglePaused(cb) {
             Vis.setPaused(!cb.checked)
         }

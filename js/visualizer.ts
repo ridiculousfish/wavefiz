@@ -201,8 +201,7 @@ module visualizing {
         public psiScale: number = 150 // how much scale we apply to the wavefunction
         
         public showPsi = !false // show psi(x)
-        public showPsi2 = false // show |psi(x)|^2
-        public showPsiT = false // show psi(x,t)
+        public showPsiAbs = false // show |psi(x)|
         
         public showEven = false
         public showOdd = false
@@ -403,7 +402,7 @@ module visualizing {
         private wavefunction_: GeneralizedWavefunction = null
         private group_ : THREE.Group = new THREE.Group()
         private psiGraph_ : VisLine
-        private psi2Graph_ : VisLine
+        private psiAbsGraph_ : VisLine
         private psiBaseline_ : VisLine
         
         constructor(public params: Parameters, public color: number, public animator:Animator) {
@@ -418,7 +417,7 @@ module visualizing {
                 linewidth: 3,
                 depthTest: false
             }
-            const psi2Material = {
+            const psiAbsMaterial = {
                 color: this.color,
                 linewidth: 8,
                 transparent: true,
@@ -432,7 +431,7 @@ module visualizing {
             }
             
             this.psiGraph_ = new VisLine(this.params.meshDivision, psiMaterial)
-            this.psi2Graph_ = new VisLine(this.params.meshDivision, psi2Material)
+            this.psiAbsGraph_ = new VisLine(this.params.meshDivision, psiAbsMaterial)
             this.psiBaseline_ = new VisLine(2, baselineMaterial)            
         }
         
@@ -477,13 +476,13 @@ module visualizing {
                 const magnitude = -psiScale * Math.sqrt(yz.re * yz.re + yz.im * yz.im)
                 
                 this.psiGraph_.geometry.vertices[index] = new THREE.Vector3(x, y, z)
-                this.psi2Graph_.geometry.vertices[index] = new THREE.Vector3(x, magnitude, 0)
+                this.psiAbsGraph_.geometry.vertices[index] = new THREE.Vector3(x, magnitude, 0)
             }
             this.psiGraph_.geometry.verticesNeedUpdate = true
-            this.psi2Graph_.geometry.verticesNeedUpdate = true
+            this.psiAbsGraph_.geometry.verticesNeedUpdate = true
             
             this.psiGraph_.line.visible = this.params.showPsi
-            this.psi2Graph_.line.visible = this.params.showPsi2     
+            this.psiAbsGraph_.line.visible = this.params.showPsiAbs     
             this.psiBaseline_.update((i:number) => {
                 return {x:i*this.params.width, y:0, z:0}
             })
@@ -497,7 +496,7 @@ module visualizing {
         
         addToScene(scene:THREE.Scene, yOffset:number) {
             [this.psiGraph_,
-             this.psi2Graph_,
+             this.psiAbsGraph_,
              this.psiBaseline_].forEach((vl:VisLine) => {
                  this.group_.add(vl.line)
              })
@@ -780,16 +779,11 @@ module visualizing {
             this.computeAndShowWavefunctions()
         }
         
-        public setShowPsi2(flag:boolean) {
-            this.params.showPsi2 = flag
+        public setShowPsiAbs(flag:boolean) {
+            this.params.showPsiAbs = flag
             this.computeAndShowWavefunctions()
         }
-        
-        public setShowPsiT(flag:boolean) {
-            this.params.showPsiT = flag
-            this.computeAndShowWavefunctions()            
-        }
-        
+                
         public setPaused(flag:boolean) {
             this.params.paused = flag
             this.animator_.setPaused(flag)
