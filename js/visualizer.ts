@@ -36,7 +36,7 @@ module visualizing {
         // so we have to do that ourselves
         private elapsed_: number
         
-        constructor(public timescale:number, rerender:() => void) {
+        constructor(public params:Parameters, rerender:() => void) {
             this.rerender_ = rerender
             this.elapsed_ = this.clock.getElapsedTime() 
         }
@@ -73,7 +73,7 @@ module visualizing {
         
         fireClients() {
             let locals = this.clients_
-            const dt = this.clock.getDelta() * this.timescale
+            const dt = this.clock.getDelta() * this.params.timescale
             this.elapsed_ += dt
             this.clients_ = []
             let processed = []
@@ -197,6 +197,7 @@ module visualizing {
         public yScale = 1 // multiply to go from potential to graphical point
         public width : number = 800
         public height : number = 600
+        public timescale : number = 1.0 / 3.0
         public meshDivision : number = 1025 // how many points are in our mesh. Must be odd.
         public psiScale: number = 150 // how much scale we apply to the wavefunction
         
@@ -537,7 +538,7 @@ module visualizing {
             this.container_ = container
             
             // Animator
-            this.animator_ = new Animator(.3, () => this.render())
+            this.animator_ = new Animator(this.params, () => this.render())
             
             let renderer = new THREE.WebGLRenderer({antialias: true})
             renderer.setClearColor(0xAAAAAA, 1)            
@@ -804,6 +805,7 @@ module visualizing {
         public loadSHO() {
             // Simple Harmonic Oscillator
             this.params.yScale = 20
+            this.params.timescale = 1.0 / 3.0
             this.potential_.loadFrom((x:number) => {
                 // x is a value in [0, this.potential_.width)
                 // we have a value of 1 at x = width/2
@@ -816,6 +818,7 @@ module visualizing {
         public loadISW() {
             // Infinite square well
             this.params.yScale = 100
+            this.params.timescale = 1.0
             const widthRatio = 1.0 / 5.0
             this.potential_.loadFrom((x:number) => {
                 // x is a value in [0, this.params.width)
@@ -830,6 +833,7 @@ module visualizing {
         public loadFSW() {
             // Finite square well
             this.params.yScale = 100
+            this.params.timescale = 1.0
             const widthRatio = 1.0 / 5.0
             this.potential_.loadFrom((x:number) => {
                 // x is a value in [0, this.params.width)
