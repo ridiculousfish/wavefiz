@@ -182,6 +182,10 @@ module visualizing {
         public showPsi2 = false // show |psi(x)|^2
         public showPsiT = false // show psi(x,t)
         
+        public showEven = false
+        public showOdd = false
+        public showAvg = true
+        
         public centerForMeshIndex(idx:number):number {
             assert(idx >= 0 && idx < this.meshDivision, "idx out of range")
             let meshWidth = this.width / this.meshDivision
@@ -378,7 +382,7 @@ module visualizing {
         private psi2Graph_ : VisLine
         private psiTGraph_: VisLine
         private psiBaseline_ : VisLine
-                
+        
         constructor(public params: Parameters, public color: number, public animator:Animator) {
             
             const psiMaterial = {
@@ -413,6 +417,10 @@ module visualizing {
         setWavefunction(psi:GeneralizedWavefunction) {
             this.wavefunction_ = psi
             this.redraw()
+        }
+        
+        setVisible(flag:boolean) {
+            this.group_.visible = flag
         }
         
         clear() {
@@ -500,8 +508,8 @@ module visualizing {
         private potential_ : PotentialVisualizer
         private animator_ : Animator
         
-        private wavefunction_ : WavefunctionVisualizer
-        private wavefunction2_ : WavefunctionVisualizer
+        private wavefunctionOdd_ : WavefunctionVisualizer
+        private wavefunctionEven_ : WavefunctionVisualizer
         private wavefunctionAvg_ : WavefunctionVisualizer
         
         private energyVisualizer_ : energy.EnergyVisualizer
@@ -555,12 +563,12 @@ module visualizing {
 
             // Wavefunction Visualizer
             const centerY = this.params.height / 2
-            this.wavefunction_ = new WavefunctionVisualizer(this.params, 0xFFA500, this.animator_) // orange
-            this.wavefunction2_ = new WavefunctionVisualizer(this.params, 0xFFFF00, this.animator_) // yellow
+            this.wavefunctionOdd_ = new WavefunctionVisualizer(this.params, 0xFFA500, this.animator_) // orange
+            this.wavefunctionEven_ = new WavefunctionVisualizer(this.params, 0xFFFF00, this.animator_) // yellow
             this.wavefunctionAvg_ = new WavefunctionVisualizer(this.params, 0xFF7777, this.animator_) 
             
-            this.wavefunction_.addToScene(this.scene_, centerY - 125)
-            this.wavefunction2_.addToScene(this.scene_, centerY + 125)
+            this.wavefunctionOdd_.addToScene(this.scene_, centerY - 125)
+            this.wavefunctionEven_.addToScene(this.scene_, centerY + 125)
             this.wavefunctionAvg_.addToScene(this.scene_, centerY)
             
             // Turning Points
@@ -677,8 +685,9 @@ module visualizing {
         private computeAndShowWavefunctions() {
             if (0 && this.state.potential.length == 0) {
                 // clear everything
-                this.wavefunction_.clear()
-                this.wavefunction2_.clear()
+                this.wavefunctionOdd_.clear()
+                this.wavefunctionEven_.clear()
+                this.wavefunctionAvg_.clear()
                 return
             }
             
@@ -688,13 +697,16 @@ module visualizing {
                 energy:this.state.energy,
                 xMax: this.maxX
             }
-            let psi1 = NumerovIntegrator(true).computeWavefunction(psiInputs)
-            let psiR1 = psi1.resolveAtClassicalTurningPoints()
-            this.wavefunction_.setWavefunction(new GeneralizedWavefunction([psiR1]))
+            const psiEven = NumerovIntegrator(true).computeWavefunction(psiInputs)
+            const psiOdd = NumerovIntegrator(false).computeWavefunction(psiInputs)
+            const psiREven = psiEven.resolveAtClassicalTurningPoints()
+            const psiROdd = psiOdd.resolveAtClassicalTurningPoints()
             
-            let psi2 = NumerovIntegrator(false).computeWavefunction(psiInputs)
-            let psiR2 = psi2.resolveAtClassicalTurningPoints()
-            this.wavefunction2_.setWavefunction(new GeneralizedWavefunction([psiR2]))
+            this.wavefunctionEven_.setVisible(this.params.showEven)
+            this.wavefunctionEven_.setWavefunction(psiREven.asGeneralized())
+            
+            this.wavefunctionOdd_.setVisible(this.params.showOdd)
+            this.wavefunctionOdd_.setWavefunction(psiROdd.asGeneralized())
             
             if (this.energyBars_.length > 0) {
                 let psis = this.energyBars_.map((bar:EnergyBar) => {
@@ -703,24 +715,25 @@ module visualizing {
                         energy:bar.energy,
                         xMax: this.maxX
                     }
-                    return NumerovIntegrator(false).computeWavefunction(psiInputs).resolveAtClassicalTurningPoints()
+                    let even = NumerovIntegrator(true).computeWavefunction(psiInputs).resolveAtClassicalTurningPoints()
+                    let odd = NumerovIntegrator(false).computeWavefunction(psiInputs).resolveAtClassicalTurningPoints()
+                    return averageResolvedWavefunctions(odd, even)
                 })
                 let genPsi = new GeneralizedWavefunction(psis)
                 this.wavefunctionAvg_.setWavefunction(genPsi)
             }
-            
-            //this.wavefunctionAvg_.setWavefunction(averageResolvedWavefunctions(psiR1, psiR2))
+            this.wavefunctionAvg_.setVisible(this.params.showAvg && this.energyBars_.length > 0)
             
             {
                 let disContText = ""
-                disContText += "even: " + psiR1.leftDerivativeDiscontinuity.toFixed(3) + "," + psiR1.rightDerivativeDiscontinuity.toFixed(3)
+                disContText += "even: " + psiREven.leftDerivativeDiscontinuity.toFixed(3) + "," + psiREven.rightDerivativeDiscontinuity.toFixed(3)
                 disContText += " / "
-                disContText += "odd: " + psiR2.leftDerivativeDiscontinuity.toFixed(3) + "," + psiR2.rightDerivativeDiscontinuity.toFixed(3)
+                disContText += "odd: " + psiROdd.leftDerivativeDiscontinuity.toFixed(3) + "," + psiROdd.rightDerivativeDiscontinuity.toFixed(3)
                 document.getElementById("statusfield").textContent = disContText
             }
             
             // update turning points
-            const turningPoints = psi1.classicalTurningPoints()
+            const turningPoints = psiOdd.classicalTurningPoints()
             const leftV = this.params.convertXToVisualCoordinate(turningPoints.left)
             const rightV = this.params.convertXToVisualCoordinate(turningPoints.right)
             this.leftTurningPoint_.update((i:number) => ({x:leftV, y:i*this.params.height, z:0}))

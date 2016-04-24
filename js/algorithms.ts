@@ -19,6 +19,24 @@ function normalize(vals:number[], dx:number) {
     }
 }
 
+function normalizeSign(vals:number[]) {
+    // make it negative on the left
+    // negative is upwards in our visualizer
+    let wantsSignFlip = false
+    const eps = 1.0E-16
+    for (let i=0; i < vals.length; i++) {
+        if (Math.abs(vals[i]) > eps) {
+            wantsSignFlip = vals[i] > 0
+            break
+        }
+    }
+    if (wantsSignFlip) {
+        for (let i=0; i < vals.length; i++) {
+            vals[i] = -vals[i]
+        }
+    }
+}
+
 interface IntegratorInput {
     potentialMesh: number[]
     energy: number
@@ -46,6 +64,9 @@ function computeTimeDependence(energy:number, time:number): Complex {
 class ResolvedWavefunction {
     constructor(public values:number[],
                 public energy:number,
+                public dx:number,
+                public leftTurningPoint:number,
+                public rightTurningPoint:number,
                 public leftDerivativeDiscontinuity:number,
                 public rightDerivativeDiscontinuity:number) {}
     
@@ -58,6 +79,10 @@ class ResolvedWavefunction {
         const nEt = - this.energy * time
         const y = this.values[x]
         return new Complex(y * Math.cos(nEt), y * Math.sin(nEt))
+    }
+    
+    asGeneralized() : GeneralizedWavefunction {
+        return new GeneralizedWavefunction([this])
     }
 }
 
@@ -95,29 +120,27 @@ class GeneralizedWavefunction {
 // Given two ResolvedWavefunction, computes an average weighted by the discontinuities in their derivatives
 function averageResolvedWavefunctions(first:ResolvedWavefunction, second:ResolvedWavefunction) : ResolvedWavefunction {
     assert(first.values.length == second.values.length, "Wavefunctions have different lengths")
-    const bad1 = first.discontinuity()
-    const bad2 = second.discontinuity()
-    if (bad1 < bad2) {
-        return first
+    const bad1 = first.leftDerivativeDiscontinuity
+    const bad2 = second.leftDerivativeDiscontinuity
+    const eps = .01
+    let values : number[]
+    if (Math.abs(bad1) < eps) {
+        values = first.values.slice()
+    } else if (Math.abs(bad2) < eps) {
+        values = second.values.slice()
     } else {
-        return second
-    }
-    if (bad1 == 0) {
-        return first
-    } else if (bad2 == 0) {
-        return second
-    } else {
-        const badSum = bad1 + bad2
-        const weight1 = 1.0 - (bad1 / badSum)
-        const weight2 = 1.0 - (bad2 / badSum)
-        
+        // we want bad1 + k * bad2 = 0
+        // so k = -bad1 / bad2
+        const k = -bad1 / bad2
         const length = first.values.length
-        let values = zeros(length)
+        values = zeros(length)
         for (let i=0; i < length; i++) {
-            values[i] = weight1 * first.values[i] + weight2 * second.values[i]
+            values[i] = first.values[i] + k * second.values[i]
         }
-        return new ResolvedWavefunction(values, first.energy, 0, 0)
+        normalize(values, first.dx)
     }
+    normalizeSign(values)
+    return new ResolvedWavefunction(values, first.energy, first.dx, first.leftTurningPoint, first.rightTurningPoint, 0, 0)
 }
 
 interface TurningPoints {
@@ -194,7 +217,7 @@ class Wavefunction {
         const leftDiscont = this.derivativeDiscontinuity(psi, left, dx, false)
         const rightDiscont = this.derivativeDiscontinuity(psi, right, dx, true) 
 
-        return new ResolvedWavefunction(psi, this.energy, leftDiscont, rightDiscont)
+        return new ResolvedWavefunction(psi, this.energy, dx, left, right, leftDiscont, rightDiscont)
     }
     
     resolveAtClassicalTurningPoints() : ResolvedWavefunction {
