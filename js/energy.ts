@@ -56,8 +56,22 @@ module energy {
             return slider
         }
         
+        public removeSlider(slider:EnergySlider) {
+            let index = this.sliders.indexOf(slider)
+            if (index >= 0) {
+                let slider = this.sliders[index]
+                this.sliders.splice(index, 1)
+                this.endWatching(slider)
+                this.container.removeChild(slider.element)
+            }
+        }
+        
         private beginWatching(slider:EnergySlider) {
             slider.element.onmousedown = (evt:MouseEvent) => this.startDragging(slider, evt)
+        }
+        
+        private endWatching(slider:EnergySlider) {
+            slider.element.onmousedown = null
         }
         
         private getY(evt:MouseEvent) : number {

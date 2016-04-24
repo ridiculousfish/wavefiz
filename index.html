@@ -113,7 +113,7 @@
                 <!-- Add/Remove buttons -->
                 <div style="position: absolute; bottom: -45px; left: 5px;">
                     <button class="square_button" onClick="addEnergySlider()"><div>+</div></button>
-                    <button class="square_button"><div>-</div></button>
+                    <button class="square_button" onClick="removeEnergySlider()"><div>-</div></button>
                 </div>
             </div>
         </div>
@@ -146,6 +146,9 @@
         }        
         function addEnergySlider() {
             Vis.addEnergySlider()
+        }
+        function removeEnergySlider() {
+            Vis.removeEnergySlider()
         }
         loadSHO()
         addEnergySlider()

@@ -664,6 +664,16 @@ module visualizing {
             this.scene_.add(bar.line.line)
         }
         
+        public removeEnergySlider() {
+            // remove the last added one
+            if (this.energyBars_.length == 0) {
+                return
+            }
+            const bar = this.energyBars_.pop()
+            this.scene_.remove(bar.line.line)
+            this.energyVisualizer_.removeSlider(bar.slider)
+        }
+        
         private computeAndShowWavefunctions() {
             if (0 && this.state.potential.length == 0) {
                 // clear everything
@@ -704,7 +714,7 @@ module visualizing {
             {
                 let disContText = ""
                 disContText += "even: " + psiR1.leftDerivativeDiscontinuity.toFixed(3) + "," + psiR1.rightDerivativeDiscontinuity.toFixed(3)
-                disContText += " *** "
+                disContText += " / "
                 disContText += "odd: " + psiR2.leftDerivativeDiscontinuity.toFixed(3) + "," + psiR2.rightDerivativeDiscontinuity.toFixed(3)
                 document.getElementById("statusfield").textContent = disContText
             }
