@@ -572,6 +572,7 @@ module visualizing {
             this.potential_ = new PotentialVisualizer(this.params)
             this.potential_.potentialUpdatedCallback = (v:number[]) => { 
                 this.state.potential = v.slice()
+                this.rescaleEnergies()
                 this.computeAndShowWavefunctions()
             }
             this.potential_.addToGroup(this.topGroup_)
@@ -660,7 +661,7 @@ module visualizing {
                 this.render()
 //                this.animator_.clock.stop()
             })
-            element.addEventListener('mouseup', () => {
+            window.addEventListener('mouseup', () => {
                 if (dragSelection) {
                     dragSelection.dragEnd()
                     dragSelection = null   
@@ -718,6 +719,14 @@ module visualizing {
             this.topGroup_.remove(bar.line.line)
             this.energyVisualizer_.removeSlider(bar.slider)
             this.computeAndShowWavefunctions()
+        }
+        
+        private rescaleEnergies() {
+            this.energyBars_.forEach((eb:EnergyBar) => {
+                const pos = eb.slider.position
+                const energy = this.params.convertYFromVisualCoordinate(pos)
+                eb.setPositionAndEnergy(pos, energy)
+            })
         }
         
         private computeAndShowWavefunctions() {
@@ -805,7 +814,7 @@ module visualizing {
         public loadSHO() {
             // Simple Harmonic Oscillator
             this.params.yScale = 20
-            this.params.timescale = 1.0 / 3.0
+            this.params.timescale = 1.0 / 2.0
             this.potential_.loadFrom((x:number) => {
                 // x is a value in [0, this.potential_.width)
                 // we have a value of 1 at x = width/2
