@@ -1,6 +1,7 @@
 /// <reference path="../typings/threejs/three.d.ts"/>
 /// <reference path='./algorithms.ts'/>
 /// <reference path='./energy.ts'/>
+/// <reference path='./ui.ts'/>
 
 module visualizing {
     
@@ -541,23 +542,21 @@ module visualizing {
             this.animator_ = new Animator(this.params, () => this.render())
             
             let renderer = new THREE.WebGLRenderer({antialias: true})
-            renderer.setClearColor(0xAAAAAA, 1)            
+            renderer.setClearColor(0x4682B4, 1)            
             renderer.setSize( container.offsetWidth, container.offsetHeight )
             this.renderer_ = renderer
             this.container_.appendChild( renderer.domElement )
             
-            const usePerspective = false
+            const usePerspective = !true
             if (usePerspective) {
-                this.camera_ = new THREE.PerspectiveCamera( -75, this.params.width / this.params.height, 0.1, 1000 );
+                this.camera_ = new THREE.PerspectiveCamera( 75, this.params.width / this.params.height, 0.1, 1000 );
                 this.topGroup_.position.x = -this.params.width / 2
-                this.topGroup_.position.y = -this.params.height / 2
-                this.camera_.position.set(0, 0, 400)
-                this.camera_.lookAt(new THREE.Vector3(0, 0, 0))
+                this.topGroup_.position.y = this.params.height / 2
+                this.topGroup_.scale.y = -1
             } else {
                 this.camera_ = new THREE.OrthographicCamera(0, this.params.width, 0, this.params.height, 0.1, 10000)
-                this.camera_.position.set(0, 0, 1000)
-                this.camera_.lookAt(new THREE.Vector3(0, 0, 0))
             }
+            this.setCameraRotation(0)
             
             // Background
             let background = new VisRect(this.params.width, this.params.height, 0, {
@@ -565,7 +564,7 @@ module visualizing {
                 side: THREE.DoubleSide
             })
             background.mesh.position.set(0, 0, 0)
-            this.topGroup_.add(background.mesh)
+            //this.topGroup_.add(background.mesh)
             this.topScene_.add(this.topGroup_)
             
             // Potential Visualizer
@@ -661,18 +660,28 @@ module visualizing {
                 this.render()
 //                this.animator_.clock.stop()
             })
-            window.addEventListener('mouseup', () => {
+            document.addEventListener('mouseup', () => {
                 if (dragSelection) {
                     dragSelection.dragEnd()
                     dragSelection = null   
+                    lastX = -1
+                    lastY = -1
+                    mouseIsDown = false
+                    this.render()
                 }
-                lastX = -1
-                lastY = -1
-                mouseIsDown = false
-                this.render()
 //                this.animator_.clock.start()
             })
 
+        }
+        
+        private setCameraRotation(rads:number) {
+            // rotate about the y axis
+            // rotation of 0 => z = 1 * scale
+            const scale = 400
+            const x = Math.sin(rads) * scale
+            const z = Math.cos(rads) * scale
+            this.camera_.position.set(x, 0, z)
+            this.camera_.lookAt(new THREE.Vector3(0, 0, 0))
         }
         
         private render() {
@@ -809,6 +818,11 @@ module visualizing {
             if (flag) {
                 this.animator_.reset()
             }
+        }
+        
+        public setRotation(rads:number) {
+            this.setCameraRotation(rads)
+            this.render()
         }
         
         public loadSHO() {

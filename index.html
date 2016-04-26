@@ -32,7 +32,7 @@
         #outer_container {
             white-space: nowrap;
         }
-        .energy_dragger, #outer_container {            
+        .energy_dragger, #outer_container, .noselect {            
             /* Defeat text selection */
             -webkit-touch-callout: none;
             -webkit-user-select: none;
@@ -45,6 +45,9 @@
             display: inline-block;
             position: absolute;
             cursor: ns-resize;
+        }
+        #outer_container {
+            position: relative;
         }
         
         .energy_dragger div {
@@ -93,6 +96,29 @@
             bottom: 1px;
             left: 1px;
         }
+        
+        #rotator {
+            display: block;
+            border-radius: 50%;
+            background: linear-gradient(to bottom, rgba(219,219,219,1) 0%, rgba(74,74,74,1) 100%);
+            border: solid 2px #AAA;
+            width: 40px;
+            height: 40px;
+            position: relative;
+            left: 750px;
+            bottom: 25px;                    
+        }
+        #rotator_knob {
+            border-radius: 50%;
+            width: 12px;
+            height: 12px;
+            margin-left: auto;
+            margin-right: auto;
+            background: linear-gradient(to top, rgba(219,219,219,1) 0%, rgba(74,74,74,1) 100%);
+            border: solid 1px #AAA;
+            position: relative;
+            top: 2px;
+        }
     </style>
 </head>
 <body>
@@ -120,17 +146,25 @@
         </div>
     </p>
     <span id="statusfield"></span>
+    <div id="rotator" class="noselect">
+        <div id="rotator_knob"></div>
+    </div>
     <p class="options">
         <input type="checkbox" name="psi" onClick="togglePsi(this)" checked><i>&psi;</i>&nbsp;&nbsp;&nbsp;
         <input type="checkbox" name="psiAbs" onClick="togglePsiAbs(this)">|<i>&psi;</i>|
         <input type="checkbox" name="paused" onClick="togglePaused(this)">&#x25B6;
     </p>
     <script src="js/three.min.js"></script>
+    <script type="text/javascript" src="js/ui.js"></script>
     <script type="text/javascript" src="js/algorithms.js"></script>
-    <script type="text/javascript" src="js/dragging.js"></script>
     <script type="text/javascript" src="js/energy.js"></script>
     <script type="text/javascript" src="js/visualizer.js"></script>
     <script>
+        ui.setupRotatorKnob(document.getElementById("rotator"),
+                            document.getElementById("rotator_knob"),
+                            function(rads) { Vis.setRotation(rads) }
+        )
+        
         var vis_container = document.getElementById("vis_container")
         var energy_container = document.getElementById("energy_dragging_container")
         var energy_dragger_prototype = document.getElementById("energy_dragger_prototype")

@@ -175,7 +175,7 @@ class Wavefunction {
         }
         // if we meet, it means the energy is above the potential: scattering state
         // assume we have an infinite square well box in that case 
-        if (left == right) {
+        if (left > right) {
             left = 0
             right = length - 1
         }
