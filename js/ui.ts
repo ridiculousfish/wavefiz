@@ -23,7 +23,20 @@ module ui {
               // a rotation of 0 is pointing up
               // determine rotation about the center
               if (x != 0 && y != 0) {
-                  rotation = Math.atan2(y, x) + Math.PI / 2
+                  rotation = Math.atan2(y, x)
+                  // Allow snap-to for the four 90 degree rotations
+                  const eps = .1
+                  for (let i=-2; i <= 2; i++) {
+                      const snapTo = i * Math.PI/2
+                      if (Math.abs(rotation - snapTo) < eps) {
+                          rotation = snapTo
+                          break
+                      } 
+                  }
+                  
+                  // a rotation of 0 should be up
+                  rotation += Math.PI / 2
+                  
                   rotator.style["transform"] = "rotate(" + rotation + "rad)"
                   if (onRotate) {
                       onRotate(rotation)

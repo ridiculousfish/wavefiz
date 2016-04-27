@@ -200,7 +200,7 @@ module visualizing {
         public height : number = 600
         public timescale : number = 1.0 / 3.0
         public meshDivision : number = 1025 // how many points are in our mesh. Must be odd.
-        public psiScale: number = 150 // how much scale we apply to the wavefunction
+        public psiScale: number = 250 // how much scale we apply to the wavefunction
         
         public showPsi = !false // show psi(x)
         public showPsiAbs = false // show |psi(x)|
@@ -542,12 +542,12 @@ module visualizing {
             this.animator_ = new Animator(this.params, () => this.render())
             
             let renderer = new THREE.WebGLRenderer({antialias: true})
-            renderer.setClearColor(0x4682B4, 1)            
+            renderer.setClearColor(0x222222, 1)            
             renderer.setSize( container.offsetWidth, container.offsetHeight )
             this.renderer_ = renderer
             this.container_.appendChild( renderer.domElement )
             
-            const usePerspective = !true
+            const usePerspective = true
             if (usePerspective) {
                 this.camera_ = new THREE.PerspectiveCamera( 75, this.params.width / this.params.height, 0.1, 1000 );
                 this.topGroup_.position.x = -this.params.width / 2
