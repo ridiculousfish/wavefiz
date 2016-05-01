@@ -9,6 +9,19 @@ module visualizing {
         return Math.round(val * 100) / 100
     }
     
+    function getElementOffset(elem:HTMLElement) {
+        let x = 0
+        let y = 0
+        let cursor = elem as any
+        while (cursor != null) {
+            x += cursor.offsetLeft
+            y += cursor.offsetTop
+            cursor = cursor.offsetParent
+        }
+        return {x:x, y:y}
+    }
+
+    
     /* A simple 3D point */
     interface Point3 {
         x:number,
@@ -17,10 +30,10 @@ module visualizing {
     }
     
     export interface Draggable {
-        dragStart(dx:number, dy:number) : void
+        dragStart(raycaster:THREE.Raycaster) : void
         dragEnd() : void
-        dragged(x:number, y:number, dx:number, dy:number): void
-        hitTestDraggable(x:number, y:number): Draggable // or null
+        dragged(raycaster:THREE.Raycaster): void
+        hitTestDraggable(raycaster:THREE.Raycaster): Draggable // or null
     }
 
     
@@ -256,6 +269,7 @@ module visualizing {
         private dragLocations_ : Point3[] = []
         private dragLine_ : VisLine
         private potentialLine_ : VisLine
+        private background_ : THREE.Mesh 
         private DRAG_STROKE_WIDTH = 5
         
         // callback for when the potential is updated
@@ -314,7 +328,7 @@ module visualizing {
         }
         
         // Draggable implementations
-        dragStart(dx:number, dy:number) {
+        dragStart(raycaster:THREE.Raycaster) {
             this.clearDragLocations(false)
         }
         
@@ -325,16 +339,18 @@ module visualizing {
             this.announceNewPotential()
         }
         
-        dragged(x:number, y:number, dx:number, dy:number) {
-            this.dragLocations_.push({x:x, y:y, z:0})
-            this.redrawDragLine()
-        }
-        
-        hitTestDraggable(x:number, y:number): Draggable {
-            if (x >= 0 && x < this.params.width && y >= 0 && y < this.params.height) {
-                return this
+        dragged(raycaster:THREE.Raycaster) {
+            let intersections = raycaster.intersectObject(this.background_, false)
+            if (intersections.length > 0) {
+                let where = intersections[0].point
+                this.dragLocations_.push({x:where.x + this.params.width/2, y:where.y + this.params.height/2, z:0})
+                this.redrawDragLine()
             }
-            return null
+        }
+                
+        hitTestDraggable(raycaster:THREE.Raycaster): Draggable {
+            let intersections = raycaster.intersectObject(this.background_, false)
+            return intersections.length > 0 ? this : null
         }
         
         private clearDragLocations(animate:boolean) {
@@ -379,10 +395,17 @@ module visualizing {
             this.potentialLine_ = new VisLine(this.params.meshDivision, {
                 color: 0xFF00FF,
                 linewidth: 5
-            })                        
+            })                
+            
+            let planeGeo = new THREE.PlaneGeometry(this.params.width * 2, this.params.height * 2)
+            let planeMat = new THREE.MeshBasicMaterial({visible:false, depthWrite:false})
+            this.background_ = new THREE.Mesh(planeGeo, planeMat)
+            this.background_.position.set(this.params.width/2, this.params.height/2, 0)
+            this.background_.renderOrder = -10000
         }
         
         public addToGroup(group:THREE.Group) {
+            group.add(this.background_)
             group.add(this.potentialLine_.line)
             group.add(this.dragLine_.line)
         }
@@ -549,7 +572,7 @@ module visualizing {
             
             const usePerspective = true
             if (usePerspective) {
-                this.camera_ = new THREE.PerspectiveCamera( 75, this.params.width / this.params.height, 0.1, 1000 );
+                this.camera_ = new THREE.PerspectiveCamera( 74, this.params.width / this.params.height, 0.1, 1000 );
                 this.topGroup_.position.x = -this.params.width / 2
                 this.topGroup_.position.y = this.params.height / 2
                 this.topGroup_.scale.y = -1
@@ -627,34 +650,41 @@ module visualizing {
         private initEvents() {
             let mouseIsDown = false
             let dragSelection : Draggable = null
-            let lastX = -1, lastY = -1
             const element = this.container_
-            const getX = (evt:MouseEvent) => evt.pageX - element.offsetLeft
-            const getY = (evt:MouseEvent) => evt.pageY - element.offsetTop
+            const getXY = (evt:MouseEvent) => {
+                let offset = getElementOffset(element)
+                return {x: evt.pageX- offset.x, y:evt.pageY - offset.y}
+            }
+            const getRaycaster = (evt:MouseEvent) : THREE.Raycaster => {
+                let {x, y} = getXY(evt)
+                let x2 = (x / element.offsetWidth) * 2 - 1
+                let y2 = (y / element.offsetHeight) * 2 - 1
+                let mouse = new THREE.Vector2(x2, y2)
+                let raycaster = new THREE.Raycaster()
+                raycaster.setFromCamera(mouse, this.camera_)
+                return raycaster
+            }
             element.addEventListener('mousemove', (evt:MouseEvent) => {
-                const x = getX(evt)
-                const y = getY(evt)
+                let {x, y} = getXY(evt)
                 if (mouseIsDown) {
                     if (dragSelection) {
-                        dragSelection.dragged(x, y, x - lastX, y - lastY)
+                        dragSelection.dragged(getRaycaster(evt))
                     }
-                    lastX = x
-                    lastY = y
                     this.render()
-                }
+                }                
             })
             element.addEventListener('mousedown', (evt) => {
-                lastX = getX(evt)
-                lastY = getY(evt)
+                let {x, y} = getXY(evt)
                 
                 dragSelection = null
+                const raycaster = getRaycaster(evt)
                 const draggables : Draggable[] = [this.potential_]
                 for (let i=0; i < draggables.length && dragSelection == null; i++) {
-                    dragSelection = draggables[i].hitTestDraggable(lastX, lastY)
+                    dragSelection = draggables[i].hitTestDraggable(raycaster)
                 }
                 
                 if (dragSelection) {
-                    dragSelection.dragStart(lastX, lastY)
+                    dragSelection.dragStart(raycaster)
                 }
                 mouseIsDown = true
                 this.render()
@@ -664,8 +694,6 @@ module visualizing {
                 if (dragSelection) {
                     dragSelection.dragEnd()
                     dragSelection = null   
-                    lastX = -1
-                    lastY = -1
                     mouseIsDown = false
                     this.render()
                 }

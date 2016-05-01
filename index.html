@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <style>
+        body {
+            padding: 10px;
+        }
         .options {
             font-size: 15pt;
         }
@@ -16,10 +19,32 @@
         .options input:first-child {
             margin-left: 10px;
         }
+        .options input[type="checkbox"] {
+           display: none;
+        }
+        .options label {
+            cursor: pointer;
+            vertical-align: middle;
+            display: inline-block;
+            font-size: 24pt;
+            margin-left: 30px;
+            padding: 0px 8px 5px 8px;
+            border-radius: 8px;
+            color: #555;
+            width: 45px;
+            text-align: center;
+            border: solid 2px #333;
+        }
+        .options input[type="checkbox"]:checked + label {
+            background-color: #333;
+            color: #99CCFF;
+            text-shadow: 2px 2px black;
+        }
         #vis_container {
             width: 800px;
             height: 600px;
             display: inline-block;
+            position: relative; /* allow offsetLeft and offsetTop to work */
         }        
         #energy_dragging_container {
             width: 250px;
@@ -106,7 +131,8 @@
             height: 40px;
             position: relative;
             left: 750px;
-            bottom: 25px;                    
+            bottom: 10px;
+            margin-bottom: -75px;               
         }
         #rotator_knob {
             border-radius: 50%;
@@ -145,15 +171,15 @@
             </div>
         </div>
     </p>
-    <span id="statusfield"></span>
     <div id="rotator" class="noselect">
         <div id="rotator_knob"></div>
     </div>
     <p class="options">
-        <input type="checkbox" name="psi" onClick="togglePsi(this)" checked><i>&psi;</i>&nbsp;&nbsp;&nbsp;
-        <input type="checkbox" name="psiAbs" onClick="togglePsiAbs(this)">|<i>&psi;</i>|
-        <input type="checkbox" name="paused" onClick="togglePaused(this)">&#x25B6;
+        <input type="checkbox" id="check_psi" name="psi" onClick="togglePsi(this)" checked><label for="check_psi"><i>&psi;</i></label>
+        <input type="checkbox" id="check_psiAbs" name="psiAbs" onClick="togglePsiAbs(this)"><label for="check_psiAbs">|<i>&psi;</i>|</label>
+        <input type="checkbox" id="check_paused" name="paused" onClick="togglePaused(this)"><label for="check_paused"><span style="position: relative; top: 3px; left: 1px;">&#x25B6;</span></label>
     </p>
+    <span id="statusfield"></span>
     <script src="js/three.min.js"></script>
     <script type="text/javascript" src="js/ui.js"></script>
     <script type="text/javascript" src="js/algorithms.js"></script>
