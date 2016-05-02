@@ -4,7 +4,22 @@ function assert(condition, message) {
     }
 }
 
-function normalize(vals: number[], dx: number) {
+function normalizeComplex(vals: Complex[], dx: number) {
+    // norm is sum of dx * |vals|**2
+    let norm = 0
+    for (let i = 0; i < vals.length; i++) {
+        norm += vals[i].magnitudeSquared()
+    }
+    norm *= dx
+    norm = Math.sqrt(norm)
+    if (norm == 0) norm = 1 // gross
+    const normRecip = 1.0 / norm
+    for (let i = 0; i < vals.length; i++) {
+        vals[i] = vals[i].multipliedByReal(normRecip)
+    }
+}
+
+function normalizeReals(vals: number[], dx: number) {
     // norm is sum of dx * vals**2
     let norm = 0
     for (let i = 0; i < vals.length; i++) {
@@ -19,20 +34,20 @@ function normalize(vals: number[], dx: number) {
     }
 }
 
-function normalizeSign(vals: number[], leftTurningPoint: number) {
+function normalizeSign(vals: Complex[], leftTurningPoint: number) {
     // make it negative on the left
     // negative is upwards in our visualizer
     let wantsSignFlip = false
     const eps = 1.0E-16
     for (let i = leftTurningPoint; i + 1 < vals.length; i++) {
-        if (Math.abs(vals[i]) > eps) {
-            wantsSignFlip = vals[i] > 0
+        if (Math.abs(vals[i].re) > eps) {
+            wantsSignFlip = vals[i].re > 0
             break
         }
     }
     if (wantsSignFlip) {
         for (let i = 0; i < vals.length; i++) {
-            vals[i] = -vals[i]
+            vals[i] = vals[i].multipliedByReal(-1)
         }
     }
 }
@@ -47,12 +62,16 @@ interface IntegratorInput {
 class Complex {
     constructor(public re: number, public im: number) { }
 
-    add(rhs: Complex) {
+    addToSelf(rhs: Complex) {
         this.re += rhs.re
         this.im += rhs.im
     }
+    
+    added(rhs:Complex) {
+        return new Complex(this.re + rhs.re, this.im + rhs.im)
+    }
 
-    conjugate(): Complex {
+    conjugated(): Complex {
         return new Complex(this.re, -this.im)
     }
 
@@ -70,6 +89,10 @@ class Complex {
 
     multipliedByReal(val: number): Complex {
         return new Complex(this.re * val, this.im * val)
+    }
+    
+    magnitudeSquared() : number {
+        return this.re * this.re + this.im * this.im
     }
 
     toString(): string {
@@ -89,18 +112,18 @@ function computeTimeDependence(energy: number, time: number): Complex {
     return Complex.exponential(nEt)
 }
 
-function fourierTransform(spaceValues: number[], dx: number): number[] {
+function fourierTransform(spaceValues: Complex[], dx: number): Complex[] {
     const length = spaceValues.length
-    let freqValues = zeros(length)
+    let freqValues = zerosComplex(length)
     for (let p = 0; p < length; p++) {
         // phiX = 1/sqrt(2pi) * integral of e^-ipx psi(x)
         let phi = new Complex(0, 0)
         for (let x = 0; x < length; x++) {
-            phi.add(Complex.exponential(-p * x).multipliedByReal(spaceValues[x]))
+            phi.addToSelf(Complex.exponential(-p * x).multiplied(spaceValues[x]))
         }
         phi = phi.multipliedByReal(dx) // for integral
         phi = phi.dividedByReal(Math.sqrt(2 * Math.PI))
-        freqValues[p] = phi.re
+        freqValues[p] = phi
     }
     return freqValues
 }
@@ -114,7 +137,7 @@ class WavefunctionMetadata {
 }
 
 class ResolvedWavefunction {
-    constructor(public values: number[],
+    constructor(public values: Complex[],
         public dx: number,
         public md: WavefunctionMetadata) {
 
@@ -128,8 +151,7 @@ class ResolvedWavefunction {
     valueAt(x: number, time: number) {
         // e^(-iEt) -> cos(-eT) + i * sin(-Et)
         const nEt = - this.md.energy * time
-        const y = this.values[x]
-        return new Complex(y * Math.cos(nEt), y * Math.sin(nEt))
+        return this.values[x].multiplied(Complex.exponential(nEt))
     }
 
     asGeneralized(): GeneralizedWavefunction {
@@ -160,7 +182,7 @@ class GeneralizedWavefunction {
         assert(x === +x && x === (x | 0), "Non-integer passed to valueAt")
         let result = new Complex(0, 0)
         this.components.forEach((psi: ResolvedWavefunction) => {
-            result.add(psi.valueAt(x, time))
+            result.addToSelf(psi.valueAt(x, time))
         })
         result.re /= this.components.length
         result.im /= this.components.length
@@ -174,7 +196,7 @@ function averageResolvedWavefunctions(first: ResolvedWavefunction, second: Resol
     const bad1 = first.md.leftDerivativeDiscontinuity
     const bad2 = second.md.leftDerivativeDiscontinuity
     const eps = .01
-    let values: number[]
+    let values: Complex[]
     if (Math.abs(bad1) < eps) {
         values = first.values.slice()
     } else if (Math.abs(bad2) < eps) {
@@ -184,11 +206,11 @@ function averageResolvedWavefunctions(first: ResolvedWavefunction, second: Resol
         // so k = -bad1 / bad2
         const k = -bad1 / bad2
         const length = first.values.length
-        values = zeros(length)
+        values = zerosComplex(length)
         for (let i = 0; i < length; i++) {
-            values[i] = first.values[i] + k * second.values[i]
+            values[i] = first.values[i].added(second.values[i].multipliedByReal(k))
         }
-        normalize(values, first.dx)
+        normalizeComplex(values, first.dx)
     }
     normalizeSign(values, first.md.leftTurningPoint)
     return new ResolvedWavefunction(values, first.dx, first.md)
@@ -273,14 +295,14 @@ class UnresolvedWavefunction {
 
         // normalize
         const dx = this.xMax / length
-        normalize(psi, dx)
+        normalizeReals(psi, dx)
 
         // compute discontinuities
         const leftDiscont = this.derivativeDiscontinuity(psi, left, dx, false)
         const rightDiscont = this.derivativeDiscontinuity(psi, right, dx, true)
         
         let md = new WavefunctionMetadata(this.energy, left, right, leftDiscont, rightDiscont)
-        return new ResolvedWavefunction(psi, dx, md)
+        return new ResolvedWavefunction(psi.map((r:number) => new Complex(r, 0)), dx, md)
     }
 
     resolveAtClassicalTurningPoints(): ResolvedWavefunction {
@@ -301,10 +323,17 @@ function NumerovIntegrator(even: boolean): Integrator {
 }
 
 function zeros(amt: number): number[] {
-    var result = []
+    let result = []
     for (let i = 0; i < amt; i++) result.push(0)
     return result
 }
+
+function zerosComplex(amt: number): Complex[] {
+    let result = []
+    for (let i = 0; i < amt; i++) result.push(new Complex(0, 0))
+    return result
+}
+
 
 function indexOfMinimum(potential: number[]): number {
     assert(potential.length > 0, "No minimum for empty potential")
@@ -406,17 +435,17 @@ function formatFloat(x: number): string {
 
 function algorithmTest() {
     let width = 1025
-    let values = zeros(width)
+    let values = zerosComplex(width)
     let maxX = 4 * Math.PI
     let dx = maxX / width
     for (let i = 0; i < width; i++) {
-        values[i] = Math.sin(i * dx)
+        values[i].re = Math.sin(i * dx)
     }
     let freqValues = fourierTransform(values, dx)
 
     let lines: string[] = []
     for (let i = 0; i < width; i++) {
-        lines.push(formatFloat(i) + "\t" + formatFloat(values[i]) + "\t" + formatFloat(freqValues[i]))
+        lines.push(formatFloat(i) + "\t" + values[i].toString() + "\t" + freqValues[i].toString())
     }
     return lines.join("\n")
 }
@@ -445,7 +474,7 @@ function algorithmTest2() {
     lines.push("x\tpsi\tV")
     for (let i = 0; i < width; i++) {
         let x = i / width * xMax - (xMax / 2)
-        lines.push(formatFloat(x) + "\t" + formatFloat(psi.values[i]) + "\t" + formatFloat(potential[i]))
+        lines.push(formatFloat(x) + "\t" + formatFloat(psi.values[i].re) + "\t" + formatFloat(potential[i]))
     }
 
     return lines.join("\n")

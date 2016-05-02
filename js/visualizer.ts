@@ -512,7 +512,7 @@ module visualizing {
                 const magnitude = -psiScale * Math.sqrt(yz.re * yz.re + yz.im * yz.im)
                 
                 const dx = this.wavefunction_.dx
-                const yzConj = yz.conjugate()
+                const yzConj = yz.conjugated()
                 const derivativePsiWrtX = yz.subtracted(lastYZ).dividedByReal(dx) // (yz - lastYz) / dx
                 const derivativePsiWrtXDivI = new Complex(derivativePsiWrtX.im, -derivativePsiWrtX.re) // divide by i
                 const momentum = yzConj.multiplied(derivativePsiWrtXDivI)
