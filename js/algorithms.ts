@@ -35,13 +35,12 @@ function normalizeReals(vals: number[], dx: number) {
 }
 
 function normalizeSign(vals: Complex[], leftTurningPoint: number) {
-    // make it negative on the left
-    // negative is upwards in our visualizer
+    // make it positive on the left
     let wantsSignFlip = false
     const eps = 1.0E-16
     for (let i = leftTurningPoint; i + 1 < vals.length; i++) {
         if (Math.abs(vals[i].re) > eps) {
-            wantsSignFlip = vals[i].re > 0
+            wantsSignFlip = vals[i].re < 0
             break
         }
     }
