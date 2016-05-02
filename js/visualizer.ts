@@ -217,6 +217,7 @@ module visualizing {
         
         public showPsi = !false // show psi(x)
         public showPsiAbs = false // show |psi(x)|
+        public showMomentum = !true // show momentum
         
         public showEven = false
         public showOdd = false
@@ -428,6 +429,7 @@ module visualizing {
         private group_ : THREE.Group = new THREE.Group()
         private psiGraph_ : VisLine
         private psiAbsGraph_ : VisLine
+        private momentumGraph_ : VisLine
         private psiBaseline_ : VisLine
         
         constructor(public params: Parameters, public color: number, public animator:Animator) {
@@ -449,6 +451,13 @@ module visualizing {
                 opacity: .75,
                 depthTest: false
             }
+            const momentumMaterial = {
+                color: 0x0077FF,//this.color,
+                linewidth: 5,
+                transparent: true,
+                opacity: .75,
+                depthTest: false                
+            }
             const baselineMaterial = {
                 color: this.color,
                 linewidth: .5,
@@ -457,6 +466,7 @@ module visualizing {
             
             this.psiGraph_ = new VisLine(this.params.meshDivision, psiMaterial)
             this.psiAbsGraph_ = new VisLine(this.params.meshDivision, psiAbsMaterial)
+            this.momentumGraph_ = new VisLine(this.params.meshDivision, momentumMaterial)
             this.psiBaseline_ = new VisLine(2, baselineMaterial)            
         }
         
@@ -493,21 +503,36 @@ module visualizing {
 
             const psiScale = this.params.psiScale
             
+            let lastYZ = new Complex(0, 0)
             for (let index=0; index < this.wavefunction_.length; index++) {
                 const x = this.params.centerForMeshIndex(index)
                 const yz = this.wavefunction_.valueAt(index, time)
                 const y = cleanValue(psiScale * yz.re)
-                const z = cleanValue(psiScale * yz.im)
+                const z = cleanValue(psiScale * yz.im) 
                 const magnitude = -psiScale * Math.sqrt(yz.re * yz.re + yz.im * yz.im)
+                
+                const dx = this.wavefunction_.dx
+                const yzConj = yz.conjugate()
+                const derivativePsiWrtX = yz.subtracted(lastYZ).dividedByReal(dx) // (yz - lastYz) / dx
+                const derivativePsiWrtXDivI = new Complex(derivativePsiWrtX.im, -derivativePsiWrtX.re) // divide by i
+                const momentum = yzConj.multiplied(derivativePsiWrtXDivI)
+                const scaledMomentum = -psiScale * momentum.re
+                //console.log("momentuM: " + momentum.toString())
                 
                 this.psiGraph_.geometry.vertices[index] = new THREE.Vector3(x, y, z)
                 this.psiAbsGraph_.geometry.vertices[index] = new THREE.Vector3(x, magnitude, 0)
+                this.momentumGraph_.geometry.vertices[index] = new THREE.Vector3(x, scaledMomentum, 0)
+                
+                lastYZ = yz 
             }
             this.psiGraph_.geometry.verticesNeedUpdate = true
             this.psiAbsGraph_.geometry.verticesNeedUpdate = true
+            this.momentumGraph_.geometry.verticesNeedUpdate = true
             
             this.psiGraph_.line.visible = this.params.showPsi
-            this.psiAbsGraph_.line.visible = this.params.showPsiAbs     
+            this.psiAbsGraph_.line.visible = this.params.showPsiAbs
+            this.momentumGraph_.line.visible = this.params.showMomentum
+            
             this.psiBaseline_.update((i:number) => {
                 return {x:i*this.params.width, y:0, z:0}
             })
@@ -522,6 +547,7 @@ module visualizing {
         addToGroup(parentGroup:THREE.Group, yOffset:number) {
             [this.psiGraph_,
              this.psiAbsGraph_,
+             this.momentumGraph_,
              this.psiBaseline_].forEach((vl:VisLine) => {
                  this.group_.add(vl.line)
              })
@@ -855,20 +881,23 @@ module visualizing {
         
         public loadSHO() {
             // Simple Harmonic Oscillator
-            this.params.yScale = 20
+            this.params.yScale = 80
+            const baseEnergy = 0.25
+            const xScaleFactor = 1.0 / 4.0
             this.params.timescale = 1.0 / 2.0
             this.potential_.loadFrom((x:number) => {
                 // x is a value in [0, this.potential_.width)
                 // we have a value of 1 at x = width/2
                 const offsetX = this.params.width / 2
                 const scaledX =  (x - offsetX) * this.maxX / this.params.width
-                return 1 + (scaledX * scaledX / 2.0) 
+                return baseEnergy + xScaleFactor * (scaledX * scaledX / 2.0) 
             })
         }
         
         public loadISW() {
             // Infinite square well
-            this.params.yScale = 100
+            this.params.yScale = 400
+            const baseEnergy = 1 / 16
             this.params.timescale = 1.0
             const widthRatio = 1.0 / 5.0
             this.potential_.loadFrom((x:number) => {
@@ -877,22 +906,23 @@ module visualizing {
                 if (x < width * widthRatio || x > width - (width * widthRatio)) {
                     return 1000
                 }
-                return .5
+                return baseEnergy
             })
         }
         
         public loadFSW() {
             // Finite square well
-            this.params.yScale = 100
+            this.params.yScale = 400
+            const baseEnergy = 1 / 16
             this.params.timescale = 1.0
             const widthRatio = 1.0 / 5.0
             this.potential_.loadFrom((x:number) => {
                 // x is a value in [0, this.params.width)
                 const width = this.params.width
                 if (x < width * widthRatio || x > width - (width * widthRatio)) {
-                    return 5.0
+                    return 1.25
                 }
-                return .5
+                return baseEnergy
             })
         }
         

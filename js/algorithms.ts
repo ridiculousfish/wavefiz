@@ -51,13 +51,58 @@ class Complex {
         this.re += rhs.re
         this.im += rhs.im
     }
+    
+    conjugate() : Complex {
+        return new Complex(this.re, -this.im)
+    }
+    
+    subtracted(rhs:Complex) : Complex {
+        return new Complex(this.re - rhs.re, this.im - rhs.im)
+    }
+    
+    dividedByReal(val:number) {
+        return new Complex(this.re / val, this.im / val)
+    }
+    
+    multiplied(val:Complex) : Complex {
+        return new Complex(this.re * val.re - this.im * val.im, this.re * val.im + this.im * val.re)
+    }
+    
+    multipliedByReal(val:number) : Complex {
+        return new Complex(this.re * val, this.im * val)
+    }
+    
+    toString() : string {
+        return this.re.toFixed(2) + " + i*" + this.im.toFixed(2)
+    }
+    
+    // Computes e^(i*power)
+    static exponential(power) : Complex {
+        return new Complex(Math.cos(power), Math.sin(power))
+    }
 }
 
 // Computes the time-dependent part of the Schrodinger equation at an energy eigenvalue
 function computeTimeDependence(energy:number, time:number): Complex {
     // e^(-iEt) -> cos(-eT) + i * sin(-Et)
     const nEt = - energy * time
-    return new Complex(Math.cos(nEt), Math.sin(nEt))
+    return Complex.exponential(nEt)
+}
+
+function fourierTransform(spaceValues:number[], dx:number) : number[] {
+    const length = spaceValues.length
+    let freqValues = zeros(length)
+    for (let p=0; p < length; p++) {
+        // phiX = 1/sqrt(2pi) * integral of e^-ipx psi(x)
+        let phi = new Complex(0, 0) 
+        for (let x=0; x < length; x++) {
+            phi.add(Complex.exponential(-p*x).multipliedByReal(spaceValues[x])) 
+        }
+        phi = phi.multipliedByReal(dx) // for integral
+        phi = phi.dividedByReal(Math.sqrt(2 * Math.PI))
+        freqValues[p] = phi.re
+    }
+    return freqValues
 }
 
 
@@ -87,18 +132,27 @@ class ResolvedWavefunction {
     asGeneralized() : GeneralizedWavefunction {
         return new GeneralizedWavefunction([this])
     }
+        
+    fourierTransform() : ResolvedWavefunction {
+        let freqValues = fourierTransform(this.values, this.dx)
+        return new ResolvedWavefunction(freqValues, this.energy, this.dx,
+                                        this.leftTurningPoint, this.rightTurningPoint,
+                                        this.leftDerivativeDiscontinuity, this.rightDerivativeDiscontinuity)
+    }
 }
 
 // Represents a generalized solution to the Schrodinger equation as a sum of time-independent solutions
 // Assumes equal weights
 class GeneralizedWavefunction {
     public length:number
+    public dx:number
     constructor(public components:ResolvedWavefunction[]) {
         assert(components.length > 0, "Empty components in GeneralizedWavefunction")
         this.length = components[0].values.length 
         this.components.forEach((psi:ResolvedWavefunction) => {
             assert(psi.values.length == this.length, "Not all lengths the same")
         })
+        this.dx = this.components[0].dx
     }
     
     valueAt(x:number, time:number) {
@@ -349,6 +403,23 @@ function formatFloat(x:number) : string {
 }
 
 function algorithmTest() {
+    let width = 1025
+    let values = zeros(width)
+    let maxX = 4 * Math.PI
+    let dx = maxX / width
+    for (let i=0; i < width; i++) {
+        values[i] = Math.sin(i * dx)
+    }
+    let freqValues = fourierTransform(values, dx)
+    
+    let lines : string[] = []
+    for (let i=0; i < width; i++) { 
+        lines.push(formatFloat(i) + "\t" + formatFloat(values[i]) + "\t" + formatFloat(freqValues[i]))
+    }
+    return lines.join("\n")
+}
+
+function algorithmTest2() {
     let lines : string[] = []
     const xMax = 20
     const width = 1025 
@@ -373,8 +444,7 @@ function algorithmTest() {
     for (let i=0; i < width; i++) {
         let x = i / width * xMax - (xMax / 2)
         lines.push(formatFloat(x) + "\t" + formatFloat(psi.values[i]) + "\t" + formatFloat(potential[i]))
-    }
-    
+    }   
     
     return lines.join("\n")
 }
