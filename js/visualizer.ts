@@ -836,9 +836,9 @@ module visualizing {
             
             {
                 let disContText = ""
-                disContText += "even: " + psiREven.leftDerivativeDiscontinuity.toFixed(3) + "," + psiREven.rightDerivativeDiscontinuity.toFixed(3)
+                disContText += "even: " + psiREven.md.leftDerivativeDiscontinuity.toFixed(3) + "," + psiREven.md.rightDerivativeDiscontinuity.toFixed(3)
                 disContText += " / "
-                disContText += "odd: " + psiROdd.leftDerivativeDiscontinuity.toFixed(3) + "," + psiROdd.rightDerivativeDiscontinuity.toFixed(3)
+                disContText += "odd: " + psiROdd.md.leftDerivativeDiscontinuity.toFixed(3) + "," + psiROdd.md.rightDerivativeDiscontinuity.toFixed(3)
                 document.getElementById("statusfield").textContent = disContText
             }
             
