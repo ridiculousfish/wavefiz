@@ -163,7 +163,7 @@ class ResolvedWavefunction {
 
     fourierTransform(center:number, scale:number): ResolvedWavefunction {
         let freqValues = fourierTransform(this.values, center, this.dx, scale)
-        normalizeComplex(freqValues)
+        normalizeComplex(freqValues, this.dx)
         return new ResolvedWavefunction(freqValues, this.dx, this.md)
     }
 }

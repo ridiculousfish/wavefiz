@@ -5,10 +5,7 @@
 
 module visualizing {
 
-    function roundForSVG(val: number): number {
-        return Math.round(val * 100) / 100
-    }
-
+    // returns the global offset of an HTML element
     function getElementOffset(elem: HTMLElement) {
         let x = 0
         let y = 0
@@ -20,13 +17,11 @@ module visualizing {
         }
         return { x: x, y: y }
     }
-
-
-    /* A simple 3D point */
-    interface Point3 {
-        x: number,
-        y: number,
-        z: number
+    
+    // helpers
+    type Vector3 = THREE.Vector3
+    function vector3(x:number, y:number, z:number) : THREE.Vector3 {
+        return new THREE.Vector3(x, y, z)
     }
 
     export interface Draggable {
@@ -122,10 +117,9 @@ module visualizing {
             this.line = new THREE.Line(this.geometry, new THREE.LineBasicMaterial(material))
         }
 
-        public update(cb: (index) => Point3) {
+        public update(cb: (index) => THREE.Vector3) {
             for (let i = 0; i < this.length; i++) {
-                let xyz = cb(i)
-                this.geometry.vertices[i] = new THREE.Vector3(xyz.x, xyz.y, xyz.z)
+                this.geometry.vertices[i] = cb(i)
             }
             this.geometry.verticesNeedUpdate = true
         }
@@ -219,12 +213,12 @@ module visualizing {
         }
         setPositionAndEnergy(position: number, energy: number) {
             this.energy = energy
-            this.line.update((idx: number) => ({ x: idx * this.params.width, y: position, z: 0 }))
+            this.line.update((idx:number) => vector3(idx * this.params.width, position, 0))
         }
     }
 
     class PotentialVisualizer {
-        private dragLocations_: Point3[] = []
+        private dragLocations_: Vector3[] = []
         private dragLine_: VisLine
         private potentialLine_: VisLine
         private background_: THREE.Mesh
@@ -239,7 +233,7 @@ module visualizing {
             this.init()
         }
 
-        private interpolateY(p1: Point3, p2: Point3, x: number): number {
+        private interpolateY(p1: THREE.Vector3, p2: THREE.Vector3, x: number): number {
             let d1 = Math.abs(p1.x - x)
             let d2 = Math.abs(p2.x - x)
             let distance = d1 + d2
@@ -249,7 +243,7 @@ module visualizing {
 
         // builds a potential mesh of size meshDivision_
         // locs is relative to upper left: smaller values are more north
-        private buildMeshFromDragPoints(locs: Point3[]): number[] {
+        private buildMeshFromDragPoints(locs: Vector3[]): number[] {
             let potentialMesh: number[] = []
 
             for (let meshIdx = 0; meshIdx < this.params.meshDivision; meshIdx++) {
@@ -301,7 +295,7 @@ module visualizing {
             let intersections = raycaster.intersectObject(this.background_, false)
             if (intersections.length > 0) {
                 let where = intersections[0].point
-                this.dragLocations_.push({ x: where.x + this.params.width / 2, y: where.y + this.params.height / 2, z: 0 })
+                this.dragLocations_.push(vector3(where.x + this.params.width / 2, where.y + this.params.height / 2, 0))
                 this.redrawDragLine()
             }
         }
@@ -334,7 +328,7 @@ module visualizing {
                 const x = this.params.centerForMeshIndex(index)
                 const y = this.params.convertYToVisualCoordinate(value)
                 const z = 0
-                return { x: x, y: y, z: z }
+                return vector3(x, y, z)
             })
         }
 
@@ -507,7 +501,7 @@ module visualizing {
             updateVisualizable(this.phiAbsVis_, this.phiAbsGraph_, this.params.showPhiAbs)
 
             this.psiBaseline_.update((i: number) => {
-                return { x: i * this.params.width, y: 0, z: 0 }
+                return vector3(i * this.params.width, 0, 0)
             })
 
             this.animator.schedule(this)
@@ -617,7 +611,7 @@ module visualizing {
                     transparent: true,
                     opacity: .5
                 })
-                tp.update((i: number) => ({ x: this.params.width / 2, y: i * this.params.height, z: 0 }))
+                tp.update((i: number) => vector3(this.params.width / 2, i * this.params.height, 0))
                 this.topGroup_.add(tp.line)
                 if (j == 0) {
                     this.leftTurningPoint_ = tp
@@ -821,8 +815,8 @@ module visualizing {
             const turningPoints = psiOdd.classicalTurningPoints()
             const leftV = this.params.convertXToVisualCoordinate(turningPoints.left)
             const rightV = this.params.convertXToVisualCoordinate(turningPoints.right)
-            this.leftTurningPoint_.update((i: number) => ({ x: leftV, y: i * this.params.height, z: 0 }))
-            this.rightTurningPoint_.update((i: number) => ({ x: rightV, y: i * this.params.height, z: 0 }))
+            this.leftTurningPoint_.update((i: number) => vector3(leftV, i * this.params.height, 0))
+            this.rightTurningPoint_.update((i: number) => vector3(rightV, i * this.params.height, 0))
 
             // update energy
             const visEnergy = this.params.convertYToVisualCoordinate(this.state.energy)
