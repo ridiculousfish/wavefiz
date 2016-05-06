@@ -117,18 +117,15 @@ module visualizing {
         public yScale = 1 // multiply to go from potential to graphical point
         public width: number = 800
         public height: number = 600
+        public maxX: number = 20 // maximum X value
         public timescale: number = 1.0 / 3.0
         public meshDivision: number = 1025 // how many points are in our mesh. Must be odd.
-        public psiScale: number = 250 // how much scale we apply to the wavefunction
+        public psiScale: number = 250 // how much scale we visually apply to the wavefunction
 
         public showPsi = !false // show position psi(x)
         public showPsiAbs = false // show position probability |psi(x)|^2
-        public showPhi = true // show momentum phi(x)
-        public showPhiAbs = true // show momentum probability |phi(x)|^2
-
-        public showEven = false
-        public showOdd = false
-        public showAvg = true
+        public showPhi = false // show momentum phi(x)
+        public showPhiAbs = false // show momentum probability |phi(x)|^2
 
         public paused = false
 
@@ -154,7 +151,7 @@ module visualizing {
     // Builds a potential based on a function
     // let f be a function that accepts an x position, and optionally the x fraction (in the range [0, 1))
     // returns the new potential
-    export function buildPotential(f:((x:number, xfrac?:number) => number), params:Parameters) {
+    export function buildPotential(params:Parameters, f:((x:number, xfrac?:number) => number)) {
         let potentialMesh: number[] = []
         for (let i = 0; i < params.meshDivision; i++) {
             const x = params.centerForMeshIndex(i)
@@ -172,5 +169,38 @@ module visualizing {
         if (!condition) {
             throw message || "Assertion failed"
         }
+    }
+    
+    export function benchmark() {
+        const params = new Parameters()
+        
+        // SHO-type potential
+        const baseEnergy = 0.25
+        const xScaleFactor = 1.0 / 4.0
+        const potential = buildPotential(params, (x: number) => {
+            // x is a value in [0, this.potential_.width)
+            // we have a value of 1 at x = width/2
+            const offsetX = params.width / 2
+            const scaledX = (x - offsetX) * params.maxX / params.width
+            return baseEnergy + xScaleFactor * (scaledX * scaledX / 2.0)
+        })
+        
+        const center = algorithms.indexOfMinimum(potential)
+        const energy = 2.5
+        const input = {
+            potentialMesh: potential,
+            energy: energy,
+            maxX: params.maxX
+        }
+        
+        const start = new Date().getTime()
+        const maxIter = 32
+        for (let iter=0; iter < maxIter; iter++) {
+            let psi = algorithms.classicallyResolvedAveragedNumerov(input)
+            let phi = psi.fourierTransform(center, .5)
+        }
+        const end = new Date().getTime()
+        const duration = (end - start) / maxIter
+        return duration.toFixed(2) + " ms"
     }
 }

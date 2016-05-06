@@ -56,7 +56,7 @@ module algorithms {
     interface IntegratorInput {
         potentialMesh: number[]
         energy: number
-        xMax: number
+        maxX: number
     }
 
     // represents a complex number with fields re and im
@@ -329,12 +329,18 @@ module algorithms {
         }
     }
 
+    export function classicallyResolvedAveragedNumerov(input: IntegratorInput) : ResolvedWavefunction {
+        let tps = classicalTurningPoints(input.potentialMesh, input.energy)
+        let evenVal = numerov(input, true).resolveAtTurningPoints(tps)
+        let oddVal = numerov(input, false).resolveAtTurningPoints(tps)
+        return averageResolvedWavefunctions(evenVal, oddVal)
+    }
 
     // calculates the wavefunction from a potential
     interface Integrator {
         computeWavefunction(input: IntegratorInput): UnresolvedWavefunction
     }
-
+    
     export function NumerovIntegrator(even: boolean): Integrator {
         return {
             computeWavefunction: (input) => numerov(input, even)
@@ -384,12 +390,12 @@ module algorithms {
         const c = indexOfMinimum(potential) // minimum
 
         // Fill wavefunction with all 0s
-        let wavefunction = new UnresolvedWavefunction(potential.slice(), input.energy, input.xMax)
+        let wavefunction = new UnresolvedWavefunction(potential.slice(), input.energy, input.maxX)
         wavefunction.valuesFromCenter = zeros(length)
         wavefunction.valuesFromEdge = zeros(length)
 
         const energy = input.energy
-        const dx = input.xMax / length
+        const dx = input.maxX / length
         const ddx12 = dx * dx / 12.0
 
         // F function used by Numerov
@@ -453,11 +459,11 @@ module algorithms {
 
     function algorithmTest() {
         let lines: string[] = []
-        const xMax = 20
+        const maxX = 20
         const width = 1025
         let potential = zeros(width)
         for (let i = 0; i < width; i++) {
-            let x = i / width * xMax - (xMax / 2)
+            let x = i / width * maxX - (maxX / 2)
             let V = x * x / 2
             potential[i] = V
         }
@@ -465,7 +471,7 @@ module algorithms {
         let input = {
             potentialMesh: potential,
             energy: 2.5,
-            xMax: xMax
+            maxX: maxX
         }
         let psi = numerov(input, true).resolveAtClassicalTurningPoints()
 
@@ -474,7 +480,7 @@ module algorithms {
 
         lines.push("x\tpsi\tV")
         for (let i = 0; i < width; i++) {
-            let x = i / width * xMax - (xMax / 2)
+            let x = i / width * maxX - (maxX / 2)
             lines.push(formatFloat(x) + "\t" + formatFloat(psi.values[i].re) + "\t" + formatFloat(potential[i]))
         }
 

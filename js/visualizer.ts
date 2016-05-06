@@ -37,7 +37,6 @@ module visualizing {
         private leftTurningPoint_: VisLine
         private rightTurningPoint_: VisLine
 
-        public maxX: number = 20
         public params = new Parameters()
 
         public state: InputState = { potential: [] }
@@ -254,12 +253,9 @@ module visualizing {
                     const psiInputs = {
                         potentialMesh: this.state.potential,
                         energy: bar.energy,
-                        xMax: this.maxX
+                        maxX: this.params.maxX
                     }
-                    let even = algorithms.NumerovIntegrator(true).computeWavefunction(psiInputs).resolveAtClassicalTurningPoints()
-                    let odd = algorithms.NumerovIntegrator(false).computeWavefunction(psiInputs).resolveAtClassicalTurningPoints()
-                    let resolvedWavefunction = algorithms.averageResolvedWavefunctions(odd, even)
-                    bar.wavefunction = resolvedWavefunction
+                    let resolvedWavefunction = algorithms.classicallyResolvedAveragedNumerov(psiInputs)
                     return resolvedWavefunction  
                 })
                 let genPsi = new algorithms.GeneralizedWavefunction(psis)
@@ -318,7 +314,7 @@ module visualizing {
         }
         
         loadFrom(f: ((x:number, xfrac?:number) => number)) {
-            let mesh = buildPotential(f, this.params)
+            let mesh = buildPotential(this.params, f)
             this.potential_.setPotential(mesh)
         }
 
@@ -332,7 +328,7 @@ module visualizing {
                 // x is a value in [0, this.potential_.width)
                 // we have a value of 1 at x = width/2
                 const offsetX = this.params.width / 2
-                const scaledX = (x - offsetX) * this.maxX / this.params.width
+                const scaledX = (x - offsetX) * this.params.maxX / this.params.width
                 return baseEnergy + xScaleFactor * (scaledX * scaledX / 2.0)
             })
         }

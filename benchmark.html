@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <button onClick="runBenchmark();">Benchmark</button>
+    <pre id="results"></pre>
+    <script type="text/javascript" src="js/three.min.js"></script>
+    <script type="text/javascript" src="js/ui.js"></script>
+    <script type="text/javascript" src="js/algorithms.js"></script>
+    <script type="text/javascript" src="js/commonvis.js"></script>
+    <script type="text/javascript" src="js/wavefunctionvis.js"></script>
+    <script type="text/javascript" src="js/energy.js"></script>
+    <script type="text/javascript" src="js/potentialvis.js"></script>
+    <script type="text/javascript" src="js/visualizer.js"></script>
+    
+    <script type="text/javascript">
+        function runBenchmark() {
+            document.getElementById("results").textContent += visualizing.benchmark() + "\n"
+        }
+     </script>
+</body>
+</html>
