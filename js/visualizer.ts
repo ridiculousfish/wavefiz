@@ -20,20 +20,6 @@ module visualizing {
         return { x: x, y: y }
     }
  
-    class EnergyBar {
-        public line: VisLine
-        public wavefunction: algorithms.ResolvedWavefunction = null
-        
-        constructor(public slider: visualizing.EnergySlider, public energy: number, public params: Parameters) {
-            this.line = new VisLine(2, { color: 0xFF0000 })
-        }
-        setPositionAndEnergy(position: number, energy: number) {
-            this.energy = energy
-            this.line.update((idx:number) => vector3(idx * this.params.width, position, 0))
-        }
-    }
-
-
     export class Visualizer {
         private container_: HTMLElement
         private renderer_: THREE.Renderer
