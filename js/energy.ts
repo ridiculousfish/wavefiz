@@ -18,6 +18,7 @@ module visualizing {
         setPositionAndEnergy(position: number, energy: number) {
             this.energy = energy
             this.line.update((idx:number) => vector3(idx * this.params.width, position, 0))
+            this.slider.update(position, this.energy)
         }
     }
     

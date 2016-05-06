@@ -316,6 +316,11 @@ module visualizing {
             this.setCameraRotation(rads)
             this.render()
         }
+        
+        loadFrom(f: ((x:number, xfrac?:number) => number)) {
+            let mesh = buildPotential(f, this.params)
+            this.potential_.setPotential(mesh)
+        }
 
         public loadSHO() {
             // Simple Harmonic Oscillator
@@ -323,7 +328,7 @@ module visualizing {
             const baseEnergy = 0.25
             const xScaleFactor = 1.0 / 4.0
             this.params.timescale = 1.0 / 2.0
-            this.potential_.loadFrom((x: number) => {
+            this.loadFrom((x: number) => {
                 // x is a value in [0, this.potential_.width)
                 // we have a value of 1 at x = width/2
                 const offsetX = this.params.width / 2
@@ -338,7 +343,7 @@ module visualizing {
             const baseEnergy = 1 / 16
             this.params.timescale = 1.0
             const widthRatio = 1.0 / 5.0
-            this.potential_.loadFrom((x: number) => {
+            this.loadFrom((x: number) => {
                 // x is a value in [0, this.params.width)
                 const width = this.params.width
                 if (x < width * widthRatio || x > width - (width * widthRatio)) {
@@ -354,7 +359,7 @@ module visualizing {
             const baseEnergy = 1 / 16
             this.params.timescale = 1.0
             const widthRatio = 1.0 / 5.0
-            this.potential_.loadFrom((x: number) => {
+            this.loadFrom((x: number) => {
                 // x is a value in [0, this.params.width)
                 const width = this.params.width
                 if (x < width * widthRatio || x > width - (width * widthRatio)) {
@@ -372,7 +377,7 @@ module visualizing {
             const rightBarrierStart = 1.0 - 1.0 / 5.0
             const centerBarrierStart = 1.7 / 5.0
             const centerBarrierEnd = 1.85 / 5.0
-            this.potential_.loadFrom((x: number) => {
+            this.loadFrom((x: number) => {
                 // x is a value in [0, this.params.width)
                 const sx = x / this.params.width
                 if (sx < leftBarrierEnd || sx > rightBarrierStart) {

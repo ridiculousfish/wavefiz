@@ -150,6 +150,19 @@ module visualizing {
             return (x / this.meshDivision) * this.width
         }
     }
+    
+    // Builds a potential based on a function
+    // let f be a function that accepts an x position, and optionally the x fraction (in the range [0, 1))
+    // returns the new potential
+    export function buildPotential(f:((x:number, xfrac?:number) => number), params:Parameters) {
+        let potentialMesh: number[] = []
+        for (let i = 0; i < params.meshDivision; i++) {
+            const x = params.centerForMeshIndex(i)
+            const xfrac = i / params.meshDivision
+            potentialMesh.push(f(x, xfrac))
+        }
+        return potentialMesh
+    }
 
     export interface InputState {
         potential: number[]

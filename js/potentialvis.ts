@@ -147,13 +147,7 @@ module visualizing {
             group.add(this.dragLine_.line)
         }
 
-        loadFrom(f: ((x: number) => number)) {
-            // given a function that maps x to a potential, builds the full potential
-            let potentialMesh: number[] = []
-            for (let i = 0; i < this.params.meshDivision; i++) {
-                const x = this.params.centerForMeshIndex(i)
-                potentialMesh.push(f(x))
-            }
+        public setPotential(potentialMesh: number[]) {
             this.potentialMesh_ = potentialMesh
             this.redrawPotentialMesh()
             this.announceNewPotential()
