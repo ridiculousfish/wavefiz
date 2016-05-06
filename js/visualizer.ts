@@ -22,7 +22,7 @@ module visualizing {
 
     class EnergyBar {
         line: VisLine
-        constructor(public slider: energy.EnergySlider, public energy: number, public params: Parameters) {
+        constructor(public slider: visualizing.EnergySlider, public energy: number, public params: Parameters) {
             this.line = new VisLine(2, { color: 0xFF0000 })
         }
         setPositionAndEnergy(position: number, energy: number) {
@@ -43,7 +43,7 @@ module visualizing {
 
         private wavefunctionAvg_: WavefunctionVisualizer
 
-        private energyVisualizer_: energy.EnergyVisualizer
+        private energyVisualizer_: visualizing.EnergyVisualizer
         private energyBars_: EnergyBar[] = []
 
         private leftTurningPoint_: VisLine
@@ -116,9 +116,9 @@ module visualizing {
             }
 
             // Energy dragger
-            this.energyVisualizer_ = new energy.EnergyVisualizer(energyContainer, energyDraggerPrototype, this.params)
+            this.energyVisualizer_ = new visualizing.EnergyVisualizer(energyContainer, energyDraggerPrototype, this.params)
 
-            this.energyVisualizer_.positionUpdated = (slider: energy.EnergySlider, position: number) => {
+            this.energyVisualizer_.positionUpdated = (slider: visualizing.EnergySlider, position: number) => {
                 // the user dragged the energy to a new value, expressed our "height" coordinate system
                 // compute a new wavefunction
                 const energy = this.params.convertYFromVisualCoordinate(position)
@@ -268,9 +268,9 @@ module visualizing {
                 energy: this.state.energy,
                 xMax: this.maxX
             }
-            const center = indexOfMinimum(this.state.potential)
-            const psiEven = NumerovIntegrator(true).computeWavefunction(psiInputs)
-            const psiOdd = NumerovIntegrator(false).computeWavefunction(psiInputs)
+            const center = algorithms.indexOfMinimum(this.state.potential)
+            const psiEven = algorithms.NumerovIntegrator(true).computeWavefunction(psiInputs)
+            const psiOdd = algorithms.NumerovIntegrator(false).computeWavefunction(psiInputs)
             const psiREven = psiEven.resolveAtClassicalTurningPoints()
             const psiROdd = psiOdd.resolveAtClassicalTurningPoints()
 
@@ -281,11 +281,11 @@ module visualizing {
                         energy: bar.energy,
                         xMax: this.maxX
                     }
-                    let even = NumerovIntegrator(true).computeWavefunction(psiInputs).resolveAtClassicalTurningPoints()
-                    let odd = NumerovIntegrator(false).computeWavefunction(psiInputs).resolveAtClassicalTurningPoints()
-                    return averageResolvedWavefunctions(odd, even)
+                    let even = algorithms.NumerovIntegrator(true).computeWavefunction(psiInputs).resolveAtClassicalTurningPoints()
+                    let odd = algorithms.NumerovIntegrator(false).computeWavefunction(psiInputs).resolveAtClassicalTurningPoints()
+                    return algorithms.averageResolvedWavefunctions(odd, even)
                 })
-                let genPsi = new GeneralizedWavefunction(psis)
+                let genPsi = new algorithms.GeneralizedWavefunction(psis)
                 this.wavefunctionAvg_.setWavefunction(genPsi, center)
             }
             this.wavefunctionAvg_.setVisible(this.params.showAvg && this.energyBars_.length > 0)

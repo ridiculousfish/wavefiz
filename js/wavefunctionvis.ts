@@ -1,4 +1,8 @@
+/// <reference path='./algorithms.ts'/>
+/// <reference path='./commonvis.ts'/>
+
 module visualizing {
+
     export class WavefunctionVisualizer {
         private group_: THREE.Group = new THREE.Group()
         private psiGraph_: VisLine
@@ -39,7 +43,7 @@ module visualizing {
                 transparent: true,
                 opacity: .75,
                 depthTest: false
-            }            
+            }
             const baselineMaterial = {
                 color: this.color,
                 linewidth: .5,
@@ -53,7 +57,7 @@ module visualizing {
             this.psiBaseline_ = new VisLine(2, baselineMaterial)
         }
 
-        setWavefunction(psi: GeneralizedWavefunction, potentialMinimumIndex: number) {
+        setWavefunction(psi: algorithms.GeneralizedWavefunction, potentialMinimumIndex: number) {
             if (psi == null) {
                 this.psiVis_.valueAt = null
                 this.psiAbsVis_.valueAt = null
@@ -69,7 +73,7 @@ module visualizing {
                     let mag = Math.sqrt(psi.valueAt(index, time).magnitudeSquared())
                     return new Complex(mag, 0)
                 }
-                
+
                 let freqWavefunction = psi.fourierTransform(potentialMinimumIndex, .5)
                 this.phiVis_.valueAt = (index: number, time: number) => {
                     return freqWavefunction.valueAt(index, time)
@@ -77,7 +81,7 @@ module visualizing {
                 this.phiAbsVis_.valueAt = (index: number, time: number) => {
                     let mag = Math.sqrt(freqWavefunction.valueAt(index, time).magnitudeSquared())
                     return new Complex(mag, 0)
-                } 
+                }
             }
             this.redraw()
         }
@@ -103,30 +107,28 @@ module visualizing {
                 }
                 return Math.max(-limit, Math.min(limit, value))
             }
-            
-            let updateVisualizable = (vis:Visualizable, visLine: VisLine, show:boolean) => {
+
+            let updateVisualizable = (vis: Visualizable, visLine: VisLine, show: boolean) => {
                 visLine.line.visible = show
                 if (show) {
                     const psiScale = this.params.psiScale
-                    for (let index = 0; index < this.params.meshDivision; index++) {    
+                    for (let index = 0; index < this.params.meshDivision; index++) {
                         const x = this.params.centerForMeshIndex(index)
                         const yz = vis.valueAt(index, time)
                         const y = -cleanValue(psiScale * yz.re)
                         const z = cleanValue(psiScale * yz.im)
-                        visLine.geometry.vertices[index] = new THREE.Vector3(x, y, z)                
+                        visLine.geometry.vertices[index] = new THREE.Vector3(x, y, z)
                     }
                     visLine.geometry.verticesNeedUpdate = true
                 }
             }
-            
+
             updateVisualizable(this.psiVis_, this.psiGraph_, this.params.showPsi)
             updateVisualizable(this.psiAbsVis_, this.psiAbsGraph_, this.params.showPsiAbs)
             updateVisualizable(this.phiVis_, this.phiGraph_, this.params.showPhi)
             updateVisualizable(this.phiAbsVis_, this.phiAbsGraph_, this.params.showPhiAbs)
 
-            this.psiBaseline_.update((i: number) => {
-                return vector3(i * this.params.width, 0, 0)
-            })
+            this.psiBaseline_.update((i: number) => vector3(i * this.params.width, 0, 0))
 
             this.animator.schedule(this)
         }
@@ -136,7 +138,7 @@ module visualizing {
         }
 
         addToGroup(parentGroup: THREE.Group, yOffset: number) {
-               [this.psiGraph_,
+            [this.psiGraph_,
                 this.psiAbsGraph_,
                 this.phiGraph_,
                 this.phiAbsGraph_,

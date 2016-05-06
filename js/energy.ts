@@ -1,6 +1,6 @@
 /// <reference path='./visualizer.ts'/>
 
-module energy {
+module visualizing {
     
     function assert(condition:boolean, message?:string) {
         if (!condition) {

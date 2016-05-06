@@ -1,9 +1,11 @@
 /// <reference path="../typings/threejs/three.d.ts"/>
+/// <reference path="./algorithms.ts"/>
 
 module visualizing {
 
     // helpers
-    export type Vector3 = THREE.Vector3
+    export import Vector3 = THREE.Vector3
+    export import Complex = algorithms.Complex
     
     export function vector3(x:number, y:number, z:number) : THREE.Vector3 {
         return new THREE.Vector3(x, y, z)
