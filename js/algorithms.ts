@@ -82,8 +82,8 @@ class Complex {
         return new Complex(this.re / val, this.im / val)
     }
 
-    multiplied(val: Complex): Complex {
-        return new Complex(this.re * val.re - this.im * val.im, this.re * val.im + this.im * val.re)
+    multiplied(rhs: Complex): Complex {
+        return new Complex(this.re * rhs.re - this.im * rhs.im, this.re * rhs.im + this.im * rhs.re)
     }
 
     multipliedByReal(val: number): Complex {
@@ -111,18 +111,22 @@ function computeTimeDependence(energy: number, time: number): Complex {
     return Complex.exponential(nEt)
 }
 
-function fourierTransform(spaceValues: Complex[], dx: number): Complex[] {
+function fourierTransform(spaceValues: Complex[], center: number, dx: number, c:number) : Complex[] {
     const length = spaceValues.length
+    assert(length > 0 && center < length, "center out of bounds")
     let freqValues = zerosComplex(length)
-    for (let p = 0; p < length; p++) {
-        // phiX = 1/sqrt(2pi) * integral of e^-ipx psi(x)
+    for (let arrayIdx = 0; arrayIdx < length; arrayIdx++) {
+        const p = arrayIdx - center
+        const k = p * dx
         let phi = new Complex(0, 0)
-        for (let x = 0; x < length; x++) {
-            phi.addToSelf(Complex.exponential(-p * x).multiplied(spaceValues[x]))
+        for (let i = 0; i < length; i++) {
+            const spaceValue = spaceValues[i]
+            const x = (i - center) * dx
+            phi.addToSelf(Complex.exponential(-c * k * x).multiplied(spaceValue))
         }
         phi = phi.multipliedByReal(dx) // for integral
         phi = phi.dividedByReal(Math.sqrt(2 * Math.PI))
-        freqValues[p] = phi
+        freqValues[arrayIdx] = phi
     }
     return freqValues
 }
@@ -157,8 +161,9 @@ class ResolvedWavefunction {
         return new GeneralizedWavefunction([this])
     }
 
-    fourierTransform(): ResolvedWavefunction {
-        let freqValues = fourierTransform(this.values, this.dx)
+    fourierTransform(center:number, scale:number): ResolvedWavefunction {
+        let freqValues = fourierTransform(this.values, center, this.dx, scale)
+        normalizeComplex(freqValues)
         return new ResolvedWavefunction(freqValues, this.dx, this.md)
     }
 }
@@ -177,7 +182,7 @@ class GeneralizedWavefunction {
         this.dx = this.components[0].dx
     }
 
-    valueAt(x: number, time: number) {
+    valueAt(x: number, time: number) : Complex {
         assert(x === +x && x === (x | 0), "Non-integer passed to valueAt")
         let result = new Complex(0, 0)
         this.components.forEach((psi: ResolvedWavefunction) => {
@@ -186,6 +191,19 @@ class GeneralizedWavefunction {
         result.re /= this.components.length
         result.im /= this.components.length
         return result
+    }
+    
+    valuesAtTime(time:number) : Complex[] {
+        let result : Complex[] = []
+        for (let i=0; i < this.length; i++) {
+            result.push(this.valueAt(i, time))
+        }
+        return result
+    }
+    
+    fourierTransform(center:number, scale:number) : GeneralizedWavefunction {
+        let fourierComps = this.components.map((comp) => comp.fourierTransform(center, scale))
+        return new GeneralizedWavefunction(fourierComps)
     }
 }
 
@@ -362,7 +380,6 @@ function numerov(input: IntegratorInput, even: boolean): UnresolvedWavefunction 
     assert(length % 2 == 1, "PotentialMesh does not have odd count")
     assert(length >= 3, "PotentialMesh is too small")
     const c = indexOfMinimum(potential) // minimum
-    console.log("C: " + c)
 
     // Fill wavefunction with all 0s
     let wavefunction = new UnresolvedWavefunction(potential.slice(), input.energy, input.xMax)
@@ -433,23 +450,6 @@ function formatFloat(x: number): string {
 }
 
 function algorithmTest() {
-    let width = 1025
-    let values = zerosComplex(width)
-    let maxX = 4 * Math.PI
-    let dx = maxX / width
-    for (let i = 0; i < width; i++) {
-        values[i].re = Math.sin(i * dx)
-    }
-    let freqValues = fourierTransform(values, dx)
-
-    let lines: string[] = []
-    for (let i = 0; i < width; i++) {
-        lines.push(formatFloat(i) + "\t" + values[i].toString() + "\t" + freqValues[i].toString())
-    }
-    return lines.join("\n")
-}
-
-function algorithmTest2() {
     let lines: string[] = []
     const xMax = 20
     const width = 1025

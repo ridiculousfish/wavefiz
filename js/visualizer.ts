@@ -96,7 +96,7 @@ module visualizing {
             this.clients_ = []
             let processed = []
             locals.forEach((client: AnimatorClient) => {
-                // deduplicate to avoid multiple schedules
+                // deduplicate to avoid multiple schedules of the same object
                 for (let i = 0; i < processed.length; i++) {
                     if (processed[i] === client) {
                         return
@@ -171,9 +171,10 @@ module visualizing {
         public meshDivision: number = 1025 // how many points are in our mesh. Must be odd.
         public psiScale: number = 250 // how much scale we apply to the wavefunction
 
-        public showPsi = !false // show psi(x)
-        public showPsiAbs = false // show |psi(x)|
-        public showMomentum = !true // show momentum
+        public showPsi = !false // show position psi(x)
+        public showPsiAbs = false // show position probability |psi(x)|^2
+        public showPhi = true // show momentum phi(x)
+        public showPhiAbs = true // show momentum probability |phi(x)|^2
 
         public showEven = false
         public showOdd = false
@@ -384,23 +385,20 @@ module visualizing {
         private group_: THREE.Group = new THREE.Group()
         private psiGraph_: VisLine
         private psiAbsGraph_: VisLine
-        private momentumGraph_: VisLine
+        private phiGraph_: VisLine
+        private phiAbsGraph_: VisLine
         private psiBaseline_: VisLine
 
         private psiVis_ = new Visualizable()
         private psiAbsVis_ = new Visualizable()
-        private momentumVis_ = new Visualizable()
+        private phiVis_ = new Visualizable()
+        private phiAbsVis_ = new Visualizable()
 
         constructor(public params: Parameters, public color: number, public animator: Animator) {
 
             const psiMaterial = {
                 color: this.color,
                 linewidth: 5,
-                depthTest: false
-            }
-            const psiTMaterial = {
-                color: this.color,
-                linewidth: 3,
                 depthTest: false
             }
             const psiAbsMaterial = {
@@ -410,13 +408,20 @@ module visualizing {
                 opacity: .75,
                 depthTest: false
             }
-            const momentumMaterial = {
+            const phiMaterial = {
                 color: 0x0077FF,//this.color,
                 linewidth: 5,
                 transparent: true,
                 opacity: .75,
                 depthTest: false
             }
+            const phiAbsMaterial = {
+                color: 0x0077FF,//this.color,
+                linewidth: 8,
+                transparent: true,
+                opacity: .75,
+                depthTest: false
+            }            
             const baselineMaterial = {
                 color: this.color,
                 linewidth: .5,
@@ -425,14 +430,17 @@ module visualizing {
 
             this.psiGraph_ = new VisLine(this.params.meshDivision, psiMaterial)
             this.psiAbsGraph_ = new VisLine(this.params.meshDivision, psiAbsMaterial)
-            this.momentumGraph_ = new VisLine(this.params.meshDivision, momentumMaterial)
+            this.phiGraph_ = new VisLine(this.params.meshDivision, phiMaterial)
+            this.phiAbsGraph_ = new VisLine(this.params.meshDivision, phiAbsMaterial)
             this.psiBaseline_ = new VisLine(2, baselineMaterial)
         }
 
-        setWavefunction(psi: GeneralizedWavefunction) {
+        setWavefunction(psi: GeneralizedWavefunction, potentialMinimumIndex: number) {
             if (psi == null) {
                 this.psiVis_.valueAt = null
                 this.psiAbsVis_.valueAt = null
+                this.phiVis_.valueAt = null
+                this.phiAbsVis_.valueAt = null
                 return
             } else {
                 assert(psi.length == this.params.meshDivision, "Wavefunction has wrong length")
@@ -443,6 +451,15 @@ module visualizing {
                     let mag = Math.sqrt(psi.valueAt(index, time).magnitudeSquared())
                     return new Complex(mag, 0)
                 }
+                
+                let freqWavefunction = psi.fourierTransform(potentialMinimumIndex, .5)
+                this.phiVis_.valueAt = (index: number, time: number) => {
+                    return freqWavefunction.valueAt(index, time)
+                }
+                this.phiAbsVis_.valueAt = (index: number, time: number) => {
+                    let mag = Math.sqrt(freqWavefunction.valueAt(index, time).magnitudeSquared())
+                    return new Complex(mag, 0)
+                } 
             }
             this.redraw()
         }
@@ -452,7 +469,7 @@ module visualizing {
         }
 
         clear() {
-            this.setWavefunction(null)
+            this.setWavefunction(null, -1)
         }
 
         redraw(time: number = null) {
@@ -469,27 +486,25 @@ module visualizing {
                 return Math.max(-limit, Math.min(limit, value))
             }
             
-            let vectorFromVisualizable = (index:number, time:number, vis:Visualizable) => {
-                const psiScale = this.params.psiScale
-                const x = this.params.centerForMeshIndex(index)
-                const yz = vis.valueAt(index, time)
-                const y = -cleanValue(psiScale * yz.re)
-                const z = cleanValue(psiScale * yz.im)
-                return new THREE.Vector3(x, y, z)
-                
+            let updateVisualizable = (vis:Visualizable, visLine: VisLine, show:boolean) => {
+                visLine.line.visible = show
+                if (show) {
+                    const psiScale = this.params.psiScale
+                    for (let index = 0; index < this.params.meshDivision; index++) {    
+                        const x = this.params.centerForMeshIndex(index)
+                        const yz = vis.valueAt(index, time)
+                        const y = -cleanValue(psiScale * yz.re)
+                        const z = cleanValue(psiScale * yz.im)
+                        visLine.geometry.vertices[index] = new THREE.Vector3(x, y, z)                
+                    }
+                    visLine.geometry.verticesNeedUpdate = true
+                }
             }
-
-            for (let index = 0; index < this.params.meshDivision; index++) {
-                this.psiGraph_.geometry.vertices[index] = vectorFromVisualizable(index, 0, this.psiVis_)
-                this.psiAbsGraph_.geometry.vertices[index] = vectorFromVisualizable(index, 0, this.psiAbsVis_) 
-            }
-            this.psiGraph_.geometry.verticesNeedUpdate = true
-            this.psiAbsGraph_.geometry.verticesNeedUpdate = true
-            this.momentumGraph_.geometry.verticesNeedUpdate = true
-
-            this.psiGraph_.line.visible = this.params.showPsi
-            this.psiAbsGraph_.line.visible = this.params.showPsiAbs
-            this.momentumGraph_.line.visible = this.params.showMomentum
+            
+            updateVisualizable(this.psiVis_, this.psiGraph_, this.params.showPsi)
+            updateVisualizable(this.psiAbsVis_, this.psiAbsGraph_, this.params.showPsiAbs)
+            updateVisualizable(this.phiVis_, this.phiGraph_, this.params.showPhi)
+            updateVisualizable(this.phiAbsVis_, this.phiAbsGraph_, this.params.showPhiAbs)
 
             this.psiBaseline_.update((i: number) => {
                 return { x: i * this.params.width, y: 0, z: 0 }
@@ -503,9 +518,10 @@ module visualizing {
         }
 
         addToGroup(parentGroup: THREE.Group, yOffset: number) {
-            [this.psiGraph_,
+               [this.psiGraph_,
                 this.psiAbsGraph_,
-                this.momentumGraph_,
+                this.phiGraph_,
+                this.phiAbsGraph_,
                 this.psiBaseline_].forEach((vl: VisLine) => {
                     this.group_.add(vl.line)
                 })
@@ -765,16 +781,17 @@ module visualizing {
                 energy: this.state.energy,
                 xMax: this.maxX
             }
+            const center = indexOfMinimum(this.state.potential)
             const psiEven = NumerovIntegrator(true).computeWavefunction(psiInputs)
             const psiOdd = NumerovIntegrator(false).computeWavefunction(psiInputs)
             const psiREven = psiEven.resolveAtClassicalTurningPoints()
             const psiROdd = psiOdd.resolveAtClassicalTurningPoints()
 
-            this.wavefunctionEven_.setVisible(this.params.showEven)
-            this.wavefunctionEven_.setWavefunction(psiREven.asGeneralized())
+            // this.wavefunctionEven_.setVisible(this.params.showEven)
+            // this.wavefunctionEven_.setWavefunction(psiREven.asGeneralized(), center)
 
-            this.wavefunctionOdd_.setVisible(this.params.showOdd)
-            this.wavefunctionOdd_.setWavefunction(psiROdd.asGeneralized())
+            // this.wavefunctionOdd_.setVisible(this.params.showOdd)
+            // this.wavefunctionOdd_.setWavefunction(psiROdd.asGeneralized(), center)
 
             if (this.energyBars_.length > 0) {
                 let psis = this.energyBars_.map((bar: EnergyBar) => {
@@ -788,7 +805,7 @@ module visualizing {
                     return averageResolvedWavefunctions(odd, even)
                 })
                 let genPsi = new GeneralizedWavefunction(psis)
-                this.wavefunctionAvg_.setWavefunction(genPsi)
+                this.wavefunctionAvg_.setWavefunction(genPsi, center)
             }
             this.wavefunctionAvg_.setVisible(this.params.showAvg && this.energyBars_.length > 0)
 
@@ -821,6 +838,16 @@ module visualizing {
 
         public setShowPsiAbs(flag: boolean) {
             this.params.showPsiAbs = flag
+            this.computeAndShowWavefunctions()
+        }
+
+        public setShowPhi(flag: boolean) {
+            this.params.showPhi = flag
+            this.computeAndShowWavefunctions()
+        }
+
+        public setShowPhiAbs(flag: boolean) {
+            this.params.showPhiAbs = flag
             this.computeAndShowWavefunctions()
         }
 
