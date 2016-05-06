@@ -502,8 +502,6 @@ module visualizing {
         private potential_: PotentialVisualizer
         private animator_: Animator
 
-        private wavefunctionOdd_: WavefunctionVisualizer
-        private wavefunctionEven_: WavefunctionVisualizer
         private wavefunctionAvg_: WavefunctionVisualizer
 
         private energyVisualizer_: energy.EnergyVisualizer
@@ -557,12 +555,8 @@ module visualizing {
 
             // Wavefunction Visualizer
             const centerY = this.params.height / 2
-            this.wavefunctionOdd_ = new WavefunctionVisualizer(this.params, 0xFFA500, this.animator_) // orange
-            this.wavefunctionEven_ = new WavefunctionVisualizer(this.params, 0xFFFF00, this.animator_) // yellow
             this.wavefunctionAvg_ = new WavefunctionVisualizer(this.params, 0xFF7777, this.animator_)
 
-            this.wavefunctionOdd_.addToGroup(this.topGroup_, centerY - 125)
-            this.wavefunctionEven_.addToGroup(this.topGroup_, centerY + 125)
             this.wavefunctionAvg_.addToGroup(this.topGroup_, centerY)
 
             // Turning Points
@@ -725,8 +719,6 @@ module visualizing {
         private computeAndShowWavefunctions() {
             if (0 && this.state.potential.length == 0) {
                 // clear everything
-                this.wavefunctionOdd_.clear()
-                this.wavefunctionEven_.clear()
                 this.wavefunctionAvg_.clear()
                 return
             }
@@ -742,12 +734,6 @@ module visualizing {
             const psiOdd = NumerovIntegrator(false).computeWavefunction(psiInputs)
             const psiREven = psiEven.resolveAtClassicalTurningPoints()
             const psiROdd = psiOdd.resolveAtClassicalTurningPoints()
-
-            // this.wavefunctionEven_.setVisible(this.params.showEven)
-            // this.wavefunctionEven_.setWavefunction(psiREven.asGeneralized(), center)
-
-            // this.wavefunctionOdd_.setVisible(this.params.showOdd)
-            // this.wavefunctionOdd_.setWavefunction(psiROdd.asGeneralized(), center)
 
             if (this.energyBars_.length > 0) {
                 let psis = this.energyBars_.map((bar: EnergyBar) => {
