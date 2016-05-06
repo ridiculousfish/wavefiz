@@ -125,37 +125,6 @@ module visualizing {
         }
     }
 
-    export class VisRect {
-        public mesh: THREE.Mesh
-        constructor(public width: number, public height: number, public radius: number, material: THREE.MeshBasicMaterialParameters) {
-            material.side = THREE.DoubleSide // hack
-
-            let shape = new THREE.Shape();
-            if (radius == 0) {
-                shape.moveTo(0, 0)
-                shape.moveTo(width, 0)
-                shape.moveTo(width, height)
-                shape.moveTo(0, height)
-                shape.moveTo(0, 0)
-            } else {
-                (function roundedRect(ctx, x, y, width, height, radius) {
-
-                    ctx.moveTo(x, y + radius);
-                    ctx.lineTo(x, y + height - radius);
-                    ctx.quadraticCurveTo(x, y + height, x + radius, y + height);
-                    ctx.lineTo(x + width - radius, y + height);
-                    ctx.quadraticCurveTo(x + width, y + height, x + width, y + height - radius);
-                    ctx.lineTo(x + width, y + radius);
-                    ctx.quadraticCurveTo(x + width, y, x + width - radius, y);
-                    ctx.lineTo(x + radius, y);
-                    ctx.quadraticCurveTo(x, y, x, y + radius);
-                })(shape, 0, 0, width, height, radius);
-            }
-            let geometry = shape.makeGeometry()
-            this.mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial(material));
-        }
-    }
-
     export class Parameters {
         public xScale = 1
         public yScale = 1 // multiply to go from potential to graphical point
@@ -575,13 +544,6 @@ module visualizing {
             }
             this.setCameraRotation(0)
 
-            // Background
-            let background = new VisRect(this.params.width, this.params.height, 0, {
-                color: 0x4682B4,
-                side: THREE.DoubleSide
-            })
-            background.mesh.position.set(0, 0, 0)
-            //this.topGroup_.add(background.mesh)
             this.topScene_.add(this.topGroup_)
 
             // Potential Visualizer
