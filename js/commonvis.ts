@@ -152,8 +152,7 @@ module visualizing {
     }
 
     export interface InputState {
-        potential: number[],
-        energy: number
+        potential: number[]
     }
 
     export function assert(condition, message) {

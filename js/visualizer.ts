@@ -19,9 +19,11 @@ module visualizing {
         }
         return { x: x, y: y }
     }
-
+ 
     class EnergyBar {
-        line: VisLine
+        public line: VisLine
+        public wavefunction: algorithms.ResolvedWavefunction = null
+        
         constructor(public slider: visualizing.EnergySlider, public energy: number, public params: Parameters) {
             this.line = new VisLine(2, { color: 0xFF0000 })
         }
@@ -52,7 +54,7 @@ module visualizing {
         public maxX: number = 20
         public params = new Parameters()
 
-        public state: InputState = { potential: [], energy: 2.5 }
+        public state: InputState = { potential: [] }
 
         constructor(container: HTMLElement, energyContainer: HTMLElement, energyDraggerPrototype: HTMLElement) {
 
@@ -125,7 +127,6 @@ module visualizing {
                 this.energyBars_.forEach((bar: EnergyBar) => {
                     if (bar.slider == slider) {
                         bar.setPositionAndEnergy(position, energy)
-                        this.state.energy = energy
                     }
                 })
                 this.computeAndShowWavefunctions()
@@ -256,25 +257,13 @@ module visualizing {
         }
 
         private computeAndShowWavefunctions() {
-            if (0 && this.state.potential.length == 0) {
-                // clear everything
-                this.wavefunctionAvg_.clear()
+            if (this.state.potential.length == 0) {
                 return
             }
-
-            // update wavefunctions
-            const psiInputs = {
-                potentialMesh: this.state.potential,
-                energy: this.state.energy,
-                xMax: this.maxX
-            }
-            const center = algorithms.indexOfMinimum(this.state.potential)
-            const psiEven = algorithms.NumerovIntegrator(true).computeWavefunction(psiInputs)
-            const psiOdd = algorithms.NumerovIntegrator(false).computeWavefunction(psiInputs)
-            const psiREven = psiEven.resolveAtClassicalTurningPoints()
-            const psiROdd = psiOdd.resolveAtClassicalTurningPoints()
-
+            
             if (this.energyBars_.length > 0) {
+                const center = algorithms.indexOfMinimum(this.state.potential)
+                // update wavefunctions and collect them all
                 let psis = this.energyBars_.map((bar: EnergyBar) => {
                     const psiInputs = {
                         potentialMesh: this.state.potential,
@@ -283,32 +272,29 @@ module visualizing {
                     }
                     let even = algorithms.NumerovIntegrator(true).computeWavefunction(psiInputs).resolveAtClassicalTurningPoints()
                     let odd = algorithms.NumerovIntegrator(false).computeWavefunction(psiInputs).resolveAtClassicalTurningPoints()
-                    return algorithms.averageResolvedWavefunctions(odd, even)
+                    let resolvedWavefunction = algorithms.averageResolvedWavefunctions(odd, even)
+                    bar.wavefunction = resolvedWavefunction
+                    return resolvedWavefunction  
                 })
                 let genPsi = new algorithms.GeneralizedWavefunction(psis)
                 this.wavefunctionAvg_.setWavefunction(genPsi, center)
             }
-            this.wavefunctionAvg_.setVisible(this.params.showAvg && this.energyBars_.length > 0)
+            this.wavefunctionAvg_.setVisible(this.energyBars_.length > 0)
 
             {
-                let disContText = ""
-                disContText += "even: " + psiREven.md.leftDerivativeDiscontinuity.toFixed(3) + "," + psiREven.md.rightDerivativeDiscontinuity.toFixed(3)
-                disContText += " / "
-                disContText += "odd: " + psiROdd.md.leftDerivativeDiscontinuity.toFixed(3) + "," + psiROdd.md.rightDerivativeDiscontinuity.toFixed(3)
-                document.getElementById("statusfield").textContent = disContText
+                document.getElementById("statusfield").textContent = ""
             }
 
-            // update turning points
-            const turningPoints = psiOdd.classicalTurningPoints()
-            const leftV = this.params.convertXToVisualCoordinate(turningPoints.left)
-            const rightV = this.params.convertXToVisualCoordinate(turningPoints.right)
+            // update turning points based on maximum energy
+            let maxEnergy = 0
+            this.energyBars_.map((eb:EnergyBar) => maxEnergy = Math.max(maxEnergy, eb.energy))
+            const maxTurningPoints = algorithms.classicalTurningPoints(this.state.potential, maxEnergy)
+
+            const leftV = this.params.convertXToVisualCoordinate(maxTurningPoints.left)
+            const rightV = this.params.convertXToVisualCoordinate(maxTurningPoints.right)
             this.leftTurningPoint_.update((i: number) => vector3(leftV, i * this.params.height, 0))
             this.rightTurningPoint_.update((i: number) => vector3(rightV, i * this.params.height, 0))
 
-            // update energy
-            const visEnergy = this.params.convertYToVisualCoordinate(this.state.energy)
-            //this.energyDragger_.update(visEnergy, this.state.energy)
-            //this.energyDragger_.attr({visibility: "visible"})
             this.render()
         }
 

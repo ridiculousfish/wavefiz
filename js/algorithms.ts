@@ -1,5 +1,5 @@
 module algorithms {
-    
+
     function assert(condition, message) {
         if (!condition) {
             throw message || "Assertion failed"
@@ -67,8 +67,8 @@ module algorithms {
             this.re += rhs.re
             this.im += rhs.im
         }
-        
-        added(rhs:Complex) {
+
+        added(rhs: Complex) {
             return new Complex(this.re + rhs.re, this.im + rhs.im)
         }
 
@@ -91,8 +91,8 @@ module algorithms {
         multipliedByReal(val: number): Complex {
             return new Complex(this.re * val, this.im * val)
         }
-        
-        magnitudeSquared() : number {
+
+        magnitudeSquared(): number {
             return this.re * this.re + this.im * this.im
         }
 
@@ -113,7 +113,7 @@ module algorithms {
         return Complex.exponential(nEt)
     }
 
-    function fourierTransform(spaceValues: Complex[], center: number, dx: number, c:number) : Complex[] {
+    function fourierTransform(spaceValues: Complex[], center: number, dx: number, c: number): Complex[] {
         const length = spaceValues.length
         assert(length > 0 && center < length, "center out of bounds")
         let freqValues = zerosComplex(length)
@@ -134,7 +134,7 @@ module algorithms {
     }
 
     export class WavefunctionMetadata {
-        constructor(public energy:number,
+        constructor(public energy: number,
             public leftTurningPoint: number,
             public rightTurningPoint: number,
             public leftDerivativeDiscontinuity: number,
@@ -163,7 +163,7 @@ module algorithms {
             return new GeneralizedWavefunction([this])
         }
 
-        fourierTransform(center:number, scale:number): ResolvedWavefunction {
+        fourierTransform(center: number, scale: number): ResolvedWavefunction {
             let freqValues = fourierTransform(this.values, center, this.dx, scale)
             normalizeComplex(freqValues, this.dx)
             return new ResolvedWavefunction(freqValues, this.dx, this.md)
@@ -184,7 +184,7 @@ module algorithms {
             this.dx = this.components[0].dx
         }
 
-        valueAt(x: number, time: number) : Complex {
+        valueAt(x: number, time: number): Complex {
             assert(x === +x && x === (x | 0), "Non-integer passed to valueAt")
             let result = new Complex(0, 0)
             this.components.forEach((psi: ResolvedWavefunction) => {
@@ -194,16 +194,16 @@ module algorithms {
             result.im /= this.components.length
             return result
         }
-        
-        valuesAtTime(time:number) : Complex[] {
-            let result : Complex[] = []
-            for (let i=0; i < this.length; i++) {
+
+        valuesAtTime(time: number): Complex[] {
+            let result: Complex[] = []
+            for (let i = 0; i < this.length; i++) {
                 result.push(this.valueAt(i, time))
             }
             return result
         }
-        
-        fourierTransform(center:number, scale:number) : GeneralizedWavefunction {
+
+        fourierTransform(center: number, scale: number): GeneralizedWavefunction {
             let fourierComps = this.components.map((comp) => comp.fourierTransform(center, scale))
             return new GeneralizedWavefunction(fourierComps)
         }
@@ -240,6 +240,29 @@ module algorithms {
         right: number
     }
 
+    export function classicalTurningPoints(potential: number[], energy: number): TurningPoints {
+        const length = potential.length
+        let left, right
+        for (left = 0; left < length; left++) {
+            if (energy > potential[left]) {
+                break
+            }
+        }
+        for (right = length - 1; right >= left; right--) {
+            if (energy > potential[right]) {
+                break
+            }
+        }
+        // if we meet, it means the energy is above the potential: scattering state
+        // assume we have an infinite square well box in that case 
+        if (left > right) {
+            left = 0
+            right = length - 1
+        }
+        return { left: left, right: right }
+
+    }
+
     class UnresolvedWavefunction {
         valuesFromCenter: number[] = []
         valuesFromEdge: number[] = []
@@ -253,29 +276,6 @@ module algorithms {
         length(): number {
             assert(this.valuesFromCenter.length == this.valuesFromEdge.length, "Wavefunction does not have a consistent length")
             return this.valuesFromCenter.length
-        }
-
-        // suggest some turning points, based on the classical assumption that energy <= potential 
-        classicalTurningPoints(): TurningPoints {
-            const length = this.length()
-            let left, right
-            for (left = 0; left < length; left++) {
-                if (this.energy > this.potential[left]) {
-                    break
-                }
-            }
-            for (right = length - 1; right >= left; right--) {
-                if (this.energy > this.potential[right]) {
-                    break
-                }
-            }
-            // if we meet, it means the energy is above the potential: scattering state
-            // assume we have an infinite square well box in that case 
-            if (left > right) {
-                left = 0
-                right = length - 1
-            }
-            return { left: left, right: right }
         }
 
         // computes the discontinuity in the two derivatives at the given location
@@ -319,13 +319,13 @@ module algorithms {
             // compute discontinuities
             const leftDiscont = this.derivativeDiscontinuity(psi, left, dx, false)
             const rightDiscont = this.derivativeDiscontinuity(psi, right, dx, true)
-            
+
             let md = new WavefunctionMetadata(this.energy, left, right, leftDiscont, rightDiscont)
-            return new ResolvedWavefunction(psi.map((r:number) => new Complex(r, 0)), dx, md)
+            return new ResolvedWavefunction(psi.map((r: number) => new Complex(r, 0)), dx, md)
         }
 
         resolveAtClassicalTurningPoints(): ResolvedWavefunction {
-            return this.resolveAtTurningPoints(this.classicalTurningPoints())
+            return this.resolveAtTurningPoints(classicalTurningPoints(this.potential, this.energy))
         }
     }
 

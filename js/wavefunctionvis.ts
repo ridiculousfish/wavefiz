@@ -73,13 +73,21 @@ module visualizing {
                     let mag = Math.sqrt(psi.valueAt(index, time).magnitudeSquared())
                     return new Complex(mag, 0)
                 }
+                
+                // perform fourier transform only if necessary
+                let freqWavefunctionVal = null
+                let freqWavefunction = () => {
+                    if (freqWavefunctionVal == null) {
+                        freqWavefunctionVal = psi.fourierTransform(potentialMinimumIndex, .5)
+                    }
+                    return freqWavefunctionVal
+                }
 
-                let freqWavefunction = psi.fourierTransform(potentialMinimumIndex, .5)
                 this.phiVis_.valueAt = (index: number, time: number) => {
-                    return freqWavefunction.valueAt(index, time)
+                    return freqWavefunction().valueAt(index, time)
                 }
                 this.phiAbsVis_.valueAt = (index: number, time: number) => {
-                    let mag = Math.sqrt(freqWavefunction.valueAt(index, time).magnitudeSquared())
+                    let mag = Math.sqrt(freqWavefunction().valueAt(index, time).magnitudeSquared())
                     return new Complex(mag, 0)
                 }
             }
