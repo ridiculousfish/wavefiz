@@ -199,7 +199,7 @@ module visualizing {
             }
 
             const maxEnergy = this.params.height / this.params.yScale
-            const startingPoints = [3.0, 1.5, 2.0, 2.5, 1.0, 0.5]
+            const startingPoints = [0.5, 3.0, 1.5, 2.0, 2.5, 1.0, 0.5]
             const offset = 1.3
             for (let i = 0; i < startingPoints.length; i++) {
                 for (let proposal = startingPoints[i]; proposal < maxEnergy; proposal += offset) {
@@ -264,7 +264,7 @@ module visualizing {
             this.wavefunctionAvg_.setVisible(this.energyBars_.length > 0)
 
             {
-                document.getElementById("statusfield").textContent = ""
+                //document.getElementById("statusfield").textContent = ""
             }
 
             // update turning points based on maximum energy

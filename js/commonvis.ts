@@ -119,12 +119,12 @@ module visualizing {
         public height: number = 600
         public maxX: number = 20 // maximum X value
         public timescale: number = 1.0 / 3.0
-        public meshDivision: number = 1025 // how many points are in our mesh. Must be odd.
+        public meshDivision: number = 1024 // how many points are in our mesh. Must be power of 2 for our FFT.
         public psiScale: number = 250 // how much scale we visually apply to the wavefunction
 
         public showPsi = !false // show position psi(x)
         public showPsiAbs = false // show position probability |psi(x)|^2
-        public showPhi = false // show momentum phi(x)
+        public showPhi = !false // show momentum phi(x)
         public showPhiAbs = false // show momentum probability |phi(x)|^2
 
         public paused = false
@@ -171,6 +171,16 @@ module visualizing {
         }
     }
     
+    function timeThing(iters:number, funct: (() => void)) {
+        const start = new Date().getTime()
+        for (let iter=0; iter < iters; iter++) {
+            funct()
+        }
+        const end = new Date().getTime()
+        const duration = (end - start) / iters
+        return duration
+    } 
+    
     export function benchmark() {
         const params = new Parameters()
         
@@ -193,14 +203,17 @@ module visualizing {
             maxX: params.maxX
         }
         
-        const start = new Date().getTime()
+        let psi = algorithms.classicallyResolvedAveragedNumerov(input)
         const maxIter = 32
-        for (let iter=0; iter < maxIter; iter++) {
-            let psi = algorithms.classicallyResolvedAveragedNumerov(input)
+        let duration1 = timeThing(maxIter, () => {
+            let phi = psi.fourierTransformOptimized(center, .5)
+        })
+        
+        let duration2 = timeThing(maxIter, () => {
             let phi = psi.fourierTransform(center, .5)
-        }
-        const end = new Date().getTime()
-        const duration = (end - start) / maxIter
-        return duration.toFixed(2) + " ms"
+        })
+
+        
+        return duration1.toFixed(2) + " ms / " + duration2.toFixed(2) + " ms"
     }
 }

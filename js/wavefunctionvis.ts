@@ -75,10 +75,23 @@ module visualizing {
                 }
                 
                 // perform fourier transform only if necessary
-                let freqWavefunctionVal = null
+                let freqWavefunctionVal : algorithms.GeneralizedWavefunction = null
                 let freqWavefunction = () => {
                     if (freqWavefunctionVal == null) {
-                        freqWavefunctionVal = psi.fourierTransform(potentialMinimumIndex, .5)
+                        freqWavefunctionVal = psi.fourierTransformOptimized(potentialMinimumIndex, .5)
+                        //freqWavefunctionVal = psi.discreteFourierTransform(potentialMinimumIndex)
+                        
+                        let cmp : algorithms.GeneralizedWavefunction = psi.fourierTransform(potentialMinimumIndex, .5)
+                        let status = "Matches"
+                        for (let i=0; i < cmp.length; i++) {
+                            const v1 = freqWavefunctionVal.valueAt(i, 0)
+                            const v2 = cmp.valueAt(i, 0)
+                            if (Math.abs(v1.re - v2.re) > .01 || Math.abs(v1.im - v2.im) > .01) {
+                                status = "NO MATCH: " + i + ": " + v1.toString() + " vs " + v2.toString()
+                                break
+                            }
+                        }
+                        document.getElementById("statusfield").textContent = status
                     }
                     return freqWavefunctionVal
                 }

@@ -87,6 +87,12 @@ module algorithms {
         multiplied(rhs: Complex): Complex {
             return new Complex(this.re * rhs.re - this.im * rhs.im, this.re * rhs.im + this.im * rhs.re)
         }
+        
+        multiply(rhs:Complex) {
+            let real = this.re * rhs.re - this.im * rhs.im
+            this.im = this.re * rhs.im + this.im * rhs.re
+            this.re = real
+        }
 
         multipliedByReal(val: number): Complex {
             return new Complex(this.re * val, this.im * val)
@@ -112,6 +118,43 @@ module algorithms {
         const nEt = - energy * time
         return Complex.exponential(nEt)
     }
+        
+    function rotateArray(arr:Complex[], amt:number) : Complex[] {
+        const length = arr.length
+        let offset = amt
+        while (offset < 0) offset += length
+        while (offset >= length) offset -= length
+        let result = []
+        for (let i=0; i < length; i++) {
+            result.push(arr[(offset + i) % length])
+        }
+        return result
+    }
+    
+    function fourierTransform2(spaceValues: Complex[], center: number, dx: number, c: number): Complex[] {
+        const length = spaceValues.length
+        assert(length > 0 && center < length, "center out of bounds")
+        let freqValues = zerosComplex(length)
+        for (let arrayIdx = 0; arrayIdx < length; arrayIdx++) {
+            const p = arrayIdx
+            const k = p * dx
+            let phi = new Complex(0, 0)
+            for (let i = 0; i < length; i++) {
+                const spaceValue = spaceValues[i]
+                const x = i * dx
+                phi.addToSelf(Complex.exponential(-c * k * x).multiplied(spaceValue))
+            }
+            freqValues[arrayIdx] = phi
+        }
+        let multiplier = 1
+        multiplier *= dx // for integral
+        multiplier *= Math.sqrt(2 * Math.PI)
+        for (let arrayIdx = 0; arrayIdx < length; arrayIdx++) {
+            freqValues[(arrayIdx + center) % length] = freqValues[arrayIdx].multipliedByReal(multiplier)
+        }
+
+        return freqValues
+    }
 
     function fourierTransform(spaceValues: Complex[], center: number, dx: number, c: number): Complex[] {
         const length = spaceValues.length
@@ -126,9 +169,103 @@ module algorithms {
                 const x = (i - center) * dx
                 phi.addToSelf(Complex.exponential(-c * k * x).multiplied(spaceValue))
             }
-            phi = phi.multipliedByReal(dx) // for integral
-            phi = phi.dividedByReal(Math.sqrt(2 * Math.PI))
             freqValues[arrayIdx] = phi
+        }
+        let multiplier = 1
+        multiplier *= dx // for integral
+        multiplier *= Math.sqrt(2 * Math.PI)
+        for (let arrayIdx = 0; arrayIdx < length; arrayIdx++) {
+            freqValues[arrayIdx] = freqValues[arrayIdx].multipliedByReal(multiplier)
+        }
+
+        return freqValues
+    }
+    
+    function fourierTransformOptimized(spaceValues: Complex[], center: number, dx: number, c: number): Complex[] {
+        const length = spaceValues.length
+        assert(length > 0 && center < length, "center out of bounds")
+        let freqValues = zerosComplex(length)
+        let exponential = new Complex(0, 0)
+        for (let arrayIdx = 0; arrayIdx < length; arrayIdx++) {
+            // We are going to hold X constant and then run through the frequencie
+            // then for each successive frequency xi, we want to multiply by e^ -x * dx * c
+            // where dxi is the distance between successive values of xi
+            const x = (arrayIdx - center) * dx
+            // -x * dx * c is space between frequencies
+            const stepper = Complex.exponential(-x * dx * c)
+            const fx = spaceValues[arrayIdx].re
+            
+            // compute initial exponential
+            let startFreq = (0 - center) * dx * c
+            let exponential = Complex.exponential(-x * startFreq)
+            
+            for (let freqIndex = 0; freqIndex < length; freqIndex++) {
+                let freqValue = freqValues[freqIndex]
+                freqValue.re += fx * exponential.re
+                freqValue.im += fx * exponential.im
+                
+                let real = exponential.re * stepper.re - exponential.im * stepper.im
+                exponential.im = exponential.re * stepper.im + exponential.im * stepper.re
+                exponential.re = real
+            }
+        }
+        let multiplier = 1
+        multiplier *= dx // for integral
+        multiplier *= Math.sqrt(2 * Math.PI)
+        for (let arrayIdx = 0; arrayIdx < length; arrayIdx++) {
+            let fv = freqValues[arrayIdx]
+            fv.re *= multiplier
+            fv.im *= multiplier 
+        }
+
+        return freqValues
+    }
+
+    
+    function fourierTransformOptimized1(spaceValues: Complex[], center: number, dx: number, c: number): Complex[] {
+        const length = spaceValues.length
+        assert(length > 0 && center < length, "center out of bounds")
+        let freqValues = zerosComplex(length)
+        for (let arrayIdx = 0; arrayIdx < length; arrayIdx++) {
+            const p = arrayIdx - center
+            const k = p * dx
+            const negCK = -c * k
+            let phiReal = 0, phiIm = 0
+            for (let i = 0; i < length; i++) {
+                const spaceValue = spaceValues[i].re // derp
+                const x = (i - center) * dx
+                const exp = negCK * x
+                phiReal += spaceValue * Math.cos(exp)
+                phiIm += spaceValue * Math.sin(exp)
+            }
+            freqValues[arrayIdx].re = phiReal
+            freqValues[arrayIdx].im = phiIm
+        }
+        let multiplier = 1
+        multiplier *= dx // for integral
+        multiplier *= Math.sqrt(2 * Math.PI)
+        for (let arrayIdx = 0; arrayIdx < length; arrayIdx++) {
+            freqValues[arrayIdx] = freqValues[arrayIdx].multipliedByReal(multiplier)
+        }
+
+        return freqValues
+    }
+    
+    function discreteFourierTransform(spaceValues: Complex[], center: number): Complex[] {
+        const length = spaceValues.length
+        assert(length > 0 && center < length, "center out of bounds")
+        console.log("CENTER: " + spaceValues[center])
+        let freqValues = zerosComplex(length)
+        for (let arrayIdx = 0; arrayIdx < length; arrayIdx++) {
+            let Xk = new Complex(0, 0)
+            for (let n=0; n < length; n++) {
+                const xn = spaceValues[n]
+                const exponent = (-2.0 * Math.PI * arrayIdx * n) / length
+                let freqValue = Complex.exponential(exponent).multiplied(xn)
+                Xk.addToSelf(freqValue)
+            }
+            freqValues[(arrayIdx + center) % length] = Xk.multipliedByReal(1 / (1000 * length))
+            if (Xk.magnitudeSquared() > .01) console.log(arrayIdx + ": " + Xk.toString())
         }
         return freqValues
     }
@@ -142,6 +279,7 @@ module algorithms {
     }
 
     export class ResolvedWavefunction {
+        phaser = 0
         constructor(public values: Complex[],
             public dx: number,
             public md: WavefunctionMetadata) {
@@ -156,11 +294,18 @@ module algorithms {
         valueAt(x: number, time: number) {
             // e^(-iEt) -> cos(-eT) + i * sin(-Et)
             const nEt = - this.md.energy * time
-            return this.values[x].multiplied(Complex.exponential(nEt))
+            let ret = this.values[x].multiplied(Complex.exponential(nEt))
+            return ret.multiplied(Complex.exponential(this.phaser * x))
         }
 
         asGeneralized(): GeneralizedWavefunction {
             return new GeneralizedWavefunction([this])
+        }
+        
+        public discreteFourierTransform(center:number) : ResolvedWavefunction {
+            let freqValues = discreteFourierTransform(this.values, center)
+            normalizeComplex(freqValues, this.dx)
+            return new ResolvedWavefunction(freqValues, this.dx, this.md)            
         }
 
         fourierTransform(center: number, scale: number): ResolvedWavefunction {
@@ -168,6 +313,21 @@ module algorithms {
             normalizeComplex(freqValues, this.dx)
             return new ResolvedWavefunction(freqValues, this.dx, this.md)
         }
+        
+        fourierTransform2(center: number, scale: number): ResolvedWavefunction {
+            let freqValues = fourierTransform(this.values, 0, this.dx, scale)
+            normalizeComplex(freqValues, this.dx)
+            let ret = new ResolvedWavefunction(freqValues, this.dx, this.md)
+            ret.phaser = -Math.PI * scale * 2 * center * this.dx
+            return ret
+        }
+        
+        fourierTransformOptimized(center: number, scale: number): ResolvedWavefunction {
+            let freqValues = fourierTransformOptimized(this.values, center, this.dx, scale)
+            normalizeComplex(freqValues, this.dx)
+            return new ResolvedWavefunction(freqValues, this.dx, this.md)
+        }
+
     }
 
     // Represents a generalized solution to the Schrodinger equation as a sum of time-independent solutions
@@ -207,6 +367,17 @@ module algorithms {
             let fourierComps = this.components.map((comp) => comp.fourierTransform(center, scale))
             return new GeneralizedWavefunction(fourierComps)
         }
+        
+        public discreteFourierTransform(center:number) : GeneralizedWavefunction {
+            let fourierComps = this.components.map((comp) => comp.discreteFourierTransform(center))
+            return new GeneralizedWavefunction(fourierComps)
+        }
+        
+        public fourierTransformOptimized(center:number, scale:number) : GeneralizedWavefunction {
+            let fourierComps = this.components.map((comp) => comp.fourierTransformOptimized(center, scale))
+            return new GeneralizedWavefunction(fourierComps)
+        }
+
     }
 
     // Given two ResolvedWavefunction, computes an average weighted by the discontinuities in their derivatives
@@ -385,7 +556,6 @@ module algorithms {
         // and assume that the wavefunction takes on the same value in the two adjacent to the center
         const potential = input.potentialMesh
         const length = potential.length
-        assert(length % 2 == 1, "PotentialMesh does not have odd count")
         assert(length >= 3, "PotentialMesh is too small")
         const c = indexOfMinimum(potential) // minimum
 
