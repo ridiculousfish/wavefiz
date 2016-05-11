@@ -98,39 +98,39 @@ module algorithms {
         const length = spaceValues.length
         assert(length > 0 && center < length, "center out of bounds")
         let freqValues = zerosComplex(length)
+        let freqValuesRe = freqValues.res
+        let freqValuesIm = freqValues.ims
         let exponential = new Complex(0, 0)
         for (let arrayIdx = 0; arrayIdx < length; arrayIdx++) {
-            // We are going to hold X constant and then run through the frequencie
+            // We are going to hold X constant and then run through the frequencies
             // then for each successive frequency xi, we want to multiply by e^ -x * dx * c
             // where dxi is the distance between successive values of xi
             const x = (arrayIdx - center) * dx
             // -x * dx * c is space between frequencies
-            const stepper = Complex.exponential(-x * dx * c)
+            let stepper = Complex.exponential(-x * dx * c)
+            let stepperRe = stepper.re, stepperIm = stepper.im
             const fx = spaceValues.at(arrayIdx).re
             
             // compute initial exponential
             let startFreq = (0 - center) * dx * c
             let exponential = Complex.exponential(-x * startFreq)
+            let exponentialRe = exponential.re, exponentialIm = exponential.im
             
             for (let freqIndex = 0; freqIndex < length; freqIndex++) {
-                let freqValue = freqValues.at(freqIndex)
-                freqValue.re += fx * exponential.re
-                freqValue.im += fx * exponential.im
-                freqValues.set(freqIndex, freqValue)
+                freqValuesRe[freqIndex] += fx * exponentialRe
+                freqValuesIm[freqIndex] += fx * exponentialIm
                 
-                let real = exponential.re * stepper.re - exponential.im * stepper.im
-                exponential.im = exponential.re * stepper.im + exponential.im * stepper.re
-                exponential.re = real
+                let real = exponentialRe * stepperRe - exponentialIm * stepperIm
+                exponentialIm = exponentialRe * stepperIm + exponentialIm * stepperRe
+                exponentialRe = real
             }
         }
         let multiplier = 1
         multiplier *= dx // for integral
         multiplier *= Math.sqrt(2 * Math.PI)
         for (let arrayIdx = 0; arrayIdx < length; arrayIdx++) {
-            let fv = freqValues.at(arrayIdx)
-            fv.re *= multiplier
-            fv.im *= multiplier 
-            freqValues.set(arrayIdx, fv)
+            freqValuesRe[arrayIdx] *= multiplier
+            freqValuesIm[arrayIdx] *= multiplier 
         }
 
         return freqValues
