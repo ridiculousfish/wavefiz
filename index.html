@@ -7,10 +7,8 @@
             padding: 10px;
         }
         .options {
-            font-size: 15pt;
-        }
-        .options sup {
-            font-size: 10pt;
+            margin-top: 20px;
+            font-family: Times, serif;
         }
         .options input {
             display: inline-block;
@@ -30,13 +28,37 @@
             cursor: pointer;
             vertical-align: middle;
             display: inline-block;
-            font-size: 24pt;
+            font-size: 28pt;
             border-radius: 8px;
             color: #555;
             width: 45px;
             text-align: center;
             border: solid 2px #333;
             background-color: white;
+            white-space: nowrap;
+            line-height: 38px;
+        }
+        .options sup {
+            font-size: 0.45em;
+            vertical-align: super;
+            line-height: 0;
+        }
+        .playpause {
+            position: relative;
+            top: 5px;
+            left: 2px;
+            font-size: 28pt;
+        }
+        .square_button > span {
+            position: relative;
+            bottom: 1px;
+            left: 1px;
+            font-weight: bold;
+            line-height: 38px;
+            color: #242424;
+        }
+        .square_button {
+            padding: 2px 6px 3px 6px;
         }
         .square_button:active {
             background-color: #999;
@@ -110,24 +132,17 @@
             position: relative;
             bottom: 11px;
         }
-        
-        .square_button > label {
-            position: relative;
-            bottom: 1px;
-            left: 1px;
-            color: #222;
-        }
-        
+                
         #rotator {
             display: block;
             border-radius: 50%;
             background: linear-gradient(to bottom, rgba(219,219,219,1) 0%, rgba(74,74,74,1) 100%);
             border: solid 2px #AAA;
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             position: relative;
             left: 750px;
-            bottom: 10px;
+            bottom: 6px;
             margin-bottom: -75px;               
         }
         #rotator_knob {
@@ -160,9 +175,9 @@
                     </div>
                 </div>
                 <!-- Add/Remove buttons -->
-                <div style="position: absolute; bottom: -55px; left: 5px;">
-                    <button class="square_button" onClick="addEnergySlider()"><label>+</label></button>
-                    <button class="square_button" onClick="removeEnergySlider()"><label>-</label></button>
+                <div style="position: absolute; bottom: -63px; left: 5px;">
+                    <button class="square_button" onClick="addEnergySlider()"><span>+</span></button>
+                    <button class="square_button" onClick="removeEnergySlider()"><span>-</span></button>
                 </div>
             </div>
         </div>
@@ -170,13 +185,12 @@
     <div id="rotator" class="noselect">
         <div id="rotator_knob"></div>
     </div>
-    <p class="options">
+    <p class="options noselect">
         <input type="checkbox" id="check_psi" name="psi" onClick="togglePsi(this)" checked><label for="check_psi"><i>&psi;</i></label>
         <input type="checkbox" id="check_psiAbs" name="psiAbs" onClick="togglePsiAbs(this)"><label for="check_psiAbs">|<i>&psi;</i>|<sup>2</sup></label>
         <input type="checkbox" id="check_phi" name="phi" onClick="togglePhi(this)" checked><label for="check_phi"><i>&phi;</i></label>
         <input type="checkbox" id="check_phiAbs" name="phiAbs" onClick="togglePhiAbs(this)"><label for="check_phiAbs">|<i>&phi;</i>|<sup>2</sup></label>
-        
-        <input type="checkbox" id="check_paused" name="paused" onClick="togglePaused(this)"><label for="check_paused"><span style="position: relative; top: 4px; left: 3px;">&#x25B6;&#xFE0E;<!-- FE0E prevents emoji --></span></label>
+        <input type="checkbox" id="check_paused" name="paused" onClick="togglePaused(this)"><label for="check_paused"><span class="playpause">&#x25B6;&#xFE0E;<!-- FE0E prevents emoji --></span></label>
     </p>
     <span id="statusfield"></span>
     <script type="text/javascript" src="js/three.min.js"></script>
