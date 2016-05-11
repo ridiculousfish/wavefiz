@@ -7,7 +7,7 @@ module visualizing {
     export import Vector3 = THREE.Vector3
     export import Complex = algorithms.Complex
     
-    export function vector3(x:number, y:number, z:number) : THREE.Vector3 {
+    export function vector3(x:number, y:number, z:number): THREE.Vector3 {
         return new THREE.Vector3(x, y, z)
     }
 
@@ -42,7 +42,7 @@ module visualizing {
         }
 
         schedule(client: AnimatorClient) {
-            if (this.clients_.length == 0 && !this.paused()) {
+            if (this.clients_.length === 0 && !this.paused()) {
                 window.requestAnimationFrame(() => this.fireClients())
             }
             this.clients_.push(client)

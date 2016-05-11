@@ -95,7 +95,7 @@ module visualizing {
                 })
                 tp.update((i: number) => vector3(this.params.width / 2, i * this.params.height, 0))
                 this.topGroup_.add(tp.line)
-                if (j == 0) {
+                if (j === 0) {
                     this.leftTurningPoint_ = tp
                 } else {
                     this.rightTurningPoint_ = tp
@@ -110,7 +110,7 @@ module visualizing {
                 // compute a new wavefunction
                 const energy = this.params.convertYFromVisualCoordinate(position)
                 this.energyBars_.forEach((bar: EnergyBar) => {
-                    if (bar.slider == slider) {
+                    if (bar.slider === slider) {
                         bar.setPositionAndEnergy(position, energy)
                     }
                 })
@@ -224,7 +224,7 @@ module visualizing {
 
         public removeEnergySlider() {
             // remove the last added one
-            if (this.energyBars_.length == 0) {
+            if (this.energyBars_.length === 0) {
                 return
             }
             const bar = this.energyBars_.pop()
@@ -242,7 +242,7 @@ module visualizing {
         }
 
         private computeAndShowWavefunctions() {
-            if (this.state.potential.length == 0) {
+            if (this.state.potential.length === 0) {
                 return
             }
             
@@ -264,12 +264,12 @@ module visualizing {
             this.wavefunctionAvg_.setVisible(this.energyBars_.length > 0)
 
             {
-                //document.getElementById("statusfield").textContent = ""
+                // document.getElementById("statusfield").textContent = ""
             }
 
             // update turning points based on maximum energy
             let maxEnergy = 0
-            this.energyBars_.map((eb:EnergyBar) => maxEnergy = Math.max(maxEnergy, eb.energy))
+            this.energyBars_.map((eb: EnergyBar) => maxEnergy = Math.max(maxEnergy, eb.energy))
             const maxTurningPoints = algorithms.classicalTurningPoints(this.state.potential, maxEnergy)
 
             const leftV = this.params.convertXToVisualCoordinate(maxTurningPoints.left)
@@ -313,7 +313,7 @@ module visualizing {
             this.render()
         }
         
-        loadFrom(f: ((x:number, xfrac?:number) => number)) {
+        loadFrom(f: ((x: number, xfrac?: number) => number)) {
             let mesh = buildPotential(this.params, f)
             this.potential_.setPotential(mesh)
         }

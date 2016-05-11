@@ -43,7 +43,7 @@ module visualizing {
     
     export class EnergyVisualizer {
         // Function property. Given a position, returns the value
-        public positionUpdated : (slider:EnergySlider, position:number) => number
+        public positionUpdated: (slider:EnergySlider, position:number) => number
         
         sliders: EnergySlider[] = []
         private draggedSlider: EnergySlider = null
@@ -60,7 +60,7 @@ module visualizing {
             document.addEventListener('mouseup', () => this.stopDragging())
         }
         
-        public addSlider(position, value) : EnergySlider {
+        public addSlider(position, value): EnergySlider {
             const sliderElem = this.sliderPrototype.cloneNode(true) as HTMLElement
             const slider = new EnergySlider(sliderElem, position, value)
             this.sliders.push(slider)
@@ -88,7 +88,7 @@ module visualizing {
             slider.element.onmousedown = null
         }
         
-        private getY(evt:MouseEvent) : number {
+        private getY(evt:MouseEvent): number {
             return evt.pageY - this.container.offsetTop
         }
         

@@ -31,14 +31,14 @@ module visualizing {
                 depthTest: false
             }
             const phiMaterial = {
-                color: 0x0077FF,//this.color,
+                color: 0x0077FF, // this.color,
                 linewidth: 5,
                 transparent: true,
                 opacity: .75,
                 depthTest: false
             }
             const phiAbsMaterial = {
-                color: 0x0077FF,//this.color,
+                color: 0x0077FF, // this.color,
                 linewidth: 8,
                 transparent: true,
                 opacity: .75,
@@ -65,7 +65,7 @@ module visualizing {
                 this.phiAbsVis_.valueAt = null
                 return
             } else {
-                assert(psi.length == this.params.meshDivision, "Wavefunction has wrong length")
+                assert(psi.length === this.params.meshDivision, "Wavefunction has wrong length")
                 this.psiVis_.valueAt = (index: number, time: number) => {
                     return psi.valueAt(index, time)
                 }
@@ -75,13 +75,13 @@ module visualizing {
                 }
                 
                 // perform fourier transform only if necessary
-                let freqWavefunctionVal : algorithms.GeneralizedWavefunction = null
+                let freqWavefunctionVal: algorithms.GeneralizedWavefunction = null
                 let freqWavefunction = () => {
                     if (freqWavefunctionVal == null) {
                         freqWavefunctionVal = psi.fourierTransformOptimized(potentialMinimumIndex, .5)
-                        //freqWavefunctionVal = psi.discreteFourierTransform(potentialMinimumIndex)
+                        // freqWavefunctionVal = psi.discreteFourierTransform(potentialMinimumIndex)
                         
-                        let cmp : algorithms.GeneralizedWavefunction = psi.fourierTransform(potentialMinimumIndex, .5)
+                        let cmp: algorithms.GeneralizedWavefunction = psi.fourierTransform(potentialMinimumIndex, .5)
                         let status = "Matches"
                         for (let i=0; i < cmp.length; i++) {
                             const v1 = freqWavefunctionVal.valueAt(i, 0)
