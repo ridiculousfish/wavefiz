@@ -100,21 +100,24 @@ module algorithms {
         let freqValues = zerosComplex(length)
         let freqValuesRe = freqValues.res
         let freqValuesIm = freqValues.ims
-        let exponential = new Complex(0, 0)
+        const spaceValuesRe = spaceValues.res
+        const spaceValuesIm = spaceValues.im
+        
         for (let arrayIdx = 0; arrayIdx < length; arrayIdx++) {
             // We are going to hold X constant and then run through the frequencies
             // then for each successive frequency xi, we want to multiply by e^ -x * dx * c
             // where dxi is the distance between successive values of xi
             const x = (arrayIdx - center) * dx
             // -x * dx * c is space between frequencies
-            let stepper = Complex.exponential(-x * dx * c)
-            let stepperRe = stepper.re, stepperIm = stepper.im
-            const fx = spaceValues.at(arrayIdx).re
+            let stepperPower = -x * dx * c
+            let stepperRe = Math.cos(stepperPower), stepperIm = Math.sin(stepperPower)
+            const fx = spaceValuesRe[arrayIdx]
             
             // compute initial exponential
             let startFreq = (0 - center) * dx * c
-            let exponential = Complex.exponential(-x * startFreq)
-            let exponentialRe = exponential.re, exponentialIm = exponential.im
+            let power = -x * startFreq
+            let exponentialRe = Math.cos(power)
+            let exponentialIm = Math.sin(power)
             
             for (let freqIndex = 0; freqIndex < length; freqIndex++) {
                 freqValuesRe[freqIndex] += fx * exponentialRe

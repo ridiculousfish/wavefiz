@@ -5,6 +5,7 @@
 </head>
 <body>
     <button onClick="runBenchmark();">Benchmark</button>
+    <button onClick="runForProfiling();">Run For Profiling</button>
     <pre id="results"></pre>
     <script type="text/javascript" src="js/three.min.js"></script>
     <script type="text/javascript" src="js/ui.js"></script>
@@ -20,6 +21,10 @@
         function runBenchmark() {
             document.getElementById("results").textContent += visualizing.benchmark() + "\n"
         }
+        function runForProfiling() {
+            document.getElementById("results").textContent += visualizing.runForProfiling() + "\n"
+        }
+
      </script>
 </body>
 </html>

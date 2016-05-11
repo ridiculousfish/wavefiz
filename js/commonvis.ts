@@ -181,7 +181,7 @@ module visualizing {
         return duration
     } 
     
-    export function benchmark() {
+    function benchmarkImpl(forProfiling: boolean):string {
         const params = new Parameters()
         
         // SHO-type potential
@@ -204,16 +204,27 @@ module visualizing {
         }
         
         let psi = algorithms.classicallyResolvedAveragedNumerov(input)
-        const maxIter = 32
+        const maxIter = forProfiling ? 1024 : 32
         let duration1 = timeThing(maxIter, () => {
             let phi = psi.fourierTransformOptimized(center, .5)
         })
         
-        let duration2 = timeThing(maxIter, () => {
-            let phi = psi.fourierTransform(center, .5)
-        })
+        let text = duration1.toFixed(2) + " ms"
+        if (!forProfiling) {
+            let duration2 = timeThing(maxIter, () => {
+                let phi = psi.fourierTransform(center, .5)
+            })
+            text += "/ " + duration2.toFixed(2) + " ms"
+        }
 
-        
-        return duration1.toFixed(2) + " ms / " + duration2.toFixed(2) + " ms"
+        return text 
+    }
+    
+    export function benchmark(): string {
+        return benchmarkImpl(false)
+    }
+    
+    export function runForProfiling(): string {
+        return benchmarkImpl(true)
     }
 }
