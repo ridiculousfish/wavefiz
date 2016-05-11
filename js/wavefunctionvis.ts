@@ -70,7 +70,7 @@ module visualizing {
                     return psi.valueAt(index, time)
                 }
                 this.psiAbsVis_.valueAt = (index: number, time: number) => {
-                    let mag = Math.sqrt(psi.valueAt(index, time).magnitudeSquared())
+                    let mag = psi.valueAt(index, time).magnitudeSquared()
                     return new Complex(mag, 0)
                 }
                 
@@ -103,7 +103,7 @@ module visualizing {
                     return freqWavefunction().valueAt(index, time)
                 }
                 this.phiAbsVis_.valueAt = (index: number, time: number) => {
-                    let mag = Math.sqrt(freqWavefunction().valueAt(index, time).magnitudeSquared())
+                    let mag = freqWavefunction().valueAt(index, time).magnitudeSquared()
                     return new Complex(mag, 0)
                 }
             }

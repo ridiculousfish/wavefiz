@@ -23,17 +23,24 @@
            display: none;
         }
         .options label {
+            margin-left: 30px;
+            padding: 0px 8px 5px 8px;            
+        }
+        .options label, .square_button {
             cursor: pointer;
             vertical-align: middle;
             display: inline-block;
             font-size: 24pt;
-            margin-left: 30px;
-            padding: 0px 8px 5px 8px;
             border-radius: 8px;
             color: #555;
             width: 45px;
             text-align: center;
             border: solid 2px #333;
+            background-color: white;
+        }
+        .square_button:active {
+            background-color: #999;
+            color: black;
         }
         .options input[type="checkbox"]:checked + label {
             background-color: #333;
@@ -83,8 +90,8 @@
         .energy_dragger .grip {
             border-top-right-radius: 5px;
             border-bottom-right-radius: 5px;
-            width: 20px;
-            height: 21px;
+            width: 40px;
+            height: 42px;
             background-image: linear-gradient(180deg, #AAA 80%, black);
             background-size:100% 6px;
             background-position: 0 5px;
@@ -104,22 +111,11 @@
             bottom: 11px;
         }
         
-        .square_button {
-            border: 1px solid #CCC;
-            background-color: #DDD;
-            width: 25px;
-            height: 25px;
-            padding: 0;
-            display: inline-block;
-        }
-        .square_button > div {
-            text-align: center;
-            font-size: 16pt;
-            font-family: Georgia, 'Times New Roman', Times, serif;
-            font-weight: bold;
+        .square_button > label {
             position: relative;
             bottom: 1px;
             left: 1px;
+            color: #222;
         }
         
         #rotator {
@@ -164,9 +160,9 @@
                     </div>
                 </div>
                 <!-- Add/Remove buttons -->
-                <div style="position: absolute; bottom: -45px; left: 5px;">
-                    <button class="square_button" onClick="addEnergySlider()"><div>+</div></button>
-                    <button class="square_button" onClick="removeEnergySlider()"><div>-</div></button>
+                <div style="position: absolute; bottom: -55px; left: 5px;">
+                    <button class="square_button" onClick="addEnergySlider()"><label>+</label></button>
+                    <button class="square_button" onClick="removeEnergySlider()"><label>-</label></button>
                 </div>
             </div>
         </div>
@@ -179,8 +175,8 @@
         <input type="checkbox" id="check_psiAbs" name="psiAbs" onClick="togglePsiAbs(this)"><label for="check_psiAbs">|<i>&psi;</i>|<sup>2</sup></label>
         <input type="checkbox" id="check_phi" name="phi" onClick="togglePhi(this)" checked><label for="check_phi"><i>&phi;</i></label>
         <input type="checkbox" id="check_phiAbs" name="phiAbs" onClick="togglePhiAbs(this)"><label for="check_phiAbs">|<i>&phi;</i>|<sup>2</sup></label>
-
-        <input type="checkbox" id="check_paused" name="paused" onClick="togglePaused(this)"><label for="check_paused"><span style="position: relative; top: 3px; left: 1px;">&#x25B6;</span></label>
+        
+        <input type="checkbox" id="check_paused" name="paused" onClick="togglePaused(this)"><label for="check_paused"><span style="position: relative; top: 4px; left: 3px;">&#x25B6;&#xFE0E;<!-- FE0E prevents emoji --></span></label>
     </p>
     <span id="statusfield"></span>
     <script type="text/javascript" src="js/three.min.js"></script>

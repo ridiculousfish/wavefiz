@@ -101,7 +101,7 @@ module algorithms {
         let freqValuesRe = freqValues.res
         let freqValuesIm = freqValues.ims
         const spaceValuesRe = spaceValues.res
-        const spaceValuesIm = spaceValues.im
+        const spaceValuesIm = spaceValues.ims
         
         for (let arrayIdx = 0; arrayIdx < length; arrayIdx++) {
             // We are going to hold X constant and then run through the frequencies

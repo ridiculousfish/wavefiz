@@ -13,10 +13,16 @@ module ui {
         let rotation = 0
         let lastX = -1, lastY = -1
         
-        const moveHandler = (evt:MouseEvent) => {
+        const moveHandler = (evt:MouseEvent|TouchEvent) => {
           if (dragging) {
-              const x = evt.pageX - rotator.offsetLeft - rotator.offsetWidth/2
-              const y = evt.pageY - rotator.offsetTop - rotator.offsetHeight/2
+              let touchOrMouseEvent : any
+              if ((evt as any).targetTouches) {
+                  touchOrMouseEvent = (evt as any).targetTouches[0]
+              } else {
+                  touchOrMouseEvent = evt
+              }
+              const x = touchOrMouseEvent.pageX - rotator.offsetLeft - rotator.offsetWidth/2
+              const y = touchOrMouseEvent.pageY - rotator.offsetTop - rotator.offsetHeight/2
               
               // x is positive east, negative west
               // y is positive north, negative south
@@ -47,20 +53,29 @@ module ui {
           }
         }
         
-        rotator.addEventListener('mousedown', () => {
+        let startRotateHandler = () => {
             if (! dragging) {
                 dragging = true
                 document.body.classList.add("noselect")
                 document.addEventListener('mousemove', moveHandler)
+                document.addEventListener('touchmove', moveHandler)
             }    
-        })
-         
-        document.addEventListener("mouseup", () => {
+        }
+        
+        let stopRotateHandler = () => {
             if (dragging) {
                 dragging = false
                 document.removeEventListener('mousemove', moveHandler)
+                document.removeEventListener('touchmove', moveHandler)
                 document.body.classList.remove("noselect")
             }
-        })
+        }
+        
+        rotator.addEventListener('mousedown', startRotateHandler)
+        rotator.addEventListener('touchstart', startRotateHandler)
+         
+        document.addEventListener("mouseup", stopRotateHandler)
+        rotator.addEventListener("touchend", stopRotateHandler)
+        rotator.addEventListener("touchcancel", stopRotateHandler)
     }
 }    

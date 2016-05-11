@@ -124,7 +124,7 @@ module visualizing {
 
         public showPsi = !false // show position psi(x)
         public showPsiAbs = false // show position probability |psi(x)|^2
-        public showPhi = !false // show momentum phi(x)
+        public showPhi = false // show momentum phi(x)
         public showPhiAbs = false // show momentum probability |phi(x)|^2
 
         public paused = false

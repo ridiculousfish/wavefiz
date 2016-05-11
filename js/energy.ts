@@ -8,6 +8,10 @@ module visualizing {
         }
     }
     
+    function isTouchEvent(evt:MouseEvent|TouchEvent) {
+        return !! ((evt as TouchEvent).targetTouches) 
+    }
+    
     export class EnergyBar {
         public line: VisLine
         public wavefunction: algorithms.ResolvedWavefunction = null
@@ -82,17 +86,32 @@ module visualizing {
         
         private beginWatching(slider:EnergySlider) {
             slider.element.onmousedown = (evt:MouseEvent) => this.startDragging(slider, evt)
+            slider.element.ontouchstart = (evt:TouchEvent) => this.startDragging(slider, evt)
+            slider.element.ontouchmove = (evt:TouchEvent) => this.tryDrag(evt)
+            slider.element.ontouchend = () => this.stopDragging()
+            slider.element.ontouchcancel = () => this.stopDragging()
         }
         
         private endWatching(slider:EnergySlider) {
             slider.element.onmousedown = null
+            slider.element.ontouchstart = null
+            slider.element.ontouchmove = null
+            slider.element.ontouchend = null
+            slider.element.ontouchcancel = null
         }
         
-        private getY(evt:MouseEvent): number {
-            return evt.pageY - this.container.offsetTop
+        private getY(evt:MouseEvent|TouchEvent): number {
+            if ((evt as TouchEvent).targetTouches) {
+                // Touch event
+                return (evt as TouchEvent).targetTouches[0].pageY - this.container.offsetTop
+            } else {
+                // Mouse event
+                return (evt as MouseEvent).pageY - this.container.offsetTop
+            }
+            
         }
         
-        private startDragging(slider:EnergySlider, evt:MouseEvent) {
+        private startDragging(slider:EnergySlider, evt:MouseEvent|TouchEvent) {
             assert(slider != null)
             this.draggedSlider = slider
             this.lastY = this.getY(evt)
@@ -106,7 +125,7 @@ module visualizing {
             this.container.style.cursor = "default"
         }
         
-        private tryDrag(evt:MouseEvent) {
+        private tryDrag(evt:MouseEvent|TouchEvent) {
             const slider = this.draggedSlider
             if (slider != null) {
                 const y = this.getY(evt)
