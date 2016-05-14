@@ -90,6 +90,43 @@ module visualizing {
             this.rerender_()
         }
     }
+    
+    export let USE_POINTS = true
+
+    export class VisLine2 {
+        public positions: Float32Array
+        public geometry = new THREE.Geometry()
+        public particles: THREE.Points
+        
+        constructor(public length:number, material:any) {
+            for (let i=0; i < length; i++) {
+                this.geometry.vertices.push(new THREE.Vector3(0, 0, 0))
+            }
+            material["size"] = 8.0
+            this.particles = new THREE.Points( this.geometry, new THREE.PointCloudMaterial(material) );
+        }
+        
+        public update(cb: (index:number) => THREE.Vector3) {
+            
+            for (let i = 0; i < this.length; i++) {
+                let vec = cb(i);
+                (this.particles.geometry as any).vertices[i].set(vec.x, vec.y, vec.z)
+            };
+            (this.particles.geometry as any).verticesNeedUpdate = true
+        }
+        
+        setVisible(flag:boolean) {
+            this.particles.visible = flag
+        }
+        
+        public removeFromGroup(group:THREE.Group) {
+            group.remove(this.particles)
+        }
+        
+        public addToGroup(group:THREE.Group) {
+            group.add(this.particles)
+        }
+    }
 
     export class VisLine {
         public vertices: THREE.Vector3[] = []
@@ -136,6 +173,14 @@ module visualizing {
         
         setVisible(flag:boolean) {
             this.mesh.visible = flag
+        }
+        
+        public addToGroup(group:THREE.Group) {
+            group.add(this.mesh)
+        }
+
+        public removeFromGroup(group:THREE.Group) {
+            group.remove(this.mesh)
         }
     }
 

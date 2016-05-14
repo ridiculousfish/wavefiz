@@ -143,8 +143,8 @@ module visualizing {
 
         public addToGroup(group: THREE.Group) {
             group.add(this.background_)
-            group.add(this.potentialLine_.mesh)
-            group.add(this.dragLine_.mesh)
+            this.potentialLine_.addToGroup(group)
+            this.dragLine_.addToGroup(group)
         }
 
         public setPotential(potentialMesh: number[]) {

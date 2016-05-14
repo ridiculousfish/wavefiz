@@ -94,7 +94,7 @@ module visualizing {
                     opacity: .5
                 })
                 tp.update((i: number) => vector3(this.params.width / 2, i * this.params.height, 0))
-                this.topGroup_.add(tp.mesh)
+                tp.addToGroup(this.topGroup_)
                 if (j === 0) {
                     this.leftTurningPoint_ = tp
                 } else {
@@ -218,7 +218,7 @@ module visualizing {
             const bar = new EnergyBar(slider, energy, this.params)
             this.energyBars_.push(bar)
             bar.setPositionAndEnergy(position, energy) // hack, we shouldn't need to do this
-            this.topGroup_.add(bar.line.mesh)
+            bar.line.addToGroup(this.topGroup_)
             this.computeAndShowWavefunctions()
         }
 
@@ -228,7 +228,7 @@ module visualizing {
                 return
             }
             const bar = this.energyBars_.pop()
-            this.topGroup_.remove(bar.line.mesh)
+            bar.line.removeFromGroup(this.topGroup_)
             this.energyVisualizer_.removeSlider(bar.slider)
             this.computeAndShowWavefunctions()
         }

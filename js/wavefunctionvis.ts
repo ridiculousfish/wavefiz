@@ -166,7 +166,7 @@ module visualizing {
                 this.phiGraph_,
                 this.phiAbsGraph_,
                 this.psiBaseline_].forEach((vl: VisLine) => {
-                    this.group_.add(vl.mesh)
+                    vl.addToGroup(this.group_)
                 })
             this.group_.position.y = yOffset
             parentGroup.add(this.group_)
