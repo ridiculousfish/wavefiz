@@ -99,7 +99,7 @@ module visualizing {
 
         private redrawDragLine() {
             const hasPoints = this.dragLocations_.length > 0
-            this.dragLine_.line.visible = hasPoints
+            this.dragLine_.setVisible(hasPoints)
             if (hasPoints) {
                 this.dragLine_.update((i: number) => {
                     return this.dragLocations_[Math.min(i, this.dragLocations_.length - 1)]
@@ -143,8 +143,8 @@ module visualizing {
 
         public addToGroup(group: THREE.Group) {
             group.add(this.background_)
-            group.add(this.potentialLine_.line)
-            group.add(this.dragLine_.line)
+            group.add(this.potentialLine_.mesh)
+            group.add(this.dragLine_.mesh)
         }
 
         public setPotential(potentialMesh: number[]) {

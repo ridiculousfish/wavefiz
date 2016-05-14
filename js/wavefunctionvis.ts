@@ -133,17 +133,16 @@ module visualizing {
             }
 
             let updateVisualizable = (vis: Visualizable, visLine: VisLine, show: boolean) => {
-                visLine.line.visible = show
+                visLine.setVisible(show)
                 if (show) {
                     const psiScale = this.params.psiScale
-                    for (let index = 0; index < this.params.meshDivision; index++) {
+                    visLine.update((index:number) => {
                         const x = this.params.centerForMeshIndex(index)
                         const yz = vis.valueAt(index, time)
                         const y = -cleanValue(psiScale * yz.re)
                         const z = cleanValue(psiScale * yz.im)
-                        visLine.geometry.vertices[index] = new THREE.Vector3(x, y, z)
-                    }
-                    visLine.geometry.verticesNeedUpdate = true
+                        return new THREE.Vector3(x, y, z)
+                    })
                 }
             }
 
@@ -167,7 +166,7 @@ module visualizing {
                 this.phiGraph_,
                 this.phiAbsGraph_,
                 this.psiBaseline_].forEach((vl: VisLine) => {
-                    this.group_.add(vl.line)
+                    this.group_.add(vl.mesh)
                 })
             this.group_.position.y = yOffset
             parentGroup.add(this.group_)

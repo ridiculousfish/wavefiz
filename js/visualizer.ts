@@ -51,7 +51,7 @@ module visualizing {
             // Animator
             this.animator_ = new Animator(this.params, () => this.render())
 
-            let renderer = new THREE.WebGLRenderer({ antialias: true })
+            let renderer = new THREE.WebGLRenderer({ antialias: false })
             renderer.setClearColor(0x222222, 1)
             renderer.setSize(container.offsetWidth, container.offsetHeight)
             this.renderer_ = renderer
@@ -94,7 +94,7 @@ module visualizing {
                     opacity: .5
                 })
                 tp.update((i: number) => vector3(this.params.width / 2, i * this.params.height, 0))
-                this.topGroup_.add(tp.line)
+                this.topGroup_.add(tp.mesh)
                 if (j === 0) {
                     this.leftTurningPoint_ = tp
                 } else {
@@ -218,7 +218,7 @@ module visualizing {
             const bar = new EnergyBar(slider, energy, this.params)
             this.energyBars_.push(bar)
             bar.setPositionAndEnergy(position, energy) // hack, we shouldn't need to do this
-            this.topGroup_.add(bar.line.line)
+            this.topGroup_.add(bar.line.mesh)
             this.computeAndShowWavefunctions()
         }
 
@@ -228,7 +228,7 @@ module visualizing {
                 return
             }
             const bar = this.energyBars_.pop()
-            this.topGroup_.remove(bar.line.line)
+            this.topGroup_.remove(bar.line.mesh)
             this.energyVisualizer_.removeSlider(bar.slider)
             this.computeAndShowWavefunctions()
         }

@@ -92,23 +92,50 @@ module visualizing {
     }
 
     export class VisLine {
-        public geometry: THREE.Geometry
-        public line: THREE.Line
-        constructor(public length: number, material: THREE.LineBasicMaterialParameters) {
-            this.geometry = new THREE.Geometry()
+        public vertices: THREE.Vector3[] = []
+        public mesh: THREE.Mesh
+        public lineWidth: number
+        
+        constructor(public length: number, material: any) {
             const zero = new THREE.Vector3(0, 0, 0)
             for (let i = 0; i < length; i++) {
-                this.geometry.vertices.push(zero)
-            };
-            (this.geometry as any).dynamic = true
-            this.line = new THREE.Line(this.geometry, new THREE.LineBasicMaterial(material))
+                this.vertices.push(zero)
+            }
+            this.lineWidth = material["linewidth"]
+            this.mesh = new THREE.Mesh(this.makeGeometry() as any, new THREE.MeshBasicMaterial(material))
+        }
+        
+        makeGeometry() : THREE.TubeGeometry {
+            let curve = new THREE.CatmullRomCurve3(this.vertices)
+            let geometry = new THREE.TubeGeometry(
+                curve as any,
+                this.length, // segments
+                this.lineWidth, // radius
+                3, // radius segments
+                false // closed
+            );
+            (geometry as any).dynamic = true
+            return geometry
         }
 
-        public update(cb: (index) => THREE.Vector3) {
+        public update(cb: (index:number) => THREE.Vector3) {
+            
             for (let i = 0; i < this.length; i++) {
-                this.geometry.vertices[i] = cb(i)
+                this.vertices[i] = cb(i)
             }
-            this.geometry.verticesNeedUpdate = true
+            
+            let geometry = this.makeGeometry()
+            let length = geometry.vertices.length
+            let meshGeometry = this.mesh.geometry as any 
+            for (let i=0; i < length; i++) {
+                let geoVert = geometry.vertices[i]
+                meshGeometry.vertices[i].set(geoVert.x, geoVert.y, geoVert.z)
+            }
+            meshGeometry.verticesNeedUpdate = true
+        }
+        
+        setVisible(flag:boolean) {
+            this.mesh.visible = flag
         }
     }
 
@@ -119,7 +146,7 @@ module visualizing {
         public height: number = 600
         public maxX: number = 20 // maximum X value
         public timescale: number = 1.0 / 3.0
-        public meshDivision: number = 1024 // how many points are in our mesh. Must be power of 2 for our FFT.
+        public meshDivision: number = 800 // how many points are in our mesh
         public psiScale: number = 250 // how much scale we visually apply to the wavefunction
 
         public showPsi = !false // show position psi(x)
