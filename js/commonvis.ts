@@ -281,7 +281,7 @@ module visualizing {
             }
         `,
         
-        vertexCode:
+        vertexCodeOld:
         `
             attribute float direction;
             uniform float thickness;
@@ -294,6 +294,47 @@ module visualizing {
                 gl_Position = projectionMatrix *
                             modelViewMatrix *
                             vec4(directedPosition,1.0);
+            }
+        `,
+        
+        vertexCode:
+        `
+            attribute float direction;
+            uniform float thickness;
+            attribute vec3 next;
+            attribute vec3 prev;
+            
+            
+            void main() {
+                float aspect = 1.0;
+                vec2 aspectVec = vec2(aspect, 1.0);
+                //mat4 projViewModel = projection * view * model;
+                mat4 projViewModel = projectionMatrix * modelViewMatrix;
+                vec4 previousProjected = projViewModel * vec4(prev, 1.0);
+                vec4 currentProjected = projViewModel * vec4(position, 1.0);
+                vec4 nextProjected = projViewModel * vec4(next, 1.0);
+                
+                //get 2D screen space with W divide and aspect correction
+                vec2 currentScreen = currentProjected.xy / currentProjected.w * aspectVec;
+                vec2 previousScreen = previousProjected.xy / previousProjected.w * aspectVec;
+                vec2 nextScreen = nextProjected.xy / nextProjected.w * aspectVec;
+                
+                float len = thickness;
+                float orientation = direction;
+                
+                vec2 dir = vec2(0.0);
+                if (currentScreen == previousScreen) {
+                    dir = normalize(nextScreen - currentScreen);
+                } else {
+                    dir = normalize(currentScreen - previousScreen);
+                }
+                vec2 normal = vec2(-dir.y, dir.x);
+                normal *= len/2.0;
+                normal.x /= aspect;
+                
+                vec4 offset = vec4(normal * orientation, 0.0, 1.0);
+                gl_Position = currentProjected + offset;
+                //gl_PointSize = 1.0;
             }
         `
     }
