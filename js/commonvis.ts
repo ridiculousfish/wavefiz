@@ -263,16 +263,39 @@ module visualizing {
         }
     }
     
-    function packVectors(vals:THREE.Vector3[]): Float32Array {
-        let ret = new Float32Array(3 * length)
-        let outIdx = 0
-        for (let i=0; i < length; i++) {
-            let v = vals[i]
-            ret[outIdx++] = v.x
-            ret[outIdx++] = v.y
-            ret[outIdx++] = v.z 
-        }
-        return ret
+    // does not handle copying within self
+    function copyToFrom(dst:Float32Array, src:Float32Array, dstStart:number, srcStart:number, amount:number = Number.MAX_VALUE) {
+        const effectiveAmount = Math.min(amount, dst.length - dstStart, src.length - srcStart)
+        for (let i=0; i < effectiveAmount; i++) {
+            dst[i + dstStart] = src[i + srcStart]
+        } 
+    }
+    
+    let Shaders = {
+        fragmentCode:
+        `
+            uniform vec3 color;
+
+            void main() {
+                gl_FragColor = vec4(color, 1.0);
+            }
+        `,
+        
+        vertexCode:
+        `
+            attribute float direction;
+            uniform float thickness;
+            attribute vec3 next;
+            attribute vec3 prev;
+            
+            
+            void main() {
+                vec3 directedPosition = thickness * direction + position;
+                gl_Position = projectionMatrix *
+                            modelViewMatrix *
+                            vec4(directedPosition,1.0);
+            }
+        `
     }
     
     /* Use shaders */
@@ -283,8 +306,9 @@ module visualizing {
             // Length is the length of the path
             // Use two vertices for each element of our path
             // (and each vertex has 3 coordinates)
-            let vertices = new Float32Array(length*2*3)
-            this.geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3))
+            const vertexCount = 2 * length
+            let positions = new Float32Array(vertexCount*3)
+            this.geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3))
             
             // set face indexes
             // we draw two faces (triangles) between every two elements of the path
@@ -302,13 +326,44 @@ module visualizing {
                 faces[faceVertIdx++] = startVertex + 3
             }
             this.geometry.setIndex(new THREE.BufferAttribute(faces, 1));
-            (this.geometry as any).dynamic = true
-            this.mesh = new THREE.Mesh(this.geometry, 
-                new THREE.MeshBasicMaterial({color: material.color, side:THREE.DoubleSide, wireframe:false}));
+            
+            // compute the "direction" attribute, alternating 1 and -1 for each vertex
+            let directions = new Float32Array(vertexCount)
+            for (let i=0; i < length; i++) {
+                directions[i*2] = 1.0
+                directions[i*2+1] = -1.0
+            }
+            this.geometry.addAttribute('direction', new THREE.BufferAttribute(directions, 1));
+            
+            // compute "next" and "previous" locations
+            // next is shifted left, and previous shifted right
+            let nexts = new Float32Array(vertexCount*3)
+            let prevs = new Float32Array(vertexCount*3)
+            // nexts.copyWithin(0, 3) // shift elements left by 3, duplicating the last 3
+            // prevs.copyWithin(3, 0) // shift elements right by 3, duplicating the first 3            
+            this.geometry.addAttribute('next', new THREE.BufferAttribute(nexts, 3))
+            this.geometry.addAttribute('prev', new THREE.BufferAttribute(prevs, 3))
+            
+            ;(this.geometry as any).dynamic = true
+            if ("abc".length > 100) {
+                this.mesh = new THREE.Mesh(this.geometry, 
+                    new THREE.MeshBasicMaterial({color: material.color, side:THREE.DoubleSide, wireframe:false}));        
+            } else {
+                let sm = new THREE.ShaderMaterial({
+                    side:THREE.DoubleSide,
+                    uniforms: {
+                        color: { type: 'c', value: new THREE.Color( material.color as number ) },
+                        thickness: { type: 'f', value: 5.0}
+                    },
+                    vertexShader: Shaders.vertexCode,
+                    fragmentShader: Shaders.fragmentCode
+                })
+                this.mesh = new THREE.Mesh(this.geometry, sm)
+            }
         }
         public update(cb: (index) => THREE.Vector3) {
-            let positionAttr = (this.geometry as any).attributes.position
-            let positions = positionAttr.array
+            let attrs = (this.geometry as any).attributes
+            let positions = attrs.position.array
             let path : THREE.Vector3[] = []
             for (let i = 0; i < this.length; i++) {
                 path.push(cb(i))
@@ -319,11 +374,22 @@ module visualizing {
                 positions[positionIdx++] = pt.x
                 positions[positionIdx++] = pt.y
                 positions[positionIdx++] = pt.z
-                positions[positionIdx++] = pt.x + 15
-                positions[positionIdx++] = pt.y + 15
-                positions[positionIdx++] = pt.z                
+                positions[positionIdx++] = pt.x
+                positions[positionIdx++] = pt.y
+                positions[positionIdx++] = pt.z
             }
-            positionAttr.needsUpdate = true
+            
+            let nexts = attrs.next.array
+            copyToFrom(nexts, positions, 0, 6) // shifted left
+            copyToFrom(nexts, positions, nexts.length - 6, positions.length - 6) // duplicate 6 at end
+
+            let prevs = attrs.prev.array
+            copyToFrom(prevs, positions, 6, 0) // shifted right
+            copyToFrom(prevs, positions, 0, 0, 6) // duplicate 6 at beginning
+            
+            attrs.position.needsUpdate = true
+            attrs.next.needsUpdate = true
+            attrs.prev.needsUpdate = true    
         }
         
         public addToGroup(group:THREE.Group) {
