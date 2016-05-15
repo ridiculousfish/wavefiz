@@ -91,8 +91,7 @@ module visualizing {
         }
     }
     
-    export let USE_POINTS = true
-
+    /* Use particles */
     export class VisLine2 {
         public positions: Float32Array
         public geometry = new THREE.Geometry()
@@ -128,7 +127,8 @@ module visualizing {
         }
     }
 
-    export class VisLine {
+    /* Use tube geometry */
+    export class VisLine3 {
         public vertices: THREE.Vector3[] = []
         public mesh: THREE.Mesh
         public lineWidth: number
@@ -171,7 +171,7 @@ module visualizing {
             meshGeometry.verticesNeedUpdate = true
         }
         
-        setVisible(flag:boolean) {
+        public setVisible(flag:boolean) {
             this.mesh.visible = flag
         }
         
@@ -181,6 +181,161 @@ module visualizing {
 
         public removeFromGroup(group:THREE.Group) {
             group.remove(this.mesh)
+        }
+    }
+    
+    /* Use native lines */
+    export class VisLine5 {
+        public geometry: THREE.Geometry
+        public line: THREE.Line
+        constructor(public length: number, material: THREE.LineBasicMaterialParameters) {
+            this.geometry = new THREE.Geometry()
+            const zero = new THREE.Vector3(0, 0, 0)
+            for (let i = 0; i < length; i++) {
+                this.geometry.vertices.push(zero)
+            };
+            (this.geometry as any).dynamic = true
+            this.line = new THREE.Line(this.geometry, new THREE.LineBasicMaterial(material))
+        }
+
+        public update(cb: (index) => THREE.Vector3) {
+            for (let i = 0; i < this.length; i++) {
+                this.geometry.vertices[i] = cb(i)
+            }
+            this.geometry.verticesNeedUpdate = true
+        }
+        
+        public addToGroup(group:THREE.Group) {
+            group.add(this.line)
+        }
+
+        public removeFromGroup(group:THREE.Group) {
+            group.remove(this.line)
+        }
+        
+        public setVisible(flag:boolean) {
+            this.line.visible = flag
+        }
+    }
+    
+    /* Use a 2d mesh */
+    export class VisLineMesh {
+        public geometry = new THREE.Geometry()
+        public mesh: THREE.Mesh
+        constructor(public length: number, material: THREE.LineBasicMaterialParameters) {
+            for (let i = 0; i < 2*length; i++) {
+                this.geometry.vertices.push(new THREE.Vector3(0, 0, 0))
+            }
+            for (let i=0; i+1 < length; i++) {
+                let ul = i * 2
+                this.geometry.faces.push(new THREE.Face3(ul, ul+1, ul+2))
+                this.geometry.faces.push(new THREE.Face3(ul+2, ul+1, ul+3))
+            };
+            (this.geometry as any).dynamic = true
+            this.mesh = new THREE.Mesh(this.geometry, 
+                new THREE.MeshBasicMaterial({color: material.color, side:THREE.DoubleSide}));
+        }
+        public update(cb: (index) => THREE.Vector3) {
+            let path : THREE.Vector3[] = []
+            for (let i = 0; i < this.length; i++) {
+                path.push(cb(i))
+            }
+            let geometry = this.mesh.geometry as any
+            for (let i = 0; i < this.length; i++) {
+                let pt = path[i]
+                let vertIdx = i * 2
+                geometry.vertices[vertIdx].set(pt.x, pt.y, pt.z)
+                geometry.vertices[vertIdx+1].set(pt.x+5, pt.y+5, pt.z)                
+            }
+            geometry.verticesNeedUpdate = true
+        }
+        
+        public addToGroup(group:THREE.Group) {
+            group.add(this.mesh)
+        }
+
+        public removeFromGroup(group:THREE.Group) {
+            group.remove(this.mesh)
+        }
+        
+        public setVisible(flag:boolean) {
+            this.mesh.visible = flag
+        }
+    }
+    
+    function packVectors(vals:THREE.Vector3[]): Float32Array {
+        let ret = new Float32Array(3 * length)
+        let outIdx = 0
+        for (let i=0; i < length; i++) {
+            let v = vals[i]
+            ret[outIdx++] = v.x
+            ret[outIdx++] = v.y
+            ret[outIdx++] = v.z 
+        }
+        return ret
+    }
+    
+    /* Use shaders */
+    export class VisLine {
+        public geometry = new THREE.BufferGeometry()
+        public mesh: THREE.Mesh
+        constructor(public length: number, material: THREE.LineBasicMaterialParameters) {
+            // Length is the length of the path
+            // Use two vertices for each element of our path
+            // (and each vertex has 3 coordinates)
+            let vertices = new Float32Array(length*2*3)
+            this.geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3))
+            
+            // set face indexes
+            // we draw two faces (triangles) between every two elements of the path
+            // each face has 3 vertices, since it's a triangle
+            const faceCount = 2 * (length - 1) 
+            let faces = new Uint32Array(3 * faceCount)
+            let faceVertIdx = 0
+            for (let i=0; i+1 < length; i++) {
+                let startVertex = i * 2
+                faces[faceVertIdx++] = startVertex + 0
+                faces[faceVertIdx++] = startVertex + 1
+                faces[faceVertIdx++] = startVertex + 2
+                faces[faceVertIdx++] = startVertex + 2
+                faces[faceVertIdx++] = startVertex + 1
+                faces[faceVertIdx++] = startVertex + 3
+            }
+            this.geometry.setIndex(new THREE.BufferAttribute(faces, 1));
+            (this.geometry as any).dynamic = true
+            this.mesh = new THREE.Mesh(this.geometry, 
+                new THREE.MeshBasicMaterial({color: material.color, side:THREE.DoubleSide, wireframe:false}));
+        }
+        public update(cb: (index) => THREE.Vector3) {
+            let positionAttr = (this.geometry as any).attributes.position
+            let positions = positionAttr.array
+            let path : THREE.Vector3[] = []
+            for (let i = 0; i < this.length; i++) {
+                path.push(cb(i))
+            }
+            let positionIdx = 0
+            for (let i = 0; i < this.length; i++) {
+                let pt = path[i]
+                positions[positionIdx++] = pt.x
+                positions[positionIdx++] = pt.y
+                positions[positionIdx++] = pt.z
+                positions[positionIdx++] = pt.x + 15
+                positions[positionIdx++] = pt.y + 15
+                positions[positionIdx++] = pt.z                
+            }
+            positionAttr.needsUpdate = true
+        }
+        
+        public addToGroup(group:THREE.Group) {
+            group.add(this.mesh)
+        }
+
+        public removeFromGroup(group:THREE.Group) {
+            group.remove(this.mesh)
+        }
+        
+        public setVisible(flag:boolean) {
+            this.mesh.visible = flag
         }
     }
 
