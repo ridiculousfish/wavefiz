@@ -275,25 +275,13 @@ module visualizing {
         fragmentCode:
         `
             uniform vec3 color;
+            varying float zdepth;
 
             void main() {
-                gl_FragColor = vec4(color, 1.0);
-            }
-        `,
-        
-        vertexCodeOld:
-        `
-            attribute float direction;
-            uniform float thickness;
-            attribute vec3 next;
-            attribute vec3 prev;
-            
-            
-            void main() {
-                vec3 directedPosition = thickness * direction + position;
-                gl_Position = projectionMatrix *
-                            modelViewMatrix *
-                            vec4(directedPosition,1.0);
+                vec3 mungedColor = color;
+                //mungedColor += 10.0 * smoothstep(-50.0, 500., gl_FragCoord.z);
+                mungedColor *= (1.0 + smoothstep(-80.0, 80.0, zdepth)) / 2.0;
+                gl_FragColor = vec4(mungedColor, 1.0);
             }
         `,
         
@@ -303,12 +291,13 @@ module visualizing {
             uniform float thickness;
             attribute vec3 next;
             attribute vec3 prev;
-            
+            varying float zdepth;
             
             void main() {
-                float aspect = 1.0;
+                zdepth = position.z;
+                
+                float aspect = 800.0 / 600.0;
                 vec2 aspectVec = vec2(aspect, 1.0);
-                //mat4 projViewModel = projection * view * model;
                 mat4 projViewModel = projectionMatrix * modelViewMatrix;
                 vec4 previousProjected = projViewModel * vec4(prev, 1.0);
                 vec4 currentProjected = projViewModel * vec4(position, 1.0);
@@ -320,21 +309,18 @@ module visualizing {
                 vec2 nextScreen = nextProjected.xy / nextProjected.w * aspectVec;
                 
                 float len = thickness;
-                float orientation = direction;
                 
-                vec2 dir = vec2(0.0);
-                if (currentScreen == previousScreen) {
-                    dir = normalize(nextScreen - currentScreen);
-                } else {
-                    dir = normalize(currentScreen - previousScreen);
-                }
+                // Use the average of the normals
+                // This helps us handle 90 degree turns correctly
+                vec2 dir1 = normalize(nextScreen - currentScreen);
+                vec2 dir2 = normalize(currentScreen - previousScreen);
+                vec2 dir = normalize(dir1 + dir2); 
                 vec2 normal = vec2(-dir.y, dir.x);
                 normal *= len/2.0;
                 normal.x /= aspect;
                 
-                vec4 offset = vec4(normal * orientation, 0.0, 1.0);
+                vec4 offset = vec4(normal * direction, 0.0, 1.0);
                 gl_Position = currentProjected + offset;
-                //gl_PointSize = 1.0;
             }
         `
     }
@@ -350,6 +336,9 @@ module visualizing {
             const vertexCount = 2 * length
             let positions = new Float32Array(vertexCount*3)
             this.geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3))
+            
+            let thickness = Math.max(2, material.linewidth || 0)
+
             
             // set face indexes
             // we draw two faces (triangles) between every two elements of the path
@@ -394,7 +383,7 @@ module visualizing {
                     side:THREE.DoubleSide,
                     uniforms: {
                         color: { type: 'c', value: new THREE.Color( material.color as number ) },
-                        thickness: { type: 'f', value: 5.0}
+                        thickness: { type: 'f', value: thickness}
                     },
                     vertexShader: Shaders.vertexCode,
                     fragmentShader: Shaders.fragmentCode
@@ -455,6 +444,7 @@ module visualizing {
         public timescale: number = 1.0 / 3.0
         public meshDivision: number = 800 // how many points are in our mesh
         public psiScale: number = 250 // how much scale we visually apply to the wavefunction
+        public absScale: number = 1.5 // how much additional scale we visually apply to the psiAbs and phiAbs
 
         public showPsi = !false // show position psi(x)
         public showPsiAbs = false // show position probability |psi(x)|^2

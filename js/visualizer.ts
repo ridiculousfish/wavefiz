@@ -51,7 +51,7 @@ module visualizing {
             // Animator
             this.animator_ = new Animator(this.params, () => this.render())
 
-            let renderer = new THREE.WebGLRenderer({ antialias: false })
+            let renderer = new THREE.WebGLRenderer({ antialias: true })
             renderer.setClearColor(0x222222, 1)
             renderer.setSize(container.offsetWidth, container.offsetHeight)
             this.renderer_ = renderer

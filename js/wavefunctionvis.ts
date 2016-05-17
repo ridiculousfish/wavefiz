@@ -73,19 +73,19 @@ module visualizing {
                     let mag = psi.valueAt(index, time).magnitudeSquared()
                     return new Complex(mag, 0)
                 }
-                
+
                 // perform fourier transform only if necessary
                 let freqWavefunctionVal: algorithms.GeneralizedWavefunction = null
                 let freqWavefunction = () => {
                     if (freqWavefunctionVal == null) {
                         const scale = 1
                         freqWavefunctionVal = psi.fourierTransformOptimized(potentialMinimumIndex, scale)
-                        
+
                         let checkCorrectness = false
-                        if (checkCorrectness) {                                                    
+                        if (checkCorrectness) {
                             let cmp: algorithms.GeneralizedWavefunction = psi.fourierTransform(potentialMinimumIndex, scale)
                             let status = "Matches"
-                            for (let i=0; i < cmp.length; i++) {
+                            for (let i = 0; i < cmp.length; i++) {
                                 const v1 = freqWavefunctionVal.valueAt(i, 0)
                                 const v2 = cmp.valueAt(i, 0)
                                 if (Math.abs(v1.re - v2.re) > .01 || Math.abs(v1.im - v2.im) > .01) {
@@ -125,31 +125,32 @@ module visualizing {
             }
 
             const cleanValue = (value: number) => {
-                const limit = this.params.height / 2
+                const limit = this.params.height / 1.9
                 if (isNaN(value)) {
                     value = limit
                 }
                 return Math.max(-limit, Math.min(limit, value))
             }
 
-            let updateVisualizable = (vis: Visualizable, visLine: VisLine, show: boolean) => {
+            let updateVisualizable = (vis: Visualizable, visLine: VisLine, show: boolean, scale: number) => {
                 visLine.setVisible(show)
                 if (show) {
-                    const psiScale = this.params.psiScale
-                    visLine.update((index:number) => {
+                    visLine.update((index: number) => {
                         const x = this.params.centerForMeshIndex(index)
                         const yz = vis.valueAt(index, time)
-                        const y = -cleanValue(psiScale * yz.re)
-                        const z = cleanValue(psiScale * yz.im)
-                        return new THREE.Vector3(x, y, z)
+                        const y = -scale * yz.re
+                        const z = scale * yz.im
+                        return new THREE.Vector3(x, cleanValue(y), cleanValue(z))
                     })
                 }
             }
 
-            updateVisualizable(this.psiVis_, this.psiGraph_, this.params.showPsi)
-            updateVisualizable(this.psiAbsVis_, this.psiAbsGraph_, this.params.showPsiAbs)
-            updateVisualizable(this.phiVis_, this.phiGraph_, this.params.showPhi)
-            updateVisualizable(this.phiAbsVis_, this.phiAbsGraph_, this.params.showPhiAbs)
+            let psiScale = this.params.psiScale
+            let psiAbsScale = psiScale * this.params.absScale
+            updateVisualizable(this.psiVis_, this.psiGraph_, this.params.showPsi, psiScale)
+            updateVisualizable(this.psiAbsVis_, this.psiAbsGraph_, this.params.showPsiAbs, psiAbsScale)
+            updateVisualizable(this.phiVis_, this.phiGraph_, this.params.showPhi, psiScale)
+            updateVisualizable(this.phiAbsVis_, this.phiAbsGraph_, this.params.showPhiAbs, psiAbsScale)
 
             this.psiBaseline_.update((i: number) => vector3(i * this.params.width, 0, 0))
 
