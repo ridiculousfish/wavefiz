@@ -131,8 +131,10 @@ module visualizing {
             })
             this.potentialLine_ = new VisLine(this.params.meshDivision, {
                 color: 0xFF00FF,
-                linewidth: 5
+                linewidth: 5,
+                depthWrite: false
             })
+            this.potentialLine_.setRenderOrder(-5000)
 
             let planeGeo = new THREE.PlaneGeometry(this.params.width * 2, this.params.height * 2)
             let planeMat = new THREE.MeshBasicMaterial({ visible: false, depthWrite: false })

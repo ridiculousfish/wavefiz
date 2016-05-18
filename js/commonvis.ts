@@ -185,7 +185,7 @@ module visualizing {
     }
     
     /* Use native lines */
-    export class VisLine5 {
+    export class VisLineNative {
         public geometry: THREE.Geometry
         public line: THREE.Line
         constructor(public length: number, material: THREE.LineBasicMaterialParameters) {
@@ -217,60 +217,7 @@ module visualizing {
             this.line.visible = flag
         }
     }
-    
-    /* Use a 2d mesh */
-    export class VisLineMesh {
-        public geometry = new THREE.Geometry()
-        public mesh: THREE.Mesh
-        constructor(public length: number, material: THREE.LineBasicMaterialParameters) {
-            for (let i = 0; i < 2*length; i++) {
-                this.geometry.vertices.push(new THREE.Vector3(0, 0, 0))
-            }
-            for (let i=0; i+1 < length; i++) {
-                let ul = i * 2
-                this.geometry.faces.push(new THREE.Face3(ul, ul+1, ul+2))
-                this.geometry.faces.push(new THREE.Face3(ul+2, ul+1, ul+3))
-            };
-            (this.geometry as any).dynamic = true
-            this.mesh = new THREE.Mesh(this.geometry, 
-                new THREE.MeshBasicMaterial({color: material.color, side:THREE.DoubleSide}));
-        }
-        public update(cb: (index) => THREE.Vector3) {
-            let path : THREE.Vector3[] = []
-            for (let i = 0; i < this.length; i++) {
-                path.push(cb(i))
-            }
-            let geometry = this.mesh.geometry as any
-            for (let i = 0; i < this.length; i++) {
-                let pt = path[i]
-                let vertIdx = i * 2
-                geometry.vertices[vertIdx].set(pt.x, pt.y, pt.z)
-                geometry.vertices[vertIdx+1].set(pt.x+5, pt.y+5, pt.z)                
-            }
-            geometry.verticesNeedUpdate = true
-        }
         
-        public addToGroup(group:THREE.Group) {
-            group.add(this.mesh)
-        }
-
-        public removeFromGroup(group:THREE.Group) {
-            group.remove(this.mesh)
-        }
-        
-        public setVisible(flag:boolean) {
-            this.mesh.visible = flag
-        }
-    }
-    
-    // does not handle copying within self
-    function copyToFrom(dst:Float32Array, src:Float32Array, dstStart:number, srcStart:number, amount:number = Number.MAX_VALUE) {
-        const effectiveAmount = Math.min(amount, dst.length - dstStart, src.length - srcStart)
-        for (let i=0; i < effectiveAmount; i++) {
-            dst[i + dstStart] = src[i + srcStart]
-        } 
-    }
-    
     let Shaders = {
         fragmentCode:
         `
@@ -303,6 +250,11 @@ module visualizing {
                 vec4 currentProjected = projViewModel * vec4(position, 1.0);
                 vec4 nextProjected = projViewModel * vec4(next, 1.0);
                 
+                float huh = 1.0;
+                previousProjected.w *= huh;
+                currentProjected.w *= huh;
+                nextProjected *= huh;
+                
                 //get 2D screen space with W divide and aspect correction
                 vec2 currentScreen = currentProjected.xy / currentProjected.w * aspectVec;
                 vec2 previousScreen = previousProjected.xy / previousProjected.w * aspectVec;
@@ -325,6 +277,14 @@ module visualizing {
         `
     }
     
+    // does not handle copying within self
+    function copyToFrom(dst:Float32Array, src:Float32Array, dstStart:number, srcStart:number, amount:number = Number.MAX_VALUE) {
+        const effectiveAmount = Math.min(amount, dst.length - dstStart, src.length - srcStart)
+        for (let i=0; i < effectiveAmount; i++) {
+            dst[i + dstStart] = src[i + srcStart]
+        } 
+    }
+    
     /* Use shaders */
     export class VisLine {
         public geometry = new THREE.BufferGeometry()
@@ -337,8 +297,8 @@ module visualizing {
             let positions = new Float32Array(vertexCount*3)
             this.geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3))
             
-            let thickness = Math.max(2, material.linewidth || 0)
-
+            let thickness = Math.max(2, material["linewidth"] || 0)
+            let depthWrite = material.hasOwnProperty("depthWrite") ? material["depthWrite"] : true
             
             // set face indexes
             // we draw two faces (triangles) between every two elements of the path
@@ -377,7 +337,12 @@ module visualizing {
             ;(this.geometry as any).dynamic = true
             if ("abc".length > 100) {
                 this.mesh = new THREE.Mesh(this.geometry, 
-                    new THREE.MeshBasicMaterial({color: material.color, side:THREE.DoubleSide, wireframe:false}));        
+                    new THREE.MeshBasicMaterial({
+                        color: material.color,
+                        side:THREE.DoubleSide,
+                        wireframe:false,
+                        depthWrite:depthWrite
+                    }));        
             } else {
                 let sm = new THREE.ShaderMaterial({
                     side:THREE.DoubleSide,
@@ -386,7 +351,8 @@ module visualizing {
                         thickness: { type: 'f', value: thickness}
                     },
                     vertexShader: Shaders.vertexCode,
-                    fragmentShader: Shaders.fragmentCode
+                    fragmentShader: Shaders.fragmentCode,
+                    depthWrite: depthWrite
                 })
                 this.mesh = new THREE.Mesh(this.geometry, sm)
             }
@@ -433,6 +399,10 @@ module visualizing {
         public setVisible(flag:boolean) {
             this.mesh.visible = flag
         }
+        
+        public setRenderOrder(val:number) {
+            this.mesh.renderOrder = val
+        }
     }
 
     export class Parameters {
@@ -440,6 +410,7 @@ module visualizing {
         public yScale = 1 // multiply to go from potential to graphical point
         public width: number = 800
         public height: number = 600
+        public cameraDistance = 400 // how far back the camera is
         public maxX: number = 20 // maximum X value
         public timescale: number = 1.0 / 3.0
         public meshDivision: number = 800 // how many points are in our mesh

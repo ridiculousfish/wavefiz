@@ -42,10 +42,6 @@ module visualizing {
         public state: InputState = { potential: [] }
 
         constructor(container: HTMLElement, energyContainer: HTMLElement, energyDraggerPrototype: HTMLElement) {
-
-            this.params.width = 800
-            this.params.height = 600
-
             this.container_ = container
 
             // Animator
@@ -59,7 +55,9 @@ module visualizing {
 
             const usePerspective = true
             if (usePerspective) {
-                this.camera_ = new THREE.PerspectiveCamera(74, this.params.width / this.params.height, 0.1, 1000);
+                let fovDegrees = Math.atan2(this.params.height, this.params.width) * (180 / Math.PI) * 2.0
+                fovDegrees = Math.ceil(fovDegrees) // energy lines disappear without this, unclear why
+                this.camera_ = new THREE.PerspectiveCamera(fovDegrees, this.params.width / this.params.height, 50, 1000);
                 this.topGroup_.position.x = -this.params.width / 2
                 this.topGroup_.position.y = this.params.height / 2
                 this.topGroup_.scale.y = -1
@@ -180,7 +178,7 @@ module visualizing {
         private setCameraRotation(rads: number) {
             // rotate about the y axis
             // rotation of 0 => z = 1 * scale
-            const scale = 400
+            const scale = this.params.cameraDistance
             const x = Math.sin(rads) * scale
             const z = Math.cos(rads) * scale
             this.camera_.position.set(x, 0, z)
