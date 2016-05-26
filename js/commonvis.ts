@@ -91,99 +91,6 @@ module visualizing {
         }
     }
     
-    /* Use particles */
-    export class VisLine2 {
-        public positions: Float32Array
-        public geometry = new THREE.Geometry()
-        public particles: THREE.Points
-        
-        constructor(public length:number, material:any) {
-            for (let i=0; i < length; i++) {
-                this.geometry.vertices.push(new THREE.Vector3(0, 0, 0))
-            }
-            material["size"] = 8.0
-            this.particles = new THREE.Points( this.geometry, new THREE.PointCloudMaterial(material) );
-        }
-        
-        public update(cb: (index:number) => THREE.Vector3) {
-            
-            for (let i = 0; i < this.length; i++) {
-                let vec = cb(i);
-                (this.particles.geometry as any).vertices[i].set(vec.x, vec.y, vec.z)
-            };
-            (this.particles.geometry as any).verticesNeedUpdate = true
-        }
-        
-        setVisible(flag:boolean) {
-            this.particles.visible = flag
-        }
-        
-        public removeFromGroup(group:THREE.Group) {
-            group.remove(this.particles)
-        }
-        
-        public addToGroup(group:THREE.Group) {
-            group.add(this.particles)
-        }
-    }
-
-    /* Use tube geometry */
-    export class VisLine3 {
-        public vertices: THREE.Vector3[] = []
-        public mesh: THREE.Mesh
-        public lineWidth: number
-        
-        constructor(public length: number, material: any) {
-            const zero = new THREE.Vector3(0, 0, 0)
-            for (let i = 0; i < length; i++) {
-                this.vertices.push(zero)
-            }
-            this.lineWidth = material["linewidth"]
-            this.mesh = new THREE.Mesh(this.makeGeometry() as any, new THREE.MeshBasicMaterial(material))
-        }
-        
-        makeGeometry() : THREE.TubeGeometry {
-            let curve = new THREE.CatmullRomCurve3(this.vertices)
-            let geometry = new THREE.TubeGeometry(
-                curve as any,
-                this.length, // segments
-                this.lineWidth, // radius
-                3, // radius segments
-                false // closed
-            );
-            (geometry as any).dynamic = true
-            return geometry
-        }
-
-        public update(cb: (index:number) => THREE.Vector3) {
-            
-            for (let i = 0; i < this.length; i++) {
-                this.vertices[i] = cb(i)
-            }
-            
-            let geometry = this.makeGeometry()
-            let length = geometry.vertices.length
-            let meshGeometry = this.mesh.geometry as any 
-            for (let i=0; i < length; i++) {
-                let geoVert = geometry.vertices[i]
-                meshGeometry.vertices[i].set(geoVert.x, geoVert.y, geoVert.z)
-            }
-            meshGeometry.verticesNeedUpdate = true
-        }
-        
-        public setVisible(flag:boolean) {
-            this.mesh.visible = flag
-        }
-        
-        public addToGroup(group:THREE.Group) {
-            group.add(this.mesh)
-        }
-
-        public removeFromGroup(group:THREE.Group) {
-            group.remove(this.mesh)
-        }
-    }
-    
     /* Use native lines */
     export class VisLineNative {
         public geometry: THREE.Geometry
@@ -216,6 +123,11 @@ module visualizing {
         public setVisible(flag:boolean) {
             this.line.visible = flag
         }
+        
+        public setRenderOrder(val:number) {
+            this.line.renderOrder = val
+        }
+
     }
         
     let Shaders = {
