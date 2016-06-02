@@ -14,7 +14,6 @@ module visualizing {
     
     export class EnergyBar {
         public line: VisLine
-        public wavefunction: algorithms.ResolvedWavefunction = null
         
         constructor(public slider: EnergySlider, public energy: number, public params: Parameters) {
             this.line = new VisLine(2, { color: 0xFF0000 })
