@@ -80,10 +80,32 @@ module ui {
     }
     
     export class Slider {
-        public position:number
-        public value:number
-        constructor(public element:HTMLElement, position:number, value:number) {
+        private unconstrainedPosition:number = -1
+        
+        static draggedSlider:Slider = null
+        static lastPosition:number = -1
+        static globalInitDone = false
+        
+        constructor(public element:HTMLElement,
+                    public position:number,
+                    public value:number,
+                    public positionUpdated:(slider:Slider, position:number) => number) {
+            this.beginWatching()
             this.update(position, value)
+            
+            if (! Slider.globalInitDone) {
+                Slider.globalInitDone = true
+                document.addEventListener('mousemove', (evt:MouseEvent) => {
+                        if (Slider.draggedSlider) Slider.draggedSlider.tryDrag(evt)
+                })
+                document.addEventListener('mouseup', () => {
+                    if (Slider.draggedSlider) Slider.draggedSlider.stopDragging()
+                })
+            }
+        }
+        
+        public remove() {
+            this.endWatching()
         }
         
         update(position:number, value:number) {
@@ -96,5 +118,63 @@ module ui {
             }
             this.element.style.top = position + "px"
         }
+        
+        private beginWatching() {
+            this.element.onmousedown = (evt:MouseEvent) => this.startDragging(evt)
+            this.element.ontouchstart = (evt:TouchEvent) => this.startDragging(evt)
+            this.element.ontouchmove = (evt:TouchEvent) => this.tryDrag(evt)
+            this.element.ontouchend = () => this.stopDragging()
+            this.element.ontouchcancel = () => this.stopDragging()
+        }
+        
+        private endWatching() {
+            this.element.onmousedown = null
+            this.element.ontouchstart = null
+            this.element.ontouchmove = null
+            this.element.ontouchend = null
+            this.element.ontouchcancel = null
+        }
+        
+        
+        private startDragging(evt:MouseEvent|TouchEvent) {
+            Slider.draggedSlider = this
+            Slider.lastPosition = this.getEventPosition(evt)
+            this.unconstrainedPosition = this.position
+            //this.container.style.cursor = "ns-resize"
+            evt.preventDefault() // keeps the cursor from becoming an IBeam
+        }
+        
+        private stopDragging() {
+            Slider.draggedSlider = null
+            //this.container.style.cursor = "default"
+        }
+        
+        private tryDrag(evt:MouseEvent|TouchEvent) {
+            if (this !== Slider.draggedSlider) {
+                return
+            }
+            const y = this.getEventPosition(evt)
+            const dy = y - Slider.lastPosition
+            Slider.lastPosition = y
+            this.unconstrainedPosition += dy
+            const position = Math.min(Math.max(this.unconstrainedPosition, 0), this.container().offsetHeight)
+            const value = this.positionUpdated(this, position)
+            this.update(position, value)
+        }
+        
+        private container(): HTMLElement {
+            return this.element.parentElement || this.element
+        }
+        
+        private getEventPosition(evt:MouseEvent|TouchEvent): number {
+            if ((evt as TouchEvent).targetTouches) {
+                // Touch event
+                return (evt as TouchEvent).targetTouches[0].pageY - this.container().offsetTop
+            } else {
+                // Mouse event
+                return (evt as MouseEvent).pageY - this.container().offsetTop
+            }
+        }
+
     }
 }    
