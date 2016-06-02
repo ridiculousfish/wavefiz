@@ -1,4 +1,5 @@
 /// <reference path='./visualizer.ts'/>
+/// <reference path='./ui.ts'/>
 
 module visualizing {
     
@@ -8,14 +9,10 @@ module visualizing {
         }
     }
     
-    function isTouchEvent(evt:MouseEvent|TouchEvent) {
-        return !! ((evt as TouchEvent).targetTouches) 
-    }
-    
     export class EnergyBar {
         public line: VisLine
         
-        constructor(public slider: EnergySlider, public energy: number, public params: Parameters) {
+        constructor(public slider: ui.Slider, public energy: number, public params: Parameters) {
             this.line = new VisLine(2, { color: 0xFF0000 })
         }
         setPositionAndEnergy(position: number, energy: number) {
@@ -25,37 +22,18 @@ module visualizing {
         }
     }
     
-    export class EnergySlider {
-        public position:number
-        public value:number
-        constructor(public element:HTMLElement, position:number, value:number) {
-            this.update(position, value)
-        }
-        
-        update(position:number, value:number) {
-            this.value = value
-            this.position = position
-            const valueStr = value.toFixed(2)
-            const labelFieldNodeList = this.element.getElementsByClassName("value_text")
-            for (let i=0; i < labelFieldNodeList.length; i++) {
-                labelFieldNodeList[i].textContent = valueStr 
-            }
-            this.element.style.top = position + "px"
-        }
-    }
-    
     export class EnergyVisualizer {
         // Function property. Given a position, returns the value
-        public positionUpdated: (slider:EnergySlider, position:number) => number
+        public positionUpdated: (slider:ui.Slider, position:number) => number
         
-        sliders: EnergySlider[] = []
-        private draggedSlider: EnergySlider = null
+        sliders: ui.Slider[] = []
+        private draggedSlider: ui.Slider = null
         private lastY = 0
         private unconstrainedPosition = 0
         
         constructor(public container: HTMLElement, public sliderPrototype: HTMLElement, public params:visualizing.Parameters) {
             // Default position update handler
-            this.positionUpdated = (slider:EnergySlider, pos:number) => pos
+            this.positionUpdated = (slider:ui.Slider, pos:number) => pos
             assert(this.container != null, "Energy slider could not find container")
             assert(this.sliderPrototype != null, "Energy slider could not find prototype")
             
@@ -63,9 +41,9 @@ module visualizing {
             document.addEventListener('mouseup', () => this.stopDragging())
         }
         
-        public addSlider(position, value): EnergySlider {
+        public addSlider(position, value): ui.Slider {
             const sliderElem = this.sliderPrototype.cloneNode(true) as HTMLElement
-            const slider = new EnergySlider(sliderElem, position, value)
+            const slider = new ui.Slider(sliderElem, position, value)
             this.sliders.push(slider)
             this.container.appendChild(sliderElem)
             this.beginWatching(slider)
@@ -73,7 +51,7 @@ module visualizing {
             return slider
         }
         
-        public removeSlider(slider:EnergySlider) {
+        public removeSlider(slider:ui.Slider) {
             let index = this.sliders.indexOf(slider)
             if (index >= 0) {
                 let slider = this.sliders[index]
@@ -83,7 +61,7 @@ module visualizing {
             }
         }
         
-        private beginWatching(slider:EnergySlider) {
+        private beginWatching(slider:ui.Slider) {
             slider.element.onmousedown = (evt:MouseEvent) => this.startDragging(slider, evt)
             slider.element.ontouchstart = (evt:TouchEvent) => this.startDragging(slider, evt)
             slider.element.ontouchmove = (evt:TouchEvent) => this.tryDrag(evt)
@@ -91,7 +69,7 @@ module visualizing {
             slider.element.ontouchcancel = () => this.stopDragging()
         }
         
-        private endWatching(slider:EnergySlider) {
+        private endWatching(slider:ui.Slider) {
             slider.element.onmousedown = null
             slider.element.ontouchstart = null
             slider.element.ontouchmove = null
@@ -110,7 +88,7 @@ module visualizing {
             
         }
         
-        private startDragging(slider:EnergySlider, evt:MouseEvent|TouchEvent) {
+        private startDragging(slider:ui.Slider, evt:MouseEvent|TouchEvent) {
             assert(slider != null)
             this.draggedSlider = slider
             this.lastY = this.getY(evt)

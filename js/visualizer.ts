@@ -103,7 +103,7 @@ module visualizing {
             // Energy dragger
             this.energyVisualizer_ = new visualizing.EnergyVisualizer(energyContainer, energyDraggerPrototype, this.params)
 
-            this.energyVisualizer_.positionUpdated = (slider: visualizing.EnergySlider, position: number) => {
+            this.energyVisualizer_.positionUpdated = (slider: ui.Slider, position: number) => {
                 // the user dragged the energy to a new value, expressed our "height" coordinate system
                 // compute a new wavefunction
                 const energy = this.params.convertYFromVisualCoordinate(position)

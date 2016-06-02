@@ -78,4 +78,23 @@ module ui {
         rotator.addEventListener("touchend", stopRotateHandler)
         rotator.addEventListener("touchcancel", stopRotateHandler)
     }
+    
+    export class Slider {
+        public position:number
+        public value:number
+        constructor(public element:HTMLElement, position:number, value:number) {
+            this.update(position, value)
+        }
+        
+        update(position:number, value:number) {
+            this.value = value
+            this.position = position
+            const valueStr = value.toFixed(2)
+            const labelFieldNodeList = this.element.getElementsByClassName("value_text")
+            for (let i=0; i < labelFieldNodeList.length; i++) {
+                labelFieldNodeList[i].textContent = valueStr 
+            }
+            this.element.style.top = position + "px"
+        }
+    }
 }    
