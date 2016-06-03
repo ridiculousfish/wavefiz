@@ -37,7 +37,7 @@ module visualizing {
         
         public addSlider(position, value): ui.Slider {
             const sliderElem = this.sliderPrototype.cloneNode(true) as HTMLElement
-            const slider = new ui.Slider(sliderElem, position, value, this.positionUpdated)
+            const slider = new ui.Slider(ui.Orientation.Vertical, sliderElem, position, value, this.positionUpdated)
             this.sliders.push(slider)
             this.container.appendChild(sliderElem)
             sliderElem.style.display = "inline-block"

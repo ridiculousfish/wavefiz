@@ -79,6 +79,11 @@ module ui {
         rotator.addEventListener("touchcancel", stopRotateHandler)
     }
     
+    export enum Orientation {
+        Horizontal,
+        Vertical
+    }
+    
     export class Slider {
         private unconstrainedPosition:number = -1
         
@@ -86,7 +91,8 @@ module ui {
         static lastPosition:number = -1
         static globalInitDone = false
         
-        constructor(public element:HTMLElement,
+        constructor(public orientation:Orientation,
+                    public element:HTMLElement,
                     public position:number,
                     public value:number,
                     public positionUpdated:(slider:Slider, position:number) => number) {
@@ -153,26 +159,32 @@ module ui {
             if (this !== Slider.draggedSlider) {
                 return
             }
-            const y = this.getEventPosition(evt)
-            const dy = y - Slider.lastPosition
-            Slider.lastPosition = y
-            this.unconstrainedPosition += dy
-            const position = Math.min(Math.max(this.unconstrainedPosition, 0), this.container().offsetHeight)
-            const value = this.positionUpdated(this, position)
-            this.update(position, value)
+            const position = this.getEventPosition(evt)
+            const positionChange = position - Slider.lastPosition
+            Slider.lastPosition = position
+            this.unconstrainedPosition += positionChange
+            const maxPosition = this.isHorizontal() ? this.container().offsetWidth : this.container().offsetHeight
+            const constrainedPosition = Math.min(Math.max(this.unconstrainedPosition, 0), maxPosition)
+            const value = this.positionUpdated(this, constrainedPosition)
+            this.update(constrainedPosition, value)
         }
         
         private container(): HTMLElement {
             return this.element.parentElement || this.element
         }
         
+        private isHorizontal(): Boolean {
+            return this.orientation == Orientation.Horizontal
+        }
+        
         private getEventPosition(evt:MouseEvent|TouchEvent): number {
+            const offsetPos = this.isHorizontal() ? this.container().offsetLeft : this.container().offsetTop
             if ((evt as TouchEvent).targetTouches) {
                 // Touch event
-                return (evt as TouchEvent).targetTouches[0].pageY - this.container().offsetTop
+                return (evt as TouchEvent).targetTouches[0].pageY - offsetPos
             } else {
                 // Mouse event
-                return (evt as MouseEvent).pageY - this.container().offsetTop
+                return (evt as MouseEvent).pageY - offsetPos
             }
         }
 
