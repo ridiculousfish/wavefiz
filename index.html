@@ -10,9 +10,9 @@
             margin-top: 20px;
             font-family: Times, serif;
         }
-        .options input {
+        .options div {
             display: inline-block;
-            margin-left: 30px;
+            vertical-align: middle;
         }
         .options input:first-child {
             margin-left: 10px;
@@ -132,29 +132,27 @@
             position: relative;
             bottom: 11px;
         }
-                
+
         #rotator {
-            display: block;
+            position: relative; /* for absolute children */
+            display: inline-block;
             border-radius: 50%;
             background: linear-gradient(to bottom, rgba(219,219,219,1) 0%, rgba(74,74,74,1) 100%);
             border: solid 2px #AAA;
             width: 44px;
             height: 44px;
-            position: relative;
-            left: 750px;
-            bottom: 6px;
-            margin-bottom: -75px;               
         }
         #rotator_knob {
+            display: inline-block;
             border-radius: 50%;
             width: 12px;
             height: 12px;
-            margin-left: auto;
-            margin-right: auto;
+            position:absolute;
+            top: 10%;
+            left: 50%;
+            margin-left: -7px;
             background: linear-gradient(to top, rgba(219,219,219,1) 0%, rgba(74,74,74,1) 100%);
             border: solid 1px #AAA;
-            position: relative;
-            top: 2px;
         }
     </style>
 </head>
@@ -164,6 +162,7 @@
     <a href="javascript:loadFSW()">Finite Square Well</a>&nbsp;&nbsp;&nbsp;
     <a href="javascript:load2SW()">Two Square Wells</a>&nbsp;&nbsp;&nbsp;
     <p>
+        <!-- Visualizer -->
         <div id="outer_container">
             <div id="vis_container">
             </div><div id="energy_dragging_container">
@@ -174,24 +173,22 @@
                         <div class="value_text">12345</div>
                     </div>
                 </div>
-                <!-- Add/Remove buttons -->
-                <div style="position: absolute; bottom: -63px; left: 5px;">
-                    <button class="square_button" onClick="addEnergySlider()"><span>+</span></button>
-                    <button class="square_button" onClick="removeEnergySlider()"><span>-</span></button>
-                </div>
             </div>
         </div>
     </p>
-    <div id="rotator" class="noselect">
-        <div id="rotator_knob"></div>
-    </div>
-    <p class="options noselect">
+    <div class="options noselect">
         <input type="checkbox" id="check_psi" name="psi" onClick="togglePsi(this)" checked><label for="check_psi"><i>&psi;</i></label>
         <input type="checkbox" id="check_psiAbs" name="psiAbs" onClick="togglePsiAbs(this)"><label for="check_psiAbs">|<i>&psi;</i>|<sup>2</sup></label>
         <input type="checkbox" id="check_phi" name="phi" onClick="togglePhi(this)" checked><label for="check_phi"><i>&phi;</i></label>
         <input type="checkbox" id="check_phiAbs" name="phiAbs" onClick="togglePhiAbs(this)"><label for="check_phiAbs">|<i>&phi;</i>|<sup>2</sup></label>
         <input type="checkbox" id="check_paused" name="paused" onClick="togglePaused(this)"><label for="check_paused"><span class="playpause">&#x25B6;&#xFE0E;<!-- FE0E prevents emoji --></span></label>
-    </p>
+
+        <div id="rotator" class="noselect">
+            <div id="rotator_knob"></div>
+        </div>
+        <button class="square_button" onClick="addEnergySlider()"><span>+</span></button>
+        <button class="square_button" onClick="removeEnergySlider()"><span>-</span></button>
+    </div>
     <span id="statusfield"></span>
     <script type="text/javascript" src="js/three.min.js"></script>
     <script type="text/javascript" src="js/ui.js"></script>
