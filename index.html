@@ -7,22 +7,29 @@
             padding: 10px;
         }
         .options {
-            margin-top: 20px;
             font-family: Times, serif;
+            display: flex;
+            width: 900px;
         }
-        .options div {
+        .options > div, .options label, .options .square_button {
             display: inline-block;
             vertical-align: middle;
-        }
-        .options input:first-child {
-            margin-left: 10px;
         }
         .options input[type="checkbox"] {
            display: none;
         }
         .options label {
             margin-left: 30px;
-            padding: 0px 8px 5px 8px;            
+        }
+        .options .spacer {
+            flex-grow: 1;
+        }
+        .options .square_button {
+            margin-left: 5px;
+        }
+        .options label, .square_button div {
+            display: inline-block;
+            height: 38px;
         }
         .options label, .square_button {
             cursor: pointer;
@@ -37,6 +44,7 @@
             background-color: white;
             white-space: nowrap;
             line-height: 38px;
+            padding: 0px 8px 5px 8px;
         }
         .options sup {
             font-size: 0.45em;
@@ -49,16 +57,10 @@
             left: 2px;
             font-size: 28pt;
         }
-        .square_button > span {
+        .square_button > div {
             position: relative;
-            bottom: 1px;
-            left: 1px;
             font-weight: bold;
-            line-height: 38px;
             color: #242424;
-        }
-        .square_button {
-            padding: 2px 6px 3px 6px;
         }
         .square_button:active {
             background-color: #999;
@@ -141,6 +143,7 @@
             border: solid 2px #AAA;
             width: 44px;
             height: 44px;
+            margin-right: 5px;
         }
         #rotator_knob {
             display: inline-block;
@@ -177,17 +180,19 @@
         </div>
     </p>
     <div class="options noselect">
-        <input type="checkbox" id="check_psi" name="psi" onClick="togglePsi(this)" checked><label for="check_psi"><i>&psi;</i></label>
-        <input type="checkbox" id="check_psiAbs" name="psiAbs" onClick="togglePsiAbs(this)"><label for="check_psiAbs">|<i>&psi;</i>|<sup>2</sup></label>
-        <input type="checkbox" id="check_phi" name="phi" onClick="togglePhi(this)" checked><label for="check_phi"><i>&phi;</i></label>
-        <input type="checkbox" id="check_phiAbs" name="phiAbs" onClick="togglePhiAbs(this)"><label for="check_phiAbs">|<i>&phi;</i>|<sup>2</sup></label>
-        <input type="checkbox" id="check_paused" name="paused" onClick="togglePaused(this)"><label for="check_paused"><span class="playpause">&#x25B6;&#xFE0E;<!-- FE0E prevents emoji --></span></label>
-
+        <input type="checkbox" id="check_psi" name="psi" onClick="togglePsi(this)" checked /><label for="check_psi"><i>&psi;</i></label>
+        <input type="checkbox" id="check_psiAbs" name="psiAbs" onClick="togglePsiAbs(this)" /><label for="check_psiAbs">|<i>&psi;</i>|<sup>2</sup></label>
+        <input type="checkbox" id="check_phi" name="phi" onClick="togglePhi(this)" checked /><label for="check_phi"><i>&phi;</i></label>
+        <input type="checkbox" id="check_phiAbs" name="phiAbs" onClick="togglePhiAbs(this)" /><label for="check_phiAbs">|<i>&phi;</i>|<sup>2</sup></label>
+        <input type="checkbox" id="check_paused" name="paused" onClick="togglePaused(this)" /><label for="check_paused"><span class="playpause">&#x25B6;&#xFE0E;<!-- FE0E prevents emoji --></span></label>
+        
+        <div class="spacer"></div>
+        
         <div id="rotator" class="noselect">
             <div id="rotator_knob"></div>
         </div>
-        <button class="square_button" onClick="addEnergySlider()"><span>+</span></button>
-        <button class="square_button" onClick="removeEnergySlider()"><span>-</span></button>
+        <button class="square_button" onClick="addEnergySlider()"><div>+</div></button>
+        <button class="square_button" onClick="removeEnergySlider()"><div>-</div></button>
     </div>
     <span id="statusfield"></span>
     <script type="text/javascript" src="js/three.min.js"></script>
