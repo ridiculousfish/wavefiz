@@ -134,12 +134,19 @@ module visualizing {
         fragmentCode:
         `
             uniform vec3 color;
-            varying float zdepth;
+            varying float projectedDepth;
 
             void main() {
                 vec3 mungedColor = color;
                 //mungedColor += 10.0 * smoothstep(-50.0, 500., gl_FragCoord.z);
-                mungedColor *= (1.0 + smoothstep(-80.0, 80.0, zdepth)) / 2.0;
+                
+                //mungedColor *= (1.0 + smoothstep(-80.0, 80.0, zdepth)) / 2.0;
+                
+                float cameraDistance = 400.0;
+                float psiScale = 250.0; 
+                float depthScale = smoothstep(-psiScale, psiScale, cameraDistance - projectedDepth);
+                
+                mungedColor *= (1.0 + depthScale) / 2.0;
                 gl_FragColor = vec4(mungedColor, 1.0);
             }
         `,
@@ -150,11 +157,9 @@ module visualizing {
             uniform float thickness;
             attribute vec3 next;
             attribute vec3 prev;
-            varying float zdepth;
+            varying float projectedDepth;
             
             void main() {
-                zdepth = position.z;
-                
                 float aspect = 800.0 / 600.0;
                 vec2 aspectVec = vec2(aspect, 1.0);
                 mat4 projViewModel = projectionMatrix * modelViewMatrix;
@@ -162,11 +167,8 @@ module visualizing {
                 vec4 currentProjected = projViewModel * vec4(position, 1.0);
                 vec4 nextProjected = projViewModel * vec4(next, 1.0);
                 
-                float huh = 1.0;
-                previousProjected.w *= huh;
-                currentProjected.w *= huh;
-                nextProjected *= huh;
-                
+                projectedDepth = currentProjected.w;                
+
                 //get 2D screen space with W divide and aspect correction
                 vec2 currentScreen = currentProjected.xy / currentProjected.w * aspectVec;
                 vec2 previousScreen = previousProjected.xy / previousProjected.w * aspectVec;
@@ -241,34 +243,23 @@ module visualizing {
             // next is shifted left, and previous shifted right
             let nexts = new Float32Array(vertexCount*3)
             let prevs = new Float32Array(vertexCount*3)
-            // nexts.copyWithin(0, 3) // shift elements left by 3, duplicating the last 3
-            // prevs.copyWithin(3, 0) // shift elements right by 3, duplicating the first 3            
             this.geometry.addAttribute('next', new THREE.BufferAttribute(nexts, 3))
             this.geometry.addAttribute('prev', new THREE.BufferAttribute(prevs, 3))
             
             ;(this.geometry as any).dynamic = true
-            if ("abc".length > 100) {
-                this.mesh = new THREE.Mesh(this.geometry, 
-                    new THREE.MeshBasicMaterial({
-                        color: material.color,
-                        side:THREE.DoubleSide,
-                        wireframe:false,
-                        depthWrite:depthWrite
-                    }));        
-            } else {
-                let sm = new THREE.ShaderMaterial({
-                    side:THREE.DoubleSide,
-                    uniforms: {
-                        color: { type: 'c', value: new THREE.Color( material.color as number ) },
-                        thickness: { type: 'f', value: thickness}
-                    },
-                    vertexShader: Shaders.vertexCode,
-                    fragmentShader: Shaders.fragmentCode,
-                    depthWrite: depthWrite
-                })
-                this.mesh = new THREE.Mesh(this.geometry, sm)
-            }
+            let sm = new THREE.ShaderMaterial({
+                side:THREE.DoubleSide,
+                uniforms: {
+                    color: { type: 'c', value: new THREE.Color( material.color as number ) },
+                    thickness: { type: 'f', value: thickness}
+                },
+                vertexShader: Shaders.vertexCode,
+                fragmentShader: Shaders.fragmentCode,
+                depthWrite: depthWrite
+            })
+            this.mesh = new THREE.Mesh(this.geometry, sm)
         }
+        
         public update(cb: (index) => THREE.Vector3) {
             let attrs = (this.geometry as any).attributes
             let positions = attrs.position.array
