@@ -70,6 +70,9 @@ module visualizing {
         }
 
         dragEnd() {
+            if (this.dragLocations_.length == 0) {
+                return
+            }
             this.potentialMesh_ = this.buildMeshFromDragPoints(this.dragLocations_)
             this.clearDragLocations(true)
             this.redrawPotentialMesh()
