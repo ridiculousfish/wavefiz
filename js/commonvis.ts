@@ -143,8 +143,9 @@ module visualizing {
                 //mungedColor *= (1.0 + smoothstep(-80.0, 80.0, zdepth)) / 2.0;
                 
                 float cameraDistance = 400.0;
-                float psiScale = 250.0; 
-                float depthScale = smoothstep(-psiScale, psiScale, cameraDistance - projectedDepth);
+                float psiScale = 250.0;
+                float totalScale = psiScale * .5;
+                float depthScale = smoothstep(-totalScale, totalScale, cameraDistance - projectedDepth);
                 
                 mungedColor *= (1.0 + depthScale) / 2.0;
                 gl_FragColor = vec4(mungedColor, 1.0);

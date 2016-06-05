@@ -4,14 +4,15 @@
     <meta charset="UTF-8">
     <style>
         body {
-            padding: 10px;
+            padding-left: 10px;
         }
         .options {
             font-family: Times, serif;
             display: flex;
             width: 900px;
+            margin-top: 8px;
         }
-        .options > div, .options label, .options .square_button {
+        .options > div, .options label, .options .square_button, .options .menu_button {
             display: inline-block;
             vertical-align: middle;
         }
@@ -24,17 +25,27 @@
         .options .spacer {
             flex-grow: 1;
         }
-        .options .square_button {
-            margin-left: 5px;
+        .options .separator {
+            width: 1px;
+            border-left: dotted 2px #999;
+            margin-left: 20px;
+            margin-right: -10px;
+            height: 42px;
+            align-self: center;
+            position: relative;
+            bottom: 2px;
         }
-        .options label, .square_button div {
+        .square_button, .menu_button {
+            margin-left: 5px;
+            position: relative;
+            bottom: 2px; /* why */
+        }
+        .options label, .square_button div, .menu_button div {
             display: inline-block;
             height: 38px;
         }
-        .options label, .square_button {
+        .options label, .square_button, .menu_button {
             cursor: pointer;
-            vertical-align: middle;
-            display: inline-block;
             font-size: 28pt;
             border-radius: 8px;
             color: #555;
@@ -45,6 +56,11 @@
             white-space: nowrap;
             line-height: 38px;
             padding: 0px 8px 5px 8px;
+        }
+        .menu_button {
+            width: 60px;
+            font-weight: bold;
+            color: #333;
         }
         .options sup {
             font-size: 0.45em;
@@ -58,7 +74,6 @@
             font-size: 28pt;
         }
         .square_button > div {
-            position: relative;
             font-weight: bold;
             color: #242424;
         }
@@ -157,33 +172,79 @@
             background: linear-gradient(to top, rgba(219,219,219,1) 0%, rgba(74,74,74,1) 100%);
             border: solid 1px #AAA;
         }
+        
+        .menu {
+            position: absolute;
+            bottom:0px;
+            box-shadow:0 0 8px 0 black;
+            border-radius: 3px;
+            background-color: #DDD;
+            display: none;
+            list-style-type: none;
+            margin:0;
+            line-height: 75%;
+            text-align: left;
+            padding-left: 0;
+            padding-right: 0;
+            padding-top: 3px;
+            padding-bottom: 3px;
+        }
+        .menu-item .glyph {
+            font-size: 24pt;
+            margin-right: 5px;
+            display: inline-block;
+            width: 40px;
+            text-align: center;
+            position: relative;
+            top: 5px;
+        }
+        .menu-item {
+            font-size: 10pt;
+            padding-left: 5px;
+            padding-right: 8px;
+            padding-top: 0;
+            padding-bottom: 3px;
+            vertical-align: center;
+        }
+        .menu-item:hover {
+            background-color: #777;
+        }
+        .menu_button:hover .menu, .menu:hover {
+            display: block;
+        }
     </style>
 </head>
 <body>
-    <a href="javascript:loadSHO()">Simple Harmonic Oscillator</a>&nbsp;&nbsp;&nbsp;
-    <a href="javascript:loadISW()">Infinite Square Well</a>&nbsp;&nbsp;&nbsp;
-    <a href="javascript:loadFSW()">Finite Square Well</a>&nbsp;&nbsp;&nbsp;
-    <a href="javascript:load2SW()">Two Square Wells</a>&nbsp;&nbsp;&nbsp;
-    <p>
-        <!-- Visualizer -->
-        <div id="outer_container">
-            <div id="vis_container">
-            </div><div id="energy_dragging_container">
-                <!-- Energy dragger prototype div -->
-                <div class="energy_dragger" id="energy_dragger_prototype" style="display: none">
-                    <div class="centerer">
-                        <div class="grip"></div>
-                        <div class="value_text">12345</div>
-                    </div>
+    <!-- Visualizer -->
+    <div id="outer_container">
+        <div id="vis_container">
+        </div><div id="energy_dragging_container">
+            <!-- Energy dragger prototype div -->
+            <div class="energy_dragger" id="energy_dragger_prototype" style="display: none">
+                <div class="centerer">
+                    <div class="grip"></div>
+                    <div class="value_text">12345</div>
                 </div>
             </div>
         </div>
-    </p>
+    </div>
     <div class="options noselect">
+        <button class="menu_button"><div style="position: relative; top: 1px">V</div>
+            <div style="position: absolute; top:0px; left: 0px;height: 0px;">
+                <ul class="menu">
+                    <li class="menu-item" onClick="loadSHO()"><span class="glyph">&#x22c3;</span>Simple Harmonic Oscillator</li>
+                    <li class="menu-item" onClick="loadISW()"><span class="glyph">&#x2a06;</span>Infinite Square Well</li>
+                    <li class="menu-item" onClick="loadFSW()"><span class="glyph" style="transform: scaleY(-1);">&#x238d;</span>Finite Square Well</li>
+                    <li class="menu-item" onClick="load2SW()" style="margin-top: -5px;"><span class="glyph" style="transform: rotate(90deg); position: relative; top: 5px;">&#x2203;</span>Two Square Wells</li>
+                </ul>
+            </div>
+        </button>
+        <div class="separator"></div>
         <input type="checkbox" id="check_psi" name="psi" onClick="togglePsi(this)" checked /><label for="check_psi"><i>&psi;</i></label>
         <input type="checkbox" id="check_psiAbs" name="psiAbs" onClick="togglePsiAbs(this)" /><label for="check_psiAbs">|<i>&psi;</i>|<sup>2</sup></label>
         <input type="checkbox" id="check_phi" name="phi" onClick="togglePhi(this)" checked /><label for="check_phi"><i>&phi;</i></label>
         <input type="checkbox" id="check_phiAbs" name="phiAbs" onClick="togglePhiAbs(this)" /><label for="check_phiAbs">|<i>&phi;</i>|<sup>2</sup></label>
+        <div class="separator"></div>
         <input type="checkbox" id="check_paused" name="paused" onClick="togglePaused(this)" /><label for="check_paused"><span class="playpause">&#x25B6;&#xFE0E;<!-- FE0E prevents emoji --></span></label>
         
         <div class="spacer"></div>
