@@ -311,12 +311,12 @@ module visualizing {
 
     export class Parameters {
         public xScale = 1
-        public yScale = 1 // multiply to go from potential to graphical point
-        public width: number = 800
-        public height: number = 600
+        public width: number = 800 // in "pixels"
+        public height: number = 600 // in "pixels"
         public cameraDistance = 400 // how far back the camera is
-        public maxX: number = 20 // maximum X value
+        public maxX: number = 25 // maximum X value
         public timescale: number = 1.0 / 3.0
+        public energyScale: number = 5 // coefficient for energy in the visualizer, only affects label
         public meshDivision: number = 800 // how many points are in our mesh
         public psiScale: number = 250 // how much scale we visually apply to the wavefunction
         public absScale: number = 1.5 // how much additional scale we visually apply to the psiAbs and phiAbs
@@ -335,11 +335,12 @@ module visualizing {
         }
 
         public convertYToVisualCoordinate(y: number) {
-            return this.height - this.yScale * y
+            // 0 is at top
+            return this.height * (1.0 - y);
         }
 
         public convertYFromVisualCoordinate(y: number) {
-            return (this.height - y) / this.yScale
+            return 1.0 - y / this.height
         }
 
         public convertXToVisualCoordinate(x: number) {
@@ -350,12 +351,11 @@ module visualizing {
     // Builds a potential based on a function
     // let f be a function that accepts an x position, and optionally the x fraction (in the range [0, 1))
     // returns the new potential
-    export function buildPotential(params:Parameters, f:((x:number, xfrac?:number) => number)) {
+    export function buildPotential(params:Parameters, f:((x:number) => number)) {
         let potentialMesh: number[] = []
         for (let i = 0; i < params.meshDivision; i++) {
-            const x = params.centerForMeshIndex(i)
-            const xfrac = i / params.meshDivision
-            potentialMesh.push(f(x, xfrac))
+            const x = i / params.meshDivision
+            potentialMesh.push(f(x))
         }
         return potentialMesh
     }
@@ -390,7 +390,7 @@ module visualizing {
             // x is a value in [0, this.potential_.width)
             // we have a value of 1 at x = width/2
             const offsetX = params.width / 2
-            const scaledX = (x - offsetX) * params.maxX / params.width
+            const scaledX = (x - offsetX)
             return baseEnergy + xScaleFactor * (scaledX * scaledX / 2.0)
         })
         
@@ -399,7 +399,7 @@ module visualizing {
         const input = {
             potentialMesh: potential,
             energy: energy,
-            maxX: params.maxX
+            maxX:params.maxX
         }
         
         let psi = algorithms.classicallyResolvedAveragedNumerov(input)

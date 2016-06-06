@@ -95,7 +95,7 @@ module ui {
                     public element:HTMLElement,
                     public position:number,
                     public value:number,
-                    public positionUpdated:(slider:Slider, position:number) => number) {
+                    public positionUpdated:(slider:Slider, position:number) => void) {
             this.beginWatching()
             this.update(position, value)
             
@@ -166,7 +166,7 @@ module ui {
             const maxPosition = this.isHorizontal() ? this.container().offsetWidth : this.container().offsetHeight
             const constrainedPosition = Math.min(Math.max(this.unconstrainedPosition, 0), maxPosition)
             const value = this.positionUpdated(this, constrainedPosition)
-            this.update(constrainedPosition, value)
+            this.update(constrainedPosition, this.value)
         }
         
         private container(): HTMLElement {

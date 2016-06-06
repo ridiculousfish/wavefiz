@@ -104,6 +104,7 @@ module visualizing {
             let positionUpdated = (slider: ui.Slider, position: number) => {
                 // the user dragged the energy to a new value, expressed our "height" coordinate system
                 // compute a new wavefunction
+                // TODO: untangle this
                 const energy = this.params.convertYFromVisualCoordinate(position)
                 this.energyBars_.forEach((bar: EnergyBar) => {
                     if (bar.slider === slider) {
@@ -111,7 +112,6 @@ module visualizing {
                     }
                 })
                 this.computeAndShowWavefunctions()
-                return energy
             }
             this.energyVisualizer_ = new visualizing.EnergyVisualizer(energyContainer, energyDraggerPrototype, this.params, positionUpdated)
 
@@ -189,13 +189,13 @@ module visualizing {
         }
 
         private nextInterestingEnergy() {
-            const usedEnergies = this.energyBars_.map((eb: EnergyBar) => eb.energy)
+            const usedEnergies = this.energyBars_.map((eb: EnergyBar) => eb.energy())
             const energyIsUsed = (proposedE: number) => {
                 const eps = .25
                 return usedEnergies.some((energy: number) => Math.abs(proposedE - energy) <= eps)
             }
 
-            const maxEnergy = this.params.height / this.params.yScale
+            const maxEnergy = this.params.height
             const startingPoints = [0.5, 3.0, 1.5, 2.0, 2.5, 1.0, 0.5]
             const offset = 1.3
             for (let i = 0; i < startingPoints.length; i++) {
@@ -249,7 +249,7 @@ module visualizing {
                 let psis = this.energyBars_.map((bar: EnergyBar) => {
                     const psiInputs = {
                         potentialMesh: this.state.potential,
-                        energy: bar.energy,
+                        energy: bar.energy(),
                         maxX: this.params.maxX
                     }
                     let resolvedWavefunction = algorithms.classicallyResolvedAveragedNumerov(psiInputs)
@@ -266,7 +266,7 @@ module visualizing {
 
             // update turning points based on maximum energy
             let maxEnergy = 0
-            this.energyBars_.map((eb: EnergyBar) => maxEnergy = Math.max(maxEnergy, eb.energy))
+            this.energyBars_.map((eb: EnergyBar) => maxEnergy = Math.max(maxEnergy, eb.energy()))
             const maxTurningPoints = algorithms.classicalTurningPoints(this.state.potential, maxEnergy)
 
             const leftV = this.params.convertXToVisualCoordinate(maxTurningPoints.left)
@@ -317,22 +317,20 @@ module visualizing {
 
         public loadSHO() {
             // Simple Harmonic Oscillator
-            this.params.yScale = 80
-            const baseEnergy = 0.25
-            const xScaleFactor = 1.0 / 4.0
-            this.params.timescale = 1.0 / 2.0
+            const baseEnergy = 0.04
+            const steepness = 12.0
+            this.params.timescale = 4.0
             this.loadFrom((x: number) => {
-                // x is a value in [0, this.potential_.width)
+                // x is a value in [0, 1)
                 // we have a value of 1 at x = width/2
-                const offsetX = this.params.width / 2
-                const scaledX = (x - offsetX) * this.params.maxX / this.params.width
-                return baseEnergy + xScaleFactor * (scaledX * scaledX / 2.0)
+                const offsetX = 0.5
+                const scaledX = (x - offsetX)
+                return baseEnergy + steepness * (scaledX * scaledX / 2.0)
             })
         }
 
         public loadISW() {
             // Infinite square well
-            this.params.yScale = 400
             const baseEnergy = 1 / 16
             this.params.timescale = 1.0
             const widthRatio = 1.0 / 5.0
@@ -348,7 +346,6 @@ module visualizing {
 
         public loadFSW() {
             // Finite square well
-            this.params.yScale = 400
             const baseEnergy = 1 / 16
             this.params.timescale = 1.0
             const widthRatio = 1.0 / 5.0
@@ -364,7 +361,7 @@ module visualizing {
 
         public load2SW() {
             // Two adjacent square wells
-            this.params.yScale = 100
+            const baseEnergy = 1 / 16
             this.params.timescale = 1.0
             const leftBarrierEnd = 1.0 / 5.0
             const rightBarrierStart = 1.0 - 1.0 / 5.0
@@ -374,11 +371,11 @@ module visualizing {
                 // x is a value in [0, this.params.width)
                 const sx = x / this.params.width
                 if (sx < leftBarrierEnd || sx > rightBarrierStart) {
-                    return 5.0
+                    return 1.25
                 } else if (sx >= centerBarrierStart && sx < centerBarrierEnd) {
-                    return 4.0
+                    return 1.0
                 } else {
-                    return .5
+                    return baseEnergy
                 }
             })
 

@@ -57,7 +57,7 @@ module visualizing {
                 let minCandidate = Math.min(...candidates)
 
                 // convert from candidate to potential
-                const potential = (this.params.height - minCandidate) / this.params.yScale
+                const potential = this.params.height - minCandidate
 
                 potentialMesh.push(potential)
             }

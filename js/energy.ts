@@ -11,14 +11,20 @@ module visualizing {
     
     export class EnergyBar {
         public line: VisLine
+        private unscaledEnergy: number
         
-        constructor(public slider: ui.Slider, public energy: number, public params: Parameters) {
+        constructor(public slider: ui.Slider, energy: number, public params: Parameters) {
             this.line = new VisLine(2, { color: 0xFF0000 })
+            this.unscaledEnergy = energy
         }
         setPositionAndEnergy(position: number, energy: number) {
-            this.energy = energy
+            this.unscaledEnergy = energy
             this.line.update((idx:number) => vector3(idx * this.params.width, position, 0))
-            this.slider.update(position, this.energy)
+            this.slider.update(position, this.unscaledEnergy * this.params.energyScale)
+        }
+        
+        public energy() {
+            return this.unscaledEnergy 
         }
     }
     
@@ -30,7 +36,7 @@ module visualizing {
         constructor(public container: HTMLElement,
                     public sliderPrototype: HTMLElement,
                     public params:visualizing.Parameters,
-                    public positionUpdated: (slider:ui.Slider, position:number) => number) {
+                    public positionUpdated: (slider:ui.Slider, position:number) => void) {
             assert(this.container != null, "Energy slider could not find container")
             assert(this.sliderPrototype != null, "Energy slider could not find prototype")
         }

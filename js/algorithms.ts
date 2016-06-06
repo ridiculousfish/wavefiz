@@ -191,7 +191,7 @@ module algorithms {
             assert(isFinite(md.rightDerivativeDiscontinuity), "Non-finite rightDerivativeDiscontinuity: " + md.rightDerivativeDiscontinuity)
         }
 
-        valueAt(x: number, time: number) {
+        valueAt(x: number, time: number): Complex {
             // e^(-iEt) -> cos(-eT) + i * sin(-Et)
             const nEt = - this.md.energy * time
             let ret = this.values.at(x).multiplied(Complex.exponential(nEt))
@@ -321,7 +321,7 @@ module algorithms {
         // F function used in Numerov
         F: (x: number) => number = null
 
-        constructor(public potential: number[], public energy: number, public xMax: number) {
+        constructor(public potential: number[], public energy: number, public maxX: number) {
             this.potential = this.potential.slice()
         }
 
@@ -365,7 +365,7 @@ module algorithms {
             }
 
             // normalize
-            const dx = this.xMax / length
+            const dx = this.maxX / length
             normalizeReals(psi, dx)
 
             // compute discontinuities
@@ -509,21 +509,27 @@ module algorithms {
         return x.toFixed(2)
     }
 
-    function algorithmTest() {
-        let lines: string[] = []
-        const maxX = 20
+    export function algorithmTest() {
+        let lines: string[] = []        
         const width = 1025
+        
         let potential = zeros(width)
+        
+        // Simple Harmonic Oscillator
+        const baseEnergy = 0.04
+        const steepness = 12.0
+        
         for (let i = 0; i < width; i++) {
-            let x = i / width * maxX - (maxX / 2)
-            let V = x * x / 2
-            potential[i] = V
+            let x = i / width 
+            const offsetX = 0.5
+            const scaledX = (x - offsetX)
+            potential[i] = baseEnergy + steepness * (scaledX * scaledX / 2.0)
         }
 
         let input = {
             potentialMesh: potential,
-            energy: 2.5,
-            maxX: maxX
+            energy: 0.5,
+            maxX: 25
         }
         let psi = numerov(input, true).resolveAtClassicalTurningPoints()
 
@@ -532,8 +538,8 @@ module algorithms {
 
         lines.push("x\tpsi\tV")
         for (let i = 0; i < width; i++) {
-            let x = i / width * maxX - (maxX / 2)
-            lines.push(formatFloat(x) + "\t" + formatFloat(psi.values[i].re) + "\t" + formatFloat(potential[i]))
+            let x = i / width - (1.0 / 2.0)
+            lines.push(formatFloat(x) + "\t" + formatFloat(psi.valueAt(i, 0).re) + "\t" + formatFloat(potential[i]))
         }
 
         return lines.join("\n")
