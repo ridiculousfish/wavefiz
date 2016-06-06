@@ -331,13 +331,12 @@ module visualizing {
 
         public loadISW() {
             // Infinite square well
-            const baseEnergy = 1 / 16
-            this.params.timescale = 1.0
+            const baseEnergy = 0.05
+            this.params.timescale = 4.0
             const widthRatio = 1.0 / 5.0
             this.loadFrom((x: number) => {
-                // x is a value in [0, this.params.width)
-                const width = this.params.width
-                if (x < width * widthRatio || x > width - (width * widthRatio)) {
+                // x is a value in [0, 1)
+                if (x < widthRatio || x > 1.0 - widthRatio) {
                     return 1000
                 }
                 return baseEnergy
@@ -346,14 +345,13 @@ module visualizing {
 
         public loadFSW() {
             // Finite square well
-            const baseEnergy = 1 / 16
-            this.params.timescale = 1.0
+            const baseEnergy = 0.05
+            this.params.timescale = 4.0
             const widthRatio = 1.0 / 5.0
             this.loadFrom((x: number) => {
-                // x is a value in [0, this.params.width)
-                const width = this.params.width
-                if (x < width * widthRatio || x > width - (width * widthRatio)) {
-                    return 1.25
+                // x is a value in [0, 1)
+                if (x < widthRatio || x > 1.0 - widthRatio) {
+                    return .8
                 }
                 return baseEnergy
             })
@@ -361,19 +359,18 @@ module visualizing {
 
         public load2SW() {
             // Two adjacent square wells
-            const baseEnergy = 1 / 16
-            this.params.timescale = 1.0
-            const leftBarrierEnd = 1.0 / 5.0
-            const rightBarrierStart = 1.0 - 1.0 / 5.0
+            const baseEnergy = 0.05
+            this.params.timescale = 4.0
+            const leftBarrierEnd = 1.0 / 7.0
+            const rightBarrierStart = 1.0 - 1.0 / 7.0
             const centerBarrierStart = 1.7 / 5.0
             const centerBarrierEnd = 1.85 / 5.0
             this.loadFrom((x: number) => {
-                // x is a value in [0, this.params.width)
-                const sx = x / this.params.width
-                if (sx < leftBarrierEnd || sx > rightBarrierStart) {
-                    return 1.25
-                } else if (sx >= centerBarrierStart && sx < centerBarrierEnd) {
-                    return 1.0
+                // x is a value in [0, 1)
+                if (x < leftBarrierEnd || x > rightBarrierStart) {
+                    return 1000
+                } else if (x >= centerBarrierStart && x < centerBarrierEnd) {
+                    return .85
                 } else {
                     return baseEnergy
                 }
