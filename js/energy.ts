@@ -13,9 +13,10 @@ module visualizing {
         public line: VisLine
         private unscaledEnergy: number
         
-        constructor(public slider: ui.Slider, energy: number, public params: Parameters) {
-            this.line = new VisLine(2, { color: 0xFF0000 })
+        constructor(public slider: ui.Slider, position: number, energy: number, public params: Parameters) {
             this.unscaledEnergy = energy
+            this.line = new VisLine(2, { color: 0xFF0000 })
+            this.line.update((idx:number) => vector3(idx * this.params.width, position, 0))
         }
         setPositionAndEnergy(position: number, energy: number) {
             this.unscaledEnergy = energy

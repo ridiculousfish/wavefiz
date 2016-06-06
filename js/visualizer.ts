@@ -189,32 +189,42 @@ module visualizing {
         }
 
         private nextInterestingEnergy() {
-            const usedEnergies = this.energyBars_.map((eb: EnergyBar) => eb.energy())
-            const energyIsUsed = (proposedE: number) => {
-                const eps = .25
-                return usedEnergies.some((energy: number) => Math.abs(proposedE - energy) <= eps)
+            // Find the point in [0, 1) furthest from all other points
+            // This is naturally in the midpoint between its two closest neighbors
+            // This means we can only track one distance
+            let usedEnergies = this.energyBars_.map((eb: EnergyBar) => eb.energy())
+            
+            // hack for initial energy
+            if (usedEnergies.length == 0) {
+                return 0.3
             }
-
-            const maxEnergy = this.params.height
-            const startingPoints = [0.5, 3.0, 1.5, 2.0, 2.5, 1.0, 0.5]
-            const offset = 1.3
-            for (let i = 0; i < startingPoints.length; i++) {
-                for (let proposal = startingPoints[i]; proposal < maxEnergy; proposal += offset) {
-                    if (!energyIsUsed(proposal)) {
-                        return proposal
-                    }
+            
+            // treat us as if there's a point at each end
+            usedEnergies.push(0)
+            usedEnergies.push(1)
+            usedEnergies.sort()
+            
+            let indexOfLargestInterval = -1 
+            let lengthOfLargestInterval = -1
+            for (let i=0; i + 1 < usedEnergies.length; i++) {
+                let length = usedEnergies[i+1] - usedEnergies[i]
+                assert(length >= 0, "Array not sorted?")
+                if (length > lengthOfLargestInterval) {
+                    lengthOfLargestInterval = length
+                    indexOfLargestInterval = i
                 }
             }
-            return maxEnergy / 3; // give up!
+            let result = usedEnergies[indexOfLargestInterval] + lengthOfLargestInterval/2.0
+            assert(result >= 0 && result < 1, "energy out of range?")
+            return result
         }
 
         public addEnergySlider() {
             const energy = this.nextInterestingEnergy()
             const position = this.params.convertYToVisualCoordinate(energy)
-            const slider = this.energyVisualizer_.addSlider(position, energy)
-            const bar = new EnergyBar(slider, energy, this.params)
+            const slider = this.energyVisualizer_.addSlider(position, energy * this.params.energyScale)
+            const bar = new EnergyBar(slider, position, energy, this.params)
             this.energyBars_.push(bar)
-            bar.setPositionAndEnergy(position, energy) // hack, we shouldn't need to do this
             bar.line.addToGroup(this.topGroup_)
             this.computeAndShowWavefunctions()
         }
