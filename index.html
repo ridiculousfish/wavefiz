@@ -97,13 +97,15 @@
             height: 600px;
             display: inline-block;
             margin: 0;
-            vertical-align: top;
             position: relative;
         }
-        #outer_container {
-            white-space: nowrap;
+        #potential_dragging_container {
+            width: 800px;
+            height: 30px;
+            display: block;
+            margin: 0;
         }
-        .energy_dragger, #outer_container, .noselect {            
+        .dragger, #outer_container, .noselect {            
             /* Defeat text selection */
             -webkit-touch-callout: none;
             -webkit-user-select: none;
@@ -112,21 +114,18 @@
             -ms-user-select: none;
             user-select: none;
         }
-        .energy_dragger {
+        .dragger {
             display: inline-block;
             position: absolute;
             cursor: ns-resize;
         }
-        #outer_container {
-            position: relative;
-        }
         
-        .energy_dragger div {
+        .dragger div {
             display: inline-block;
             vertical-align: top;
         }
         
-        .energy_dragger .grip {
+        .dragger .grip {
             border-top-right-radius: 5px;
             border-bottom-right-radius: 5px;
             width: 20px;
@@ -138,18 +137,32 @@
             border-width: 1px 11px 1px 7px; /* top right bottom left */
             border-color:#AAA;
         }
-        .energy_dragger .value_text {
+        .dragger .value_text {
             font-family: Helvetica, Arial, sans-serif;
             font-size: 16pt;
             user-select: none;
         }
         
+        /* Horizontal dragging */
+        .horizontal {
+            transform: rotate(90deg);
+            cursor: ew-resize;
+        }
+        .horizontal .grip {
+            width: 14px;
+        }
+        
         /* Center us vertically */
-        .energy_dragger > .centerer {
+        .dragger > .centerer {
             padding: 10px; /* big touch surface */
             position: relative;
             right: 10px;
             bottom: 21px;
+        }
+        
+        .horizontal > .centerer {
+            /* Additional horizontal centering */
+            top: 5px;
         }
 
         #rotator {
@@ -222,13 +235,20 @@
         <div id="vis_container">
         </div><div id="energy_dragging_container">
             <!-- Energy dragger prototype div -->
-            <div class="energy_dragger" id="energy_dragger_prototype" style="display: none">
+            <div class="dragger" id="energy_dragger_prototype" style="display: none">
                 <div class="centerer">
                     <div class="grip"></div>
                     <div class="value_text">12345</div>
                 </div>
             </div>
         </div>
+        <div id="potential_dragging_container">
+            <div id="potential_dragger" class="dragger horizontal">
+                <div class="centerer">
+                    <div class="grip"></div>
+                </div>
+        </div>
+
     </div>
     <div class="options noselect">
         <button class="menu_button"><div style="position: relative; top: 1px">V</div>
@@ -262,6 +282,7 @@
     <script type="text/javascript" src="js/ui.js"></script>
     <script type="text/javascript" src="js/complex.js"></script>
     <script type="text/javascript" src="js/algorithms.js"></script>
+    <script type="text/javascript" src="js/potentials.js"></script>
     <script type="text/javascript" src="js/commonvis.js"></script>
     <script type="text/javascript" src="js/wavefunctionvis.js"></script>
     <script type="text/javascript" src="js/energy.js"></script>
@@ -274,10 +295,11 @@
         )
         
         var vis_container = document.getElementById("vis_container")
+        var potential_container = document.getElementById("potential_dragger")
         var energy_container = document.getElementById("energy_dragging_container")
         var energy_dragger_prototype = document.getElementById("energy_dragger_prototype")
         
-        var Vis = new visualizing.Visualizer(vis_container, energy_container, energy_dragger_prototype);
+        var Vis = new visualizing.Visualizer(vis_container, potential_container, energy_container, energy_dragger_prototype);
         function loadSHO() {
             Vis.loadSHO()
         }

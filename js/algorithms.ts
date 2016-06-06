@@ -384,12 +384,16 @@ module algorithms {
             return this.resolveAtTurningPoints(classicalTurningPoints(this.potential, this.energy))
         }
     }
+    
+    export function resolvedAveragedNumerov(input: IntegratorInput, tps: TurningPoints): ResolvedWavefunction {
+        let evenVal = numerov(input, true).resolveAtTurningPoints(tps)
+        let oddVal = numerov(input, false).resolveAtTurningPoints(tps)
+        return averageResolvedWavefunctions(evenVal, oddVal)        
+    } 
 
     export function classicallyResolvedAveragedNumerov(input: IntegratorInput): ResolvedWavefunction {
         let tps = classicalTurningPoints(input.potentialMesh, input.energy)
-        let evenVal = numerov(input, true).resolveAtTurningPoints(tps)
-        let oddVal = numerov(input, false).resolveAtTurningPoints(tps)
-        return averageResolvedWavefunctions(evenVal, oddVal)
+        return resolvedAveragedNumerov(input, tps)
     }
 
     // calculates the wavefunction from a potential

@@ -315,8 +315,9 @@ module visualizing {
         public height: number = 600 // in "pixels"
         public cameraDistance = 400 // how far back the camera is
         public maxX: number = 25 // maximum X value
-        public timescale: number = 1.0 / 3.0
+        public timescale: number = 4.0 // multiplier for time
         public energyScale: number = 5 // coefficient for energy in the visualizer, only affects label
+        public potentialParameter: number = .15 // single draggable parameter in our potential, in the range [0, 1)
         public meshDivision: number = 800 // how many points are in our mesh
         public psiScale: number = 250 // how much scale we visually apply to the wavefunction
         public absScale: number = 1.5 // how much additional scale we visually apply to the psiAbs and phiAbs
@@ -351,11 +352,12 @@ module visualizing {
     // Builds a potential based on a function
     // let f be a function that accepts an x position, and optionally the x fraction (in the range [0, 1))
     // returns the new potential
-    export function buildPotential(params:Parameters, f:((x:number) => number)) {
+    export function buildPotential(params:Parameters, f:algorithms.PotentialBuilderFunc) {
         let potentialMesh: number[] = []
+        const potP = params.potentialParameter
         for (let i = 0; i < params.meshDivision; i++) {
             const x = i / params.meshDivision
-            potentialMesh.push(f(x))
+            potentialMesh.push(f(potP, x))
         }
         return potentialMesh
     }

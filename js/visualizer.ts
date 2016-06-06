@@ -1,4 +1,5 @@
 /// <reference path="../typings/threejs/three.d.ts"/>
+/// <reference path='./potentials.ts'/>
 /// <reference path='./algorithms.ts'/>
 /// <reference path='./energy.ts'/>
 /// <reference path='./potentialvis.ts'/>
@@ -28,11 +29,15 @@ module visualizing {
         private camera_: THREE.Camera
         private potential_: PotentialVisualizer
         private animator_: Animator
+        
+        private potentialBuilder_ : algorithms.PotentialBuilderFunc
 
         private wavefunctionAvg_: WavefunctionVisualizer
 
         private energyVisualizer_: visualizing.EnergyVisualizer
         private energyBars_: EnergyBar[] = []
+        
+        private potentialSlider_ : ui.Slider
 
         private leftTurningPoint_: VisLine
         private rightTurningPoint_: VisLine
@@ -41,7 +46,7 @@ module visualizing {
 
         public state: InputState = { potential: [] }
 
-        constructor(container: HTMLElement, energyContainer: HTMLElement, energyDraggerPrototype: HTMLElement) {
+        constructor(container: HTMLElement, potentialDragger: HTMLElement, energyContainer: HTMLElement, energyDraggerPrototype: HTMLElement) {
             this.container_ = container
 
             // Animator
@@ -67,6 +72,17 @@ module visualizing {
             this.setCameraRotation(0)
 
             this.topScene_.add(this.topGroup_)
+            
+            // Potential slider
+            let potentialSliderUpdated = (slider: ui.Slider, position: number) => {
+                let value = position / this.params.width
+                if (value != this.params.potentialParameter) {
+                    this.params.potentialParameter = value
+                    this.rebuildPotential()
+                }
+            }
+            this.potentialSlider_ = new ui.Slider(ui.Orientation.Horizontal, potentialDragger, 0, 0, potentialSliderUpdated)
+            this.potentialSlider_.update(this.params.potentialParameter * this.params.width)
 
             // Potential Visualizer
             this.potential_ = new PotentialVisualizer(this.params)
@@ -255,6 +271,12 @@ module visualizing {
             
             if (this.energyBars_.length > 0) {
                 const center = algorithms.indexOfMinimum(this.state.potential)
+                
+                // determine max energy
+                let energies = this.energyBars_.map((bar) => bar.energy())
+                let maxEnergy = Math.max(...energies)
+                let maxTurningPoints = algorithms.classicalTurningPoints(this.state.potential, maxEnergy)
+                
                 // update wavefunctions and collect them all
                 let psis = this.energyBars_.map((bar: EnergyBar) => {
                     const psiInputs = {
@@ -262,6 +284,22 @@ module visualizing {
                         energy: bar.energy(),
                         maxX: this.params.maxX
                     }
+                    
+                    // Here we have a choice as to our turning points, which affects how we stitch
+                    // our wavefunctions together.
+                    //
+                    // One possibility is to resolve all of them at the outermost (highest-energy)
+                    // classical turning points. This would result in a single "kink." However, in the
+                    // classically forbidden region, we tend to get exponential blowup; this will be
+                    // suppressed at our turning points, but the effect will be that small adjustments
+                    // in energy will result in large swings towards the edges of the total wavefunction:
+                    // 
+                    // let resolvedWavefunction = algorithms.resolvedAveragedNumerov(psiInputs, maxTurningPoints)
+                    //
+                    // The other possibility is to resolve each wavefunction component at its own classical
+                    // turning points, and then sum those. This will tend to produce multiple "kinks:" one per
+                    // wavefunction. In practice this isn't so bad.
+                    
                     let resolvedWavefunction = algorithms.classicallyResolvedAveragedNumerov(psiInputs)
                     return resolvedWavefunction  
                 })
@@ -320,72 +358,29 @@ module visualizing {
             this.render()
         }
         
-        loadFrom(f: ((x: number, xfrac?: number) => number)) {
-            let mesh = buildPotential(this.params, f)
+        rebuildPotential() {
+            let mesh = buildPotential(this.params, this.potentialBuilder_)
             this.potential_.setPotential(mesh)
         }
 
         public loadSHO() {
-            // Simple Harmonic Oscillator
-            const baseEnergy = 0.04
-            const steepness = 12.0
-            this.params.timescale = 4.0
-            this.loadFrom((x: number) => {
-                // x is a value in [0, 1)
-                // we have a value of 1 at x = width/2
-                const offsetX = 0.5
-                const scaledX = (x - offsetX)
-                return baseEnergy + steepness * (scaledX * scaledX / 2.0)
-            })
+            this.potentialBuilder_ = algorithms.SimpleHarmonicOscillator
+            this.rebuildPotential()
         }
 
         public loadISW() {
-            // Infinite square well
-            const baseEnergy = 0.05
-            this.params.timescale = 4.0
-            const widthRatio = 1.0 / 5.0
-            this.loadFrom((x: number) => {
-                // x is a value in [0, 1)
-                if (x < widthRatio || x > 1.0 - widthRatio) {
-                    return 1000
-                }
-                return baseEnergy
-            })
+            this.potentialBuilder_ = algorithms.InfiniteSquareWell
+            this.rebuildPotential()
         }
 
         public loadFSW() {
-            // Finite square well
-            const baseEnergy = 0.05
-            this.params.timescale = 4.0
-            const widthRatio = 1.0 / 5.0
-            this.loadFrom((x: number) => {
-                // x is a value in [0, 1)
-                if (x < widthRatio || x > 1.0 - widthRatio) {
-                    return .8
-                }
-                return baseEnergy
-            })
+            this.potentialBuilder_ = algorithms.FiniteSquareWell
+            this.rebuildPotential()
         }
 
         public load2SW() {
-            // Two adjacent square wells
-            const baseEnergy = 0.05
-            this.params.timescale = 4.0
-            const leftBarrierEnd = 1.0 / 7.0
-            const rightBarrierStart = 1.0 - 1.0 / 7.0
-            const centerBarrierStart = 1.7 / 5.0
-            const centerBarrierEnd = 1.85 / 5.0
-            this.loadFrom((x: number) => {
-                // x is a value in [0, 1)
-                if (x < leftBarrierEnd || x > rightBarrierStart) {
-                    return 1000
-                } else if (x >= centerBarrierStart && x < centerBarrierEnd) {
-                    return .85
-                } else {
-                    return baseEnergy
-                }
-            })
-
+            this.potentialBuilder_ = algorithms.TwoSquareWells
+            this.rebuildPotential()
         }
     }
 }

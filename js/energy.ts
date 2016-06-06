@@ -31,8 +31,6 @@ module visualizing {
     
     export class EnergyVisualizer {
         sliders: ui.Slider[] = []
-        private draggedSlider: ui.Slider = null
-        private unconstrainedPosition = 0
         
         constructor(public container: HTMLElement,
                     public sliderPrototype: HTMLElement,

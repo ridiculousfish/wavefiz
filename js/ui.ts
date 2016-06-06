@@ -114,7 +114,7 @@ module ui {
             this.endWatching()
         }
         
-        update(position:number, value:number) {
+        update(position:number, value:number = 0) {
             this.value = value
             this.position = position
             const valueStr = value.toFixed(2)
@@ -122,7 +122,11 @@ module ui {
             for (let i=0; i < labelFieldNodeList.length; i++) {
                 labelFieldNodeList[i].textContent = valueStr 
             }
-            this.element.style.top = position + "px"
+            if (this.isHorizontal()) {
+                this.element.style.left = position + "px"
+            } else {
+                this.element.style.top = position + "px"
+            }
         }
         
         private beginWatching() {
@@ -165,7 +169,7 @@ module ui {
             this.unconstrainedPosition += positionChange
             const maxPosition = this.isHorizontal() ? this.container().offsetWidth : this.container().offsetHeight
             const constrainedPosition = Math.min(Math.max(this.unconstrainedPosition, 0), maxPosition)
-            const value = this.positionUpdated(this, constrainedPosition)
+            this.positionUpdated(this, constrainedPosition)
             this.update(constrainedPosition, this.value)
         }
         
@@ -179,12 +183,13 @@ module ui {
         
         private getEventPosition(evt:MouseEvent|TouchEvent): number {
             const offsetPos = this.isHorizontal() ? this.container().offsetLeft : this.container().offsetTop
+            const pageKey = this.isHorizontal() ? "pageX" : "pageY"
             if ((evt as TouchEvent).targetTouches) {
                 // Touch event
-                return (evt as TouchEvent).targetTouches[0].pageY - offsetPos
+                return (evt as TouchEvent).targetTouches[0][pageKey] - offsetPos
             } else {
                 // Mouse event
-                return (evt as MouseEvent).pageY - offsetPos
+                return (evt as MouseEvent)[pageKey] - offsetPos
             }
         }
 
