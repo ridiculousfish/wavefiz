@@ -1,0 +1,84 @@
+<html><head></head>
+<style>
+body {
+    padding: 2px;
+    height: 100%;
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.tour_trigger {
+    font-size: 24pt;
+}
+</style>
+<body>
+    <p>Welcome to the Schrödinger Visualizer!</p>
+    <p>This simulates solutions to the one dimensional Schrödinger equation in various potentials. The goal is to build your intuition about quantum phenomena, in a way that easily relates to an undergraduate QM course.</p>
+    <p>Click and drag stuff to see what happens! Or if you want:</p>
+    <p><a class="tour_trigger" href="#" onClick="javascript:takeTheTour();">Take the Tour</a></p>
+    <h2>What is the Schrödinger Equation?</h2>
+    <p>The Schrödinger equation describes how the wavefunction of a system evolves over time.</p>
+    <p>In Newtonian mechanics, you are given some configuration of positions, velocity, masses, and forces, and by solving F=ma, you can determine the state of the system at some future time. In quantum mechanics, you are given some potential, and by solving the Schrödinger equation, you compute the wavefunction &psi;. The wavefunction, in turn, tells you what results you get for actual measurements - or more precisely, the probability of measuring those results.</p>
+    <h2>What is a potential?</h2>
+    <p>Imagine a hill. When you ride a bike up the hill, you have to expend effort to lift yourself up, and your potential energy increases. At the top of the hill, your potential energy is maximized. Now, coast down the hill: your potential energy decreases, because it is transferred to kinetic energy. Reach the bottom of the valley, and your potential energy is minimized. If you were to plot your potential energy according to your position, the graph would look like the hill itself! This function we just graphed, of energy according to position, is called the potential.</p>
+    <p>Now think about a spring attached to a wall. When you pull the spring away from the wall, it stretches and pulls back, in accordance with Hooke's Law. We can put the distance you pull the spring on the X axis, and the energy you need to impart on the Y axis. This is also a potential, and its graph will be a parabola.</p>
+    <p>In quantum mechanics, potentials arise often. For example, the nucleus of a hydrogen atom establishes a potential that affects the electron. We can calculate this potential simply, using Coulomb's Law. We then plug that potential into the Schrödinger equation and solve it; this establishes the wavefunction of the electron, from which we can predict all sorts of neat things, like the colors of light that hydrogen emits!
+    <h2>What is a wavefunction?</h2>
+    <p>A wavefunction provides information about some system, such as an electron. It is literally a function, whose inputs are time and position, and whose output is a complex number. When written this way, physicists use the Greek letter psi: &psi;(x,t)</p> 
+
+    <p>It is also possible to express the wavefunction as a function of time and momentum. Here physicists use the Greek letter phi: &phi;(p,t). Other coordinate systems are possible but these two (position and momentum) are the most common.</p></p>
+
+    <p>You do more than just plug time and space into the wavefunction! You plug the wavefunction itself into all sorts of integrals, from which you determine many dynamical properties: position, velocity, kinetic energy, momentum, and so on. You also do <i>algebra</i> on wavefunctions: add them to each other, multiply them by scalars, and so on. Eventually the wavefunction takes on a life of its own, not merely a function but a value in its own right.</p>
+
+    <p>If you know some linear algebra, this notion of adding and multiplying by scalars may remind you of vectors. Indeed, you can think of the wavefunction as a vector, who lives in a type of vector space called Hilbert space.</p>  
+    <p>The output of the wavefunction &phi; is a complex number. If you take the absolute value of that complex number, and you square it, it gives you the probability of finding the particle at that point. (Recall that the absolute value of a complex number is a <i>real</i> number). So why don't we just take the squared absolute value of the wavefunction itself, call <i>that</i> the wavefunction, and avoid this annoying complex number two-step? Read on!</p>
+
+    <h2>Properties of wavefunctions</h2>
+    <p>Maybe you can be a wavefunction! All you have to do is satisfy the Schrödinger equation, which is easier than it sounds. Also, you have to be <i>localized</i>: as we move further away in space, you have to get closer and closer to zero. Otherwise, you get nutty, non-physical results like probabilities that sum to more than 1.
+
+    <p>The Schrödinger equation is <i>linear</i>. This means that if you have two wavefunctions, you can add them together and get a new wavefunction, and it also satisfies the Schrödinger equation. If you've heard of superposition, that's what that is. The visualizer allows you to create superpositions.</p>
+
+    <p>Linearity also means you can multiply a wavefunction by whatever constant you want, like 7, and it still satisfies the Schrödinger equation. You can even multiply it by a complex number, like 3 + 5i. When you do this, <i>nothing happens</i>: all wavefunctions that are (complex) multiples of one other represent the same physical state! (Except zero!) This will be a very useful property in our numerical technique.
+
+    <h2>Wavefunctions as Vectors</h2>
+    <p>Recall that wavefunctions are functions, but it's also natural to treat them as vectors in a vector space. If you know some linear algebra, you may remember that vector spaces have a basis - in fact, lots of them. A basis is like the cardinal directions, from which all directions can be given ("Northeast by east"). All wavefunctions are a superposition of the basis wavefunctions!</p>
+    <p>Of course, you can come up with a different basis, and it will be just as valid. A superposition isn't inherent, it is just an artifact of which coordinate system you choose to describe the wavefunction.</p>
+
+    <h2>The Energy Basis</h2>
+    <p>One especially interesting coordinate system is called the energy basis. (It is called the energy basis because it is formed from eigenvectors of the energy operator.) The "cardinal directions" of our energy basis are wavefunctions of definite energy. These wavefunctions have a very simple time dependence: their absolute value at every point doesn't change.   
+
+    <h2>Wavefunctions are Complex-Valued</h2>
+    <p>The value of a wavefunction at a location (x, t) in time and space is a complex number. When you add two wavefunctions together, you get a new wavefunction, whose value at (x, t) is just the (complex) sum of the originals.</p>
+
+    <h1>The Approximation</h1>
+    <p>The Schrödinger equation is a second order differential equation. This visualizer numerically solves the Schrödinger equation using the <a href="https://en.wikipedia.org/wiki/Numerov%27s_method">Numerov method</a>, which is fast and accurate. It is a "step" method, meaning that you construct each point by building on the previous point(s). However, there are a few wrinkles.</p>
+
+    <p>The starting point of this work is <a href="http://www.fisica.uniud.it/~giannozz/Corsi/MQ/LectureNotes/mq.pdf">Numerical Methods in Quantum Mechanics</a>, by Paolo Giannozzi. I owe a debt of gratitude to professor Giannozzi.  
+
+    <h2>Blow-up solutions</h2>
+    <p>One problem is that solutions to the Schrödinger equations "want" to blow up to infinity. In physical systems, the wavefunction of a bound particle must approach zero as you get further away: the particle should be localized to some region. Only a few solutions to the Schrödinger equation localize the particle in this way, and those solutions only exist for very precise energies. Numerically we are much more likely to "find" a solution that approaches infinity.</p>
+
+    <p>To prevent this (following Giannozzi), we construct TWO wavefunctions. The "inside out" one starts from inside the potential and steps towards the edge. This solution probably blows up. The "outside in" solution assumes the wavefunction is zero at the boundary, and steps towards the center. This solution does NOT blow up (TODO: what does it do in the center?)</p>
+
+    <p>Once we have these two solutions, we join them into a single wavefunction. Towards the center, this will be our "inside out" wavefunction, and towards the end it will be the "outside in." They will have the same value at the point they meet. This leverages the remarkable fact that scaling a wavefunction by any complex number produces the same physical result; thus given two wavefunctions, we can always join them at a point by just scaling the first to match the second at that point.</p>
+
+    <p>At what point should we join them? The natural choice is the "classical turning points:" the (outermost) point where the potential equals the energy, i.e. the particle has zero kinetic energy. Beyond this point, the wavefunction can only decay.</p>
+
+    <p>Note that while we can always make our "inside out" and "outside in" wavefunctions agree at the turning points, we cannot force their derivatives to agree. Thus our chimera wavefunction does not actually solve the Schrödinger equation at that point! This is a manifestation of the fact that there are <i>no</i> solutions of the Schrödinger equation at the chosen energy, except for the unphysical blow-ups.</p>
+    
+    <p>This change in the first derivative is visible as a kink in the wavefunction. It's only at very special energies that the first derivatives happen to match and the kink disappears. These are the eigenenergies, and this illustrates how quantization of energy arises.</p>
+
+    <h2>Starting Points</h2>
+    <p>There is a second wrinkle: the Numerov method requires TWO initial points to get it started. (Indeed, it would be surprising if it did not: the Schrödinger equation is second-order, so we need two boundary conditions.) These points are next to each other: think &psi;(x) and &psi;(x + dx).</p>
+    
+    <p>Here we leverage the fact that we can multiply a wavefunction by any nonzero complex number, and we get a physically-identical new solution. This means that the actual starting value of the wavefunction hardly matters: we're just going to scale it anyways. All that matters is whether it's zero or nonzero.</p>
+
+    <p>So there's two cases: either exactly one of &psi;(x) and &psi;(x+dx) are zero, or neither of them are zero. (If both are zero, we get the trivial solution &psi; = 0). If &psi;(x+dx) is zero, then we might as well have started at x+dx instead (TODO: needs justification). So we have only two different solutions: &psi;(x) is zero, and &psi;(x) is nonzero. Note that if our potential is symmetric, and we let our starting x be its minimum, these solutions correspond to odd and even wavefunctions.</p>
+
+    <p>So for any given energy, we have two solutions, corresponding conceptually to odd and even wavefunctions. We can mix (linearly combine) these two solutions however we like to get an "overall" solution. In particular, we can combine them so that one of the kinks cancels out! That is, we choose a linear sum that zeros out the discontinuity in the first derivative, on one side. If this happens to cancels out the other kink too, we are at an eigenenergy and our solution is physical.</p>
+
+    <p>This has the visual effect of making the wavefunction appear to "extrude" from the right. This is evocative, though not physically meaningful - only the energy eigenvalues are allowed.</p>
+
+
+</body>
+</html>
