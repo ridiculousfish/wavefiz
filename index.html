@@ -284,6 +284,7 @@
                     <li class="menu-item" onClick="loadISW()"><span class="glyph">&#x2a06;</span>Infinite Square Well</li>
                     <li class="menu-item" onClick="loadFSW()"><span class="glyph" style="transform: scaleY(-1);">&#x238d;</span>Finite Square Well</li>
                     <li class="menu-item" onClick="load2SW()" style="margin-top: -5px;"><span class="glyph" style="transform: rotate(90deg); position: relative; top: 5px;">&#x2203;</span>Two Square Wells</li>
+                    <li class="menu-item" onClick="loadRandomPotential()"><span class="glyph">?</span>Random</li>
                 </ul>
             </div>
         </button>
@@ -326,24 +327,13 @@
         var energy_dragger_prototype = document.getElementById("energy_dragger_prototype")
         
         var Vis = new visualizing.Visualizer(vis_container, potential_container, energy_container, energy_dragger_prototype);
-        function loadSHO() {
-            Vis.loadSHO()
-        }
-        function loadISW() {
-            Vis.loadISW()
-        }
-        function loadFSW() {
-            Vis.loadFSW()
-        }
-        function load2SW() {
-            Vis.load2SW()
-        }
-        function addEnergySlider() {
-            Vis.addEnergySlider()
-        }
-        function removeEnergySlider() {
-            Vis.removeEnergySlider()
-        }
+        function loadSHO() { Vis.loadSHO() }
+        function loadISW() { Vis.loadISW() }
+        function loadFSW() { Vis.loadFSW() }
+        function load2SW() { Vis.load2SW() }
+        function loadRandomPotential() { Vis.loadRandomPotential() }
+        function addEnergySlider() { Vis.addEnergySlider() }
+        function removeEnergySlider() { Vis.removeEnergySlider() }
         loadSHO()
         addEnergySlider()
 

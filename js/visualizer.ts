@@ -382,5 +382,10 @@ module visualizing {
             this.potentialBuilder_ = algorithms.TwoSquareWells
             this.rebuildPotential()
         }
+
+        public loadRandomPotential() {
+            this.potentialBuilder_ = algorithms.RandomPotential()
+            this.rebuildPotential()
+        }
     }
 }
