@@ -86,10 +86,15 @@ module visualizing {
 
             // Potential Visualizer
             this.potential_ = new PotentialVisualizer(this.params)
-            this.potential_.potentialUpdatedCallback = (v: number[]) => {
-                this.state.potential = v.slice()
-                this.rescaleEnergies()
-                this.computeAndShowWavefunctions()
+            this.potential_.potentialUpdatedCallback = (v: Vector3[]) => {
+                // v.x is in the range [0, params.width), v.y in [0, params.height), v.z is 0
+                // map to the range [0, 1]
+                let samples = v.map((vec:Vector3) => {
+                    return {x: vec.x / this.params.width,
+                            y: 1.0 - vec.y / this.params.height}
+                })
+                this.potentialBuilder_ = algorithms.SampledPotential(samples)
+                this.rebuildPotential()
             }
             this.potential_.addToGroup(this.topGroup_)
 
@@ -360,7 +365,9 @@ module visualizing {
         
         rebuildPotential() {
             let mesh = buildPotential(this.params, this.potentialBuilder_)
+            this.state.potential = mesh
             this.potential_.setPotential(mesh)
+            this.computeAndShowWavefunctions()
         }
 
         public loadSHO() {
@@ -386,6 +393,11 @@ module visualizing {
         public loadRandomPotential() {
             this.potentialBuilder_ = algorithms.RandomPotential()
             this.rebuildPotential()
+        }
+        
+        public sketchPotential() {
+            this.potential_.beginSketch()
+            this.render()
         }
     }
 }

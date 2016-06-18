@@ -346,7 +346,7 @@ module visualizing {
 
         public convertXToVisualCoordinate(x: number) {
             return (x / this.meshDivision) * this.width
-        }
+        }        
     }
     
     // Builds a potential based on a function

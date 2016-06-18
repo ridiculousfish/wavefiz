@@ -7,15 +7,41 @@ module visualizing {
         private dragLine_: VisLine
         private potentialLine_: VisLine
         private background_: THREE.Mesh
+        private sketchGrid_: THREE.GridHelper
+        private sketching_ = false
         private DRAG_STROKE_WIDTH = 5
 
         // callback for when the potential is updated
-        public potentialUpdatedCallback: ((n: number[]) => void) = undefined
+        public potentialUpdatedCallback: ((n: Vector3[]) => void) = undefined
 
         // the values of our mesh, stored unflipped (0 at bottom)
         private potentialMesh_: number[]
         constructor(public params: Parameters) {
-            this.init()
+            // note line geometries cannot be resized            
+            this.dragLine_ = new VisLine(this.params.meshDivision, {
+                color: 0x00FFFF,
+                linewidth: 8
+            })
+            this.potentialLine_ = new VisLine(this.params.meshDivision, {
+                color: 0xFF00FF,
+                linewidth: 5,
+                depthWrite: false
+            })
+            this.potentialLine_.setRenderOrder(-5000)
+
+            let planeGeo = new THREE.PlaneGeometry(this.params.width * 2, this.params.height * 2)
+            let planeMat = new THREE.MeshBasicMaterial({ visible: false, depthWrite: false })
+            this.background_ = new THREE.Mesh(planeGeo, planeMat)
+            this.background_.position.set(this.params.width / 2, this.params.height / 2, 0)
+            this.background_.renderOrder = -10000
+
+            const gridSize = Math.max(this.params.width, this.params.height)
+            const gridStep = 20
+            this.sketchGrid_ = new THREE.GridHelper(gridSize, gridStep)
+            this.sketchGrid_.setColors(0x000000, 0x006385)
+            this.sketchGrid_.renderOrder = -9999
+            this.sketchGrid_.rotation.x = Math.PI/2
+            this.sketchGrid_.visible = false
         }
 
         private interpolateY(p1: THREE.Vector3, p2: THREE.Vector3, x: number): number {
@@ -66,20 +92,27 @@ module visualizing {
 
         // Draggable implementations
         dragStart(raycaster: THREE.Raycaster) {
+            if (! this.sketching_) return
             this.clearDragLocations(false)
         }
 
         dragEnd() {
+            if (! this.sketching_) return
             if (this.dragLocations_.length == 0) {
                 return
             }
-            this.potentialMesh_ = this.buildMeshFromDragPoints(this.dragLocations_)
+            this.sketching_ = false
+            this.sketchGrid_.visible = false
+
+            const locs = this.dragLocations_.slice()
+            this.potentialMesh_ = this.buildMeshFromDragPoints(locs)
             this.clearDragLocations(true)
             this.redrawPotentialMesh()
-            this.announceNewPotential()
+            this.announceNewPotential(locs)
         }
 
         dragged(raycaster: THREE.Raycaster) {
+            if (! this.sketching_) return
             let intersections = raycaster.intersectObject(this.background_, false)
             if (intersections.length > 0) {
                 let where = intersections[0].point
@@ -120,34 +153,15 @@ module visualizing {
             })
         }
 
-        private announceNewPotential() {
+        private announceNewPotential(locs:Vector3[]) {
             if (this.potentialUpdatedCallback) {
-                this.potentialUpdatedCallback(this.potentialMesh_)
+                this.potentialUpdatedCallback(locs)
             }
-        }
-
-        private init() {
-            // note line geometries cannot be resized            
-            this.dragLine_ = new VisLine(this.params.meshDivision, {
-                color: 0x00FFFF,
-                linewidth: 8
-            })
-            this.potentialLine_ = new VisLine(this.params.meshDivision, {
-                color: 0xFF00FF,
-                linewidth: 5,
-                depthWrite: false
-            })
-            this.potentialLine_.setRenderOrder(-5000)
-
-            let planeGeo = new THREE.PlaneGeometry(this.params.width * 2, this.params.height * 2)
-            let planeMat = new THREE.MeshBasicMaterial({ visible: false, depthWrite: false })
-            this.background_ = new THREE.Mesh(planeGeo, planeMat)
-            this.background_.position.set(this.params.width / 2, this.params.height / 2, 0)
-            this.background_.renderOrder = -10000
         }
 
         public addToGroup(group: THREE.Group) {
             group.add(this.background_)
+            group.add(this.sketchGrid_)
             this.potentialLine_.addToGroup(group)
             this.dragLine_.addToGroup(group)
         }
@@ -155,7 +169,11 @@ module visualizing {
         public setPotential(potentialMesh: number[]) {
             this.potentialMesh_ = potentialMesh
             this.redrawPotentialMesh()
-            this.announceNewPotential()
+        }
+
+        public beginSketch() {
+            this.sketching_ = true
+            this.sketchGrid_.visible = true 
         }
     }
 }

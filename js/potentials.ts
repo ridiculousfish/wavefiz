@@ -1,4 +1,26 @@
 module algorithms {
+
+    function assert(condition:boolean, message?:string) {
+        if (!condition) {
+            throw message || "Assertion failed"
+        }
+    }
+
+    export interface Point2 {
+        x: number,
+        y: number
+    }
+
+    function lerp(p1: Point2, p2:Point2, x: number): number {
+        // Given a x value between two points, returns the lerp'd y value
+        if (x <= p1.x) return p1.y
+        else if (x >= p2.x) return p2.y
+        else {
+            const percent = (x - p1.x) / (p2.x - p1.x)
+            return p1.y * (1.0 - percent) + p2.y * percent
+        }
+    }
+
     export interface PotentialBuilderFunc {
         (parameter:number, x:number):number 
     }
@@ -70,6 +92,38 @@ module algorithms {
         return baseEnergy // right well
     }
 
+    function binarySearch<T extends Point2>(vals:T[], x: number): number {
+        assert(vals.length > 0)
+        let left = 0, right = vals.length
+        while (left + 1 < right) {
+            const mid = Math.floor(left + (right - left) / 2)
+            const trial = vals[mid]
+            if (trial.x <= x) {
+                left =  mid
+            } else {
+                // trial.x > x
+                right = mid
+            }
+        }
+        return left
+    }
+
+    export function SampledPotential(samples:Point2[]) : PotentialBuilderFunc {
+        assert(samples.length > 0)
+        return (parameter:number, x:number) => {
+            const idx = binarySearch(samples, x)
+            const sample = samples[idx]
+            if (x < sample.x || idx + 1 >= samples.length) {
+                // this corresponds to starting or ending the sample midway through our box
+                // flush it to "infinity""
+                return 1000
+            } else {
+                const next = samples[idx + 1]
+                return lerp(sample, next, x)
+            }
+        }
+    }
+
     export function RandomPotential() : PotentialBuilderFunc {
         // Hackish?
         interface Pivot {
@@ -120,34 +174,19 @@ module algorithms {
 
         return (parameter:number, x:number) => {
             // determine which pivot to use
-            // binary search on <=
-            let left = 0, right = pivots.length
-            while (left + 1 < right) {
-                const mid = Math.floor(left + (right - left) / 2)
-                const trial = pivots[mid]
-                if (trial.x <= x) {
-                    left =  mid
-                } else {
-                    // trial.x > x
-                    right = mid
-                }
-            }
-            let pivot = pivots[left]
-            if (left + 1 >= pivots.length) {
+            const pivotIdx = binarySearch(pivots, x)
+            const nextIdx = pivotIdx + 1
+            const pivot = pivots[pivotIdx]
+            if (nextIdx >= pivots.length) {
                 return pivot.y
             } else {
                 // interpolate between this one and next one
-                let next = pivots[left+1]
-                let interpolateAmount = (x - pivot.x) / (next.x - pivot.x)
-                if (! isFinite(interpolateAmount)) interpolateAmount = 0
-
-                const lerp = (start:number, end:number, by:number) => start + (end - start) * by 
-
+                const next = pivots[nextIdx]
                 switch (pivot.joinType) {
                     case "square":
                         return pivot.y
                     case "line":
-                        return lerp(pivot.y, next.y, interpolateAmount)
+                        return lerp(pivot, next, x)
                     case "bezier": 
                         const cpy = pivot.control
                         const t = (x - pivot.x) / (next.x - pivot.x)  

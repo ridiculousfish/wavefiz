@@ -285,13 +285,14 @@
                     <li class="menu-item" onClick="loadFSW()"><span class="glyph" style="transform: scaleY(-1);">&#x238d;</span>Finite Square Well</li>
                     <li class="menu-item" onClick="load2SW()" style="margin-top: -5px;"><span class="glyph" style="transform: rotate(90deg); position: relative; top: 5px;">&#x2203;</span>Two Square Wells</li>
                     <li class="menu-item" onClick="loadRandomPotential()"><span class="glyph">?</span>Random</li>
+                    <li class="menu-item" onClick="sketchPotential()"><span class="glyph">&#x270E;</span>Your Sketch</li>
                 </ul>
             </div>
         </button>
         <div class="separator"></div>
         <input type="checkbox" id="check_psi" name="psi" onClick="togglePsi(this)" checked /><label for="check_psi"><i>&psi;</i></label>
         <input type="checkbox" id="check_psiAbs" name="psiAbs" onClick="togglePsiAbs(this)" /><label for="check_psiAbs">|<i>&psi;</i>|<sup>2</sup></label>
-        <input type="checkbox" id="check_phi" name="phi" onClick="togglePhi(this)" checked /><label for="check_phi"><i>&phi;</i></label>
+        <input type="checkbox" id="check_phi" name="phi" onClick="togglePhi(this)" /><label for="check_phi"><i>&phi;</i></label>
         <input type="checkbox" id="check_phiAbs" name="phiAbs" onClick="togglePhiAbs(this)" /><label for="check_phiAbs">|<i>&phi;</i>|<sup>2</sup></label>
         <div class="separator"></div>
         <input type="checkbox" id="check_paused" name="paused" onClick="togglePaused(this)" /><label for="check_paused"><span class="playpause">&#x25B6;&#xFE0E;<!-- FE0E prevents emoji --></span></label>
@@ -332,6 +333,7 @@
         function loadFSW() { Vis.loadFSW() }
         function load2SW() { Vis.load2SW() }
         function loadRandomPotential() { Vis.loadRandomPotential() }
+        function sketchPotential() { Vis.sketchPotential() }
         function addEnergySlider() { Vis.addEnergySlider() }
         function removeEnergySlider() { Vis.removeEnergySlider() }
         loadSHO()
