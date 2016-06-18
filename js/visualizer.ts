@@ -396,6 +396,7 @@ module visualizing {
         }
         
         public sketchPotential() {
+            this.state.potential = []
             this.potential_.beginSketch()
             this.render()
         }

@@ -11,7 +11,7 @@ module algorithms {
         y: number
     }
 
-    function lerp(p1: Point2, p2:Point2, x: number): number {
+    function smoothstep(p1: Point2, p2:Point2, x: number): number {
         // Given a x value between two points, returns the lerp'd y value
         if (x <= p1.x) return p1.y
         else if (x >= p2.x) return p2.y
@@ -119,7 +119,7 @@ module algorithms {
                 return 1000
             } else {
                 const next = samples[idx + 1]
-                return lerp(sample, next, x)
+                return smoothstep(sample, next, x)
             }
         }
     }
@@ -186,7 +186,7 @@ module algorithms {
                     case "square":
                         return pivot.y
                     case "line":
-                        return lerp(pivot, next, x)
+                        return smoothstep(pivot, next, x)
                     case "bezier": 
                         const cpy = pivot.control
                         const t = (x - pivot.x) / (next.x - pivot.x)  
