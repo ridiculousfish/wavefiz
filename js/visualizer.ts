@@ -261,14 +261,6 @@ module visualizing {
             this.computeAndShowWavefunctions()
         }
 
-        private rescaleEnergies() {
-            this.energyBars_.forEach((eb: EnergyBar) => {
-                const pos = eb.slider.position
-                const energy = this.params.convertYFromVisualCoordinate(pos)
-                eb.setPositionAndEnergy(pos, energy)
-            })
-        }
-
         private computeAndShowWavefunctions() {
             if (this.state.potential.length === 0) {
                 return
