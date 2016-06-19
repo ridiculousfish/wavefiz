@@ -362,8 +362,8 @@ module visualizing {
         return potentialMesh
     }
 
-    export interface InputState {
-        potential: number[]
+    export class State {
+        potential: number[] = []
     }
 
     export function assert(condition, message) {

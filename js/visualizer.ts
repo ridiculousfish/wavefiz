@@ -44,7 +44,7 @@ module visualizing {
 
         public params = new Parameters()
 
-        public state: InputState = { potential: [] }
+        public state = new State()
 
         constructor(container: HTMLElement, potentialDragger: HTMLElement, energyContainer: HTMLElement, energyDraggerPrototype: HTMLElement) {
             this.container_ = container
