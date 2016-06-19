@@ -91,7 +91,17 @@
             height: 600px;
             display: inline-block;
             position: relative; /* allow offsetLeft and offsetTop to work */
-        }        
+        }
+        #draw_text {
+            position: absolute;
+            color: rgba(219,219,219,.66);
+            width: 100%;
+            text-align: center;
+            top: 255px;
+            font-size: 50pt;
+            font-weight: bold;
+            font-family: Helvetica, Arial, sans-serif;
+        }
         #energy_dragging_container {
             width: 100px;
             height: 600px;
@@ -253,7 +263,7 @@
     <!-- Visualizer -->
     <div id="outer_container">
         <div id="ui_container">
-            <div id="vis_container">
+            <div id="vis_container"><div id="draw_text" style="visibility: hidden">Draw</div>
             </div><div id="energy_dragging_container">
                 <!-- Energy dragger prototype div -->
                 <div class="dragger" id="energy_dragger_prototype" style="display: none">

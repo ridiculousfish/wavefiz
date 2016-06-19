@@ -1,6 +1,8 @@
 /// <reference path='./commonvis.ts'/>
 
 module visualizing {
+
+    const DRAW_TEXT_ID = "draw_text"
     
     export class PotentialVisualizer {
         private dragLocations_: Vector3[] = []
@@ -102,6 +104,7 @@ module visualizing {
                 return
             }
             this.sketching_ = false
+            this.setDrawTextShown(false)
             this.sketchGrid_.visible = false
 
             const locs = this.dragLocations_.slice()
@@ -115,6 +118,7 @@ module visualizing {
             if (! this.sketching_) return
             let intersections = raycaster.intersectObject(this.background_, false)
             if (intersections.length > 0) {
+                this.setDrawTextShown(false)
                 let where = intersections[0].point
                 this.dragLocations_.push(vector3(where.x + this.params.width / 2, where.y + this.params.height / 2, 0))
                 this.redrawDragLine()
@@ -144,13 +148,17 @@ module visualizing {
         }
 
         private redrawPotentialMesh() {
-            this.potentialLine_.update((index: number) => {
-                const value = this.potentialMesh_[index]
-                const x = this.params.centerForMeshIndex(index)
-                const y = this.params.convertYToVisualCoordinate(value)
-                const z = 0
-                return vector3(x, y, z)
-            })
+            const hasPotential = (this.potentialMesh_.length > 0)
+            this.potentialLine_.setVisible(hasPotential) 
+            if (hasPotential) {
+                this.potentialLine_.update((index: number) => {
+                    const value = this.potentialMesh_[index]
+                    const x = this.params.centerForMeshIndex(index)
+                    const y = this.params.convertYToVisualCoordinate(value)
+                    const z = 0
+                    return vector3(x, y, z)
+                })
+            }
         }
 
         private announceNewPotential(locs:Vector3[]) {
@@ -171,8 +179,14 @@ module visualizing {
             this.redrawPotentialMesh()
         }
 
+        private setDrawTextShown(flag:boolean) {
+            document.getElementById(DRAW_TEXT_ID).style['visibility'] = flag ? 'visible' : 'hidden'
+        }
+
         public beginSketch() {
             this.sketching_ = true
+            this.setDrawTextShown(true)
+            this.setPotential([])
             this.sketchGrid_.visible = true 
         }
     }
