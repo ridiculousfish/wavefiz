@@ -27,7 +27,7 @@ module visualizing {
         private topScene_: THREE.Scene = new THREE.Scene()
         private topGroup_: THREE.Group = new THREE.Group()
         private camera_: THREE.Camera
-        private potential_: PotentialVisualizer
+        private potentialVis_: PotentialVisualizer
         private animator_: Animator
         
         private potentialBuilder_ : algorithms.PotentialBuilderFunc
@@ -85,8 +85,8 @@ module visualizing {
             this.potentialSlider_.update(this.params.potentialParameter * this.params.width)
 
             // Potential Visualizer
-            this.potential_ = new PotentialVisualizer(this.params)
-            this.potential_.potentialUpdatedCallback = (v: Vector3[]) => {
+            this.potentialVis_ = new PotentialVisualizer(this.params)
+            this.potentialVis_.potentialUpdatedCallback = (v: Vector3[]) => {
                 // v.x is in the range [0, params.width), v.y in [0, params.height), v.z is 0
                 // map to the range [0, 1]
                 let samples = v.map((vec:Vector3) => {
@@ -96,7 +96,7 @@ module visualizing {
                 this.potentialBuilder_ = algorithms.SampledPotential(samples)
                 this.rebuildPotential()
             }
-            this.potential_.addToGroup(this.topGroup_)
+            this.potentialVis_.addToGroup(this.topGroup_)
 
             // Wavefunction Visualizer
             const centerY = this.params.height / 2
@@ -171,7 +171,7 @@ module visualizing {
 
                 dragSelection = null
                 const raycaster = getRaycaster(evt)
-                const draggables: Draggable[] = [this.potential_]
+                const draggables: Draggable[] = [this.potentialVis_]
                 for (let i = 0; i < draggables.length && dragSelection == null; i++) {
                     dragSelection = draggables[i].hitTestDraggable(raycaster)
                 }
@@ -366,7 +366,7 @@ module visualizing {
         rebuildPotential() {
             let mesh = buildPotential(this.params, this.potentialBuilder_)
             this.state.potential = mesh
-            this.potential_.setPotential(mesh)
+            this.potentialVis_.setPotential(mesh)
             this.computeAndShowWavefunctions()
         }
 
@@ -397,7 +397,7 @@ module visualizing {
         
         public sketchPotential() {
             this.state.potential = []
-            this.potential_.beginSketch()
+            this.potentialVis_.beginSketch()
             this.render()
         }
     }
