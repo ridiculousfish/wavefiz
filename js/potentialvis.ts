@@ -37,6 +37,7 @@ module visualizing {
             this.background_.position.set(this.params.width / 2, this.params.height / 2, 0)
             this.background_.renderOrder = -10000
 
+            // This is the "graph paper" grid
             const gridSize = Math.max(this.params.width, this.params.height)
             const gridStep = 20
             this.sketchGrid_ = new THREE.GridHelper(gridSize, gridStep)

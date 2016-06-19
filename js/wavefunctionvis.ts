@@ -105,12 +105,11 @@ module visualizing {
         }
 
         redraw(time: number = null) {
-
             if (time === null) {
                 time = this.animator.lastTime()
             }
-
             const cleanValue = (value: number) => {
+                // TODO: rationalize this
                 const limit = this.params.height / 1.9
                 if (isNaN(value)) {
                     value = limit

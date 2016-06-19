@@ -18,27 +18,30 @@ module visualizing {
         hitTestDraggable(raycaster: THREE.Raycaster): Draggable // or null
     }
 
+    export class Visualizable {
+        valueAt: (index: number, time: number) => Complex = undefined
+    }
 
     /* A class to help with animations. Adds callbacks (which trigger requestAnimationFrame) */
     export interface AnimatorClient {
         advanceAnimation(when: number)
     }
 
-    export class Visualizable {
-        valueAt: (index: number, time: number) => Complex = undefined
-    }
-
     export class Animator {
-        public clock = new THREE.Clock(false)
         private clients_: AnimatorClient[] = []
         private rerender_: () => void
-        // clock stopping and starting doesn't adjust elapsed time
-        // so we have to do that ourselves
         private elapsed_: number
+        private lastNow_: number
+        private paused_ = false
 
         constructor(public params: Parameters, rerender: () => void) {
             this.rerender_ = rerender
-            this.elapsed_ = this.clock.getElapsedTime()
+            this.elapsed_ = 0
+            this.lastNow_ = Animator.now()
+        }
+
+        private static now(): number {
+            return (performance || Date).now()
         }
 
         schedule(client: AnimatorClient) {
@@ -49,10 +52,9 @@ module visualizing {
         }
 
         setPaused(flag: boolean) {
-            if (flag) {
-                this.clock.stop()
-            } else {
-                this.clock.start()
+            this.paused_ = flag
+            if (! flag) {
+                this.lastNow_ = Animator.now()
                 if (this.clients_.length > 0) {
                     window.requestAnimationFrame(() => this.fireClients())
                 }
@@ -64,7 +66,7 @@ module visualizing {
         }
 
         paused(): boolean {
-            return !this.clock.running
+            return this.paused_
         }
 
         lastTime(): number {
@@ -73,8 +75,10 @@ module visualizing {
 
         fireClients() {
             let locals = this.clients_
-            const dt = this.clock.getDelta() * this.params.timescale
-            this.elapsed_ += dt
+            const now = Animator.now()
+            const dt = (now - this.lastNow_) / 1000.
+            this.lastNow_ = now
+            this.elapsed_ += dt * this.params.timescale
             this.clients_ = []
             let processed = []
             locals.forEach((client: AnimatorClient) => {

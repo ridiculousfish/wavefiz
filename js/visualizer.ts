@@ -181,7 +181,6 @@ module visualizing {
                 }
                 mouseIsDown = true
                 this.render()
-                //                this.animator_.clock.stop()
             })
             document.addEventListener('mouseup', () => {
                 if (dragSelection) {
@@ -190,7 +189,6 @@ module visualizing {
                     mouseIsDown = false
                     this.render()
                 }
-                //                this.animator_.clock.start()
             })
 
         }
