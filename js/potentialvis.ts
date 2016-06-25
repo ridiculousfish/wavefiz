@@ -67,22 +67,22 @@ module visualizing {
         public setState(state:State) {
             this.state_ = state
             this.sketchGrid_.visible = this.state_.sketching
-            this.setDrawTextShown(state.sketching && state.dragLocations.length == 0)
+            this.setDrawTextShown(state.sketching && state.sketchLocations.length == 0)
             this.redrawPotentialLine()
             this.redrawSketchLine() 
         }
 
         // Called from state update, update the line representing the sketch
         private redrawSketchLine() {
-            const hasPoints = this.state_.dragLocations.length > 0
+            const hasPoints = this.state_.sketchLocations.length > 0
             this.sketchLine_.setVisible(hasPoints)
             if (hasPoints) {
                 this.sketchLine_.update((i: number) => {
                     // Lines cannot be resized
                     // Thus we allocate our line to be the maximum number of points we care to support
                     // If our true line has fewer points, just repeat the last line
-                    const clampedIdx = Math.min(i, this.state_.dragLocations.length - 1)
-                    return this.state_.dragLocations[clampedIdx]
+                    const clampedIdx = Math.min(i, this.state_.sketchLocations.length - 1)
+                    return this.state_.sketchLocations[clampedIdx]
                 })
             }
         }
@@ -114,7 +114,7 @@ module visualizing {
         public dragStart(raycaster: THREE.Raycaster) {
             if (this.state_.sketching) {
                 this.state_.modify(this.params, (st:State) => {
-                    st.dragLocations = []
+                    st.sketchLocations = []
                 })
             }
         }
@@ -128,7 +128,7 @@ module visualizing {
                 const where = intersections[0].point
                 const newLoc = vector3(where.x + this.params.width / 2, where.y + this.params.height / 2, 0) 
                 this.state_.modify(this.params, (st:State) => {
-                    st.dragLocations = st.dragLocations.concat([newLoc]) 
+                    st.sketchLocations = st.sketchLocations.concat([newLoc]) 
                 })
             }
         }
@@ -143,12 +143,12 @@ module visualizing {
             // by interpolating between sampled points.
             // Our drag locations have x in the range [0, params.width), and y in [0, params.height)
             // map to the range [0, 1], and flip the y coordinate so that zero is at the bottom
-            let samples = this.state_.dragLocations.map((vec:Vector3) => {
+            let samples = this.state_.sketchLocations.map((vec:Vector3) => {
                 return {x: vec.x / this.params.width, y: 1.0 - vec.y / this.params.height}
             })
             this.state_.modify(this.params, (st:State) => {
                 st.sketching = false
-                st.dragLocations = []
+                st.sketchLocations = []
                 // If we have no samples, it's because the user didn't draw any
                 // Don't replace the potential in that case 
                 if (samples.length > 0) { 

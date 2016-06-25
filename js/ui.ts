@@ -90,12 +90,13 @@ module ui {
         static draggedSlider:Slider = null
         static lastPosition:number = -1
         static globalInitDone = false
+
+        public draggedToPositionHandler: (position:number) => void = () => {} 
         
         constructor(public orientation:Orientation,
                     public element:HTMLElement,
                     public position:number,
-                    public value:number,
-                    public positionUpdated:(slider:Slider, position:number) => void) {
+                    public value:number) {
             this.beginWatching()
             this.update(position, value)
             
@@ -169,8 +170,7 @@ module ui {
             this.unconstrainedPosition += positionChange
             const maxPosition = this.isHorizontal() ? this.container().offsetWidth : this.container().offsetHeight
             const constrainedPosition = Math.min(Math.max(this.unconstrainedPosition, 0), maxPosition)
-            this.positionUpdated(this, constrainedPosition)
-            this.update(constrainedPosition, this.value)
+            this.draggedToPositionHandler(constrainedPosition)
         }
         
         private container(): HTMLElement {

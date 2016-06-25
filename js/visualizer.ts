@@ -1,7 +1,7 @@
 /// <reference path="../typings/threejs/three.d.ts"/>
 /// <reference path='./potentials.ts'/>
 /// <reference path='./algorithms.ts'/>
-/// <reference path='./energy.ts'/>
+/// <reference path='./energyvis.ts'/>
 /// <reference path='./potentialvis.ts'/>
 /// <reference path='./wavefunctionvis.ts'/>
 /// <reference path='./ui.ts'/>
@@ -14,16 +14,16 @@ module visualizing {
         private topGroup_: THREE.Group = new THREE.Group()
         private camera_: THREE.Camera
         
-        private potentialVis_: PotentialVisualizer
         private animator_: Redrawer
         
+        private potentialVisualizer_: PotentialVisualizer
         private wavefunctionAvg_: WavefunctionVisualizer
-
-        private energyVisualizer_: visualizing.EnergyVisualizer
-        private energyBars_: EnergyBar[] = []
+        private energyVisualizer_: EnergyVisualizer
 
         private leftTurningPointLine_: VisLine
         private rightTurningPointLine_: VisLine
+
+        private potentialSlider_: ui.Slider
 
         private params_ = new Parameters()
 
@@ -58,19 +58,17 @@ module visualizing {
             // Build the potential slider
             // This is the slider that appears on the bottom of the visualizer,
             // and that sets the value of the potential parameter
-            let potentialSliderUpdated = (slider: ui.Slider, position: number) => {
-                let value = position / this.params_.width
+            this.potentialSlider_ = new ui.Slider(ui.Orientation.Horizontal, potentialDragger, 0, 0)
+            this.potentialSlider_.draggedToPositionHandler = (position: number) => {
                 this.state_.modify(this.params_, (st:State) => {
-                    st.potentialParameter = value 
+                    st.potentialParameter = position / this.params_.width 
                 })
             }
-            let potentialSlider = new ui.Slider(ui.Orientation.Horizontal, potentialDragger, 0, 0, potentialSliderUpdated)
-            potentialSlider.update(this.state_.potentialParameter * this.params_.width)
 
             // Build the potential visualizer
             // This draws the line showing the potential
-            this.potentialVis_ = new PotentialVisualizer(this.params_)
-            this.topGroup_.add(this.potentialVis_.group)
+            this.potentialVisualizer_ = new PotentialVisualizer(this.params_)
+            this.topGroup_.add(this.potentialVisualizer_.group)
 
             // Build a wavefunction visualizer
             // This draws the line showing the wavefunction
@@ -78,32 +76,27 @@ module visualizing {
             this.wavefunctionAvg_ = new WavefunctionVisualizer(this.params_, 0xFF7777, this.animator_)
             this.wavefunctionAvg_.addToGroup(this.topGroup_, centerY)
 
-            // Build our two turning point lines
-            // These show the classical turning points, where the energy equals the potential
-            this.leftTurningPointLine_ = this.createTurningPointLine()
-            this.rightTurningPointLine_ = this.createTurningPointLine()
-
-            // Energy dragger
+            // Energy visualizer
             let positionUpdated = (slider: ui.Slider, position: number) => {
                 // the user dragged the energy to a new value, expressed our "height" coordinate system
                 // compute a new wavefunction
                 // TODO: untangle this
                 const energy = this.params_.convertYFromVisualCoordinate(position)
-                this.energyBars_.forEach((bar: EnergyBar) => {
-                    if (bar.slider === slider) {
-                        bar.setPositionAndEnergy(position, energy)
-                    }
-                })
-                this.computeAndShowWavefunctions()
             }
             this.energyVisualizer_ = new visualizing.EnergyVisualizer(
                     energyContainer, energyDraggerPrototype, this.params_, positionUpdated)
+            this.topGroup_.add(this.energyVisualizer_.group)
+
+            // Build our two turning point lines
+            // These show the classical turning points, where the energy equals the potential
+            this.leftTurningPointLine_ = this.createTurningPointLine()
+            this.rightTurningPointLine_ = this.createTurningPointLine()
 
             // Our "sketch a potential" feature is impemented via dragging
             // Set that up
             // Note this installs some event handlers on the container
             // We don't attempt to clean those up
-            ui.initDragging(container, this.camera_, [this.potentialVis_])
+            ui.initDragging(container, this.camera_, [this.potentialVisualizer_])
         }
 
         private createTurningPointLine(): VisLine {
@@ -133,7 +126,7 @@ module visualizing {
             // Find the point in [0, 1) furthest from all other points
             // This is naturally in the midpoint between its two closest neighbors
             // This means we can only track one distance
-            let usedEnergies = this.energyBars_.map((eb: EnergyBar) => eb.energy())
+            let usedEnergies = this.state_.energyValues()
             
             // hack for initial energy
             if (usedEnergies.length == 0) {
@@ -160,25 +153,25 @@ module visualizing {
             return result
         }
 
+        // Entry point from HTML
         public addEnergySlider() {
             const energy = this.nextInterestingEnergy()
-            const position = this.params_.convertYToVisualCoordinate(energy)
-            const slider = this.energyVisualizer_.addSlider(position, energy * this.params_.energyScale)
-            const bar = new EnergyBar(slider, position, energy, this.params_)
-            this.energyBars_.push(bar)
-            bar.line.addToGroup(this.topGroup_)
-            this.computeAndShowWavefunctions()
+            this.state_.modify(this.params_, (st:State) => {
+                st.energies[State.newIdentifier()] = energy
+            })
         }
 
         public removeEnergySlider() {
-            // remove the last added one
-            if (this.energyBars_.length === 0) {
-                return
+            // Remove the most recently added energy bar, which
+            // is the one with the highest identifier
+            // Don't delete the last energy!
+            const energyIDs = Object.keys(this.state_.energies).map(parseInt)
+            if (energyIDs.length > 1) {
+                const maxID = energyIDs.reduce((a, b) => Math.max(a, b), 0)
+                this.state_.modify(this.params_, (st:State) => {                      
+                    delete st.energies[maxID]
+                })
             }
-            const bar = this.energyBars_.pop()
-            bar.line.removeFromGroup(this.topGroup_)
-            this.energyVisualizer_.removeSlider(bar.slider)
-            this.computeAndShowWavefunctions()
         }
 
         private computeAndShowWavefunctions() {
@@ -186,19 +179,18 @@ module visualizing {
                 return
             }
             
-            if (this.energyBars_.length > 0) {
+            const energies = this.state_.energyValues()
+            const maxEnergy = energies.reduce((a, b) => Math.max(a, b), 0) // 0 if none
+            if (energies.length > 0) {
                 const center = algorithms.indexOfMinimum(this.state_.potential)
                 
-                // determine max energy
-                let energies = this.energyBars_.map((bar) => bar.energy())
-                let maxEnergy = Math.max(...energies)
                 let maxTurningPoints = algorithms.classicalTurningPoints(this.state_.potential, maxEnergy)
                 
                 // update wavefunctions and collect them all
-                let psis = this.energyBars_.map((bar: EnergyBar) => {
+                let psis = energies.map((energy: number) => {
                     const psiInputs = {
                         potentialMesh: this.state_.potential,
-                        energy: bar.energy(),
+                        energy: energy,
                         maxX: this.params_.maxX
                     }
                     
@@ -223,15 +215,13 @@ module visualizing {
                 let genPsi = new algorithms.GeneralizedWavefunction(psis)
                 this.wavefunctionAvg_.setWavefunction(genPsi, center)
             }
-            this.wavefunctionAvg_.setVisible(this.energyBars_.length > 0)
+            this.wavefunctionAvg_.setVisible(energies.length > 0)
 
             {
                 // document.getElementById("statusfield").textContent = ""
             }
 
             // update turning points based on maximum energy
-            let maxEnergy = 0
-            this.energyBars_.map((eb: EnergyBar) => maxEnergy = Math.max(maxEnergy, eb.energy()))
             const maxTurningPoints = algorithms.classicalTurningPoints(this.state_.potential, maxEnergy)
 
             const leftV = this.params_.convertXToVisualCoordinate(maxTurningPoints.left)
@@ -244,8 +234,10 @@ module visualizing {
 
         public setState(state:State) {
             this.state_ = state
-            this.potentialVis_.setState(state)
+            this.potentialVisualizer_.setState(state)
             this.wavefunctionAvg_.setState(state)
+            this.energyVisualizer_.setState(state)
+            this.potentialSlider_.update(state.potentialParameter * this.params_.width)
             this.applyCameraRotation()
             this.computeAndShowWavefunctions()
             this.animator_.scheduleRerender()
@@ -296,7 +288,7 @@ module visualizing {
         public loadPotentialFromBuilder(pbf:algorithms.PotentialBuilderFunc) {
             this.state_.modify(this.params_, (st:State) => {
                 st.sketching = false
-                st.dragLocations = []
+                st.sketchLocations = []
                 st.potentialBuilder = pbf
             })
         }

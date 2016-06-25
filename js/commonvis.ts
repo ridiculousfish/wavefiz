@@ -365,16 +365,34 @@ module visualizing {
 
         public potentialBuilder: algorithms.PotentialBuilderFunc = null
         public potential: number[] = []
-        public dragLocations: Vector3[] = []
-        public sketching: boolean = false
         public potentialParameter: number = .15 // single draggable parameter in our potential, in the range [0, 1)
 
-        public showPsi = !false // show position psi(x)
+        public sketching: boolean = false
+        public sketchLocations: Vector3[] = []
+
+        public showPsi = true // show position psi(x)
         public showPsiAbs = false // show position probability |psi(x)|^2
-        public showPhi = false // show momentum phi(x)
+        public showPhi = false; // show momentum phi(x)
         public showPhiAbs = false // show momentum probability |phi(x)|^2
 
         public paused = false
+
+        // The energies array is sparse
+        // Keys are energy bar identifiers, values are numbers
+        public energies: { [key:string]:number; } = {}
+
+        // Returns a dense array of the energy values, discarding the identifiers
+        public energyValues(): number[] {
+            return Object.keys(this.energies).map((k) => this.energies[k])
+        }
+
+        // Identifier support
+        // TODO: describe this
+        private static LastUsedIdentifier = 0
+        public static newIdentifier() {
+            return ++State.LastUsedIdentifier
+        }
+
 
         public copy(): State {
             let clone = new State()
