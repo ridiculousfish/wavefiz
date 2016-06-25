@@ -21,8 +21,6 @@ module visualizing {
 
         private energyVisualizer_: visualizing.EnergyVisualizer
         private energyBars_: EnergyBar[] = []
-        
-        private potentialSlider_ : ui.Slider
 
         private leftTurningPointLine_: VisLine
         private rightTurningPointLine_: VisLine
@@ -45,7 +43,6 @@ module visualizing {
             let fovDegrees = Math.atan2(this.params_.height, this.params_.width) * (180 / Math.PI) * 2.0
             fovDegrees = Math.ceil(fovDegrees) // energy lines disappear without this, unclear why
             this.camera_ = new THREE.PerspectiveCamera(fovDegrees, this.params_.width / this.params_.height, 50, 1000);
-            this.setCameraRotation(0)
 
             // Position our top group such that it appears centered in the camera
             this.topGroup_.position.x = -this.params_.width / 2
@@ -53,7 +50,7 @@ module visualizing {
             this.topGroup_.scale.y = -1
             this.topScene_.add(this.topGroup_)
 
-            // Initialize our animator
+            // Initialize our animator / redrawer
             this.animator_ = new Redrawer(this.params_, () => {
                 renderer.render(this.topScene_, this.camera_)
             })
@@ -67,19 +64,22 @@ module visualizing {
                     st.potentialParameter = value 
                 })
             }
-            this.potentialSlider_ = new ui.Slider(ui.Orientation.Horizontal, potentialDragger, 0, 0, potentialSliderUpdated)
-            this.potentialSlider_.update(this.state_.potentialParameter * this.params_.width)
+            let potentialSlider = new ui.Slider(ui.Orientation.Horizontal, potentialDragger, 0, 0, potentialSliderUpdated)
+            potentialSlider.update(this.state_.potentialParameter * this.params_.width)
 
-            // Potential Visualizer
+            // Build the potential visualizer
+            // This draws the line showing the potential
             this.potentialVis_ = new PotentialVisualizer(this.params_)
             this.topGroup_.add(this.potentialVis_.group)
 
-            // Wavefunction Visualizer
+            // Build a wavefunction visualizer
+            // This draws the line showing the wavefunction
             const centerY = this.params_.height / 2
             this.wavefunctionAvg_ = new WavefunctionVisualizer(this.params_, 0xFF7777, this.animator_)
             this.wavefunctionAvg_.addToGroup(this.topGroup_, centerY)
 
             // Build our two turning point lines
+            // These show the classical turning points, where the energy equals the potential
             this.leftTurningPointLine_ = this.createTurningPointLine()
             this.rightTurningPointLine_ = this.createTurningPointLine()
 
@@ -96,62 +96,14 @@ module visualizing {
                 })
                 this.computeAndShowWavefunctions()
             }
-            this.energyVisualizer_ = new visualizing.EnergyVisualizer(energyContainer, energyDraggerPrototype, this.params_, positionUpdated)
+            this.energyVisualizer_ = new visualizing.EnergyVisualizer(
+                    energyContainer, energyDraggerPrototype, this.params_, positionUpdated)
 
-            // Start listening to events
-            this.initEvents(container)
-        }
-
-        private initEvents(container:HTMLElement) {
-            let mouseIsDown = false
-            let dragSelection: Draggable = null
-            const element = container
-            const getXY = (evt: MouseEvent) => {
-                let offset = getElementOffset(element)
-                return { x: evt.pageX - offset.x, y: evt.pageY - offset.y }
-            }
-            const getRaycaster = (evt: MouseEvent): THREE.Raycaster => {
-                let {x, y} = getXY(evt)
-                let x2 = (x / element.offsetWidth) * 2 - 1
-                let y2 = (y / element.offsetHeight) * 2 - 1
-                let mouse = new THREE.Vector2(x2, y2)
-                let raycaster = new THREE.Raycaster()
-                raycaster.setFromCamera(mouse, this.camera_)
-                return raycaster
-            }
-            element.addEventListener('mousemove', (evt: MouseEvent) => {
-                let {x, y} = getXY(evt)
-                if (mouseIsDown) {
-                    if (dragSelection) {
-                        dragSelection.dragged(getRaycaster(evt))
-                    }
-                    this.animator_.scheduleRerender()
-                }
-            })
-            element.addEventListener('mousedown', (evt) => {
-                let {x, y} = getXY(evt)
-
-                dragSelection = null
-                const raycaster = getRaycaster(evt)
-                const draggables: Draggable[] = [this.potentialVis_]
-                for (let i = 0; i < draggables.length && dragSelection == null; i++) {
-                    dragSelection = draggables[i].hitTestDraggable(raycaster)
-                }
-
-                if (dragSelection) {
-                    dragSelection.dragStart(raycaster)
-                }
-                mouseIsDown = true
-                this.animator_.scheduleRerender()
-            })
-            document.addEventListener('mouseup', () => {
-                if (dragSelection) {
-                    dragSelection.dragEnd()
-                    dragSelection = null
-                    mouseIsDown = false
-                    this.animator_.scheduleRerender()
-                }
-            })
+            // Our "sketch a potential" feature is impemented via dragging
+            // Set that up
+            // Note this installs some event handlers on the container
+            // We don't attempt to clean those up
+            ui.initDragging(container, this.camera_, [this.potentialVis_])
         }
 
         private createTurningPointLine(): VisLine {
@@ -166,9 +118,10 @@ module visualizing {
             return tp
         }
 
-        private setCameraRotation(rads: number) {
+        private applyCameraRotation() {
             // rotate about the y axis
             // rotation of 0 => z = 1 * scale
+            const rads = this.state_.cameraRotationRadians
             const scale = this.params_.cameraDistance
             const x = Math.sin(rads) * scale
             const z = Math.cos(rads) * scale
@@ -293,7 +246,7 @@ module visualizing {
             this.state_ = state
             this.potentialVis_.setState(state)
             this.wavefunctionAvg_.setState(state)
-            this.setCameraRotation(state.cameraRotationRadians)
+            this.applyCameraRotation()
             this.computeAndShowWavefunctions()
             this.animator_.scheduleRerender()
         }
@@ -382,6 +335,4 @@ module visualizing {
         }
         return { x: x, y: y }
     }
-
-
 }

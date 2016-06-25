@@ -192,6 +192,75 @@ module ui {
                 return (evt as MouseEvent)[pageKey] - offsetPos
             }
         }
+    }
+
+    export interface Draggable {
+        dragStart(raycaster: THREE.Raycaster): void
+        dragEnd(): void
+        dragged(raycaster: THREE.Raycaster): void
+        hitTestDraggable(raycaster: THREE.Raycaster): Draggable // or null
+    }
+
+    // Helper function
+    // returns the global offset of an HTML element
+    function getElementOffset(elem: HTMLElement) {
+        let x = 0
+        let y = 0
+        let cursor = elem as any
+        while (cursor != null) {
+            x += cursor.offsetLeft
+            y += cursor.offsetTop
+            cursor = cursor.offsetParent
+        }
+        return { x: x, y: y }
+    }
+
+    // Entry point for initializing dragging
+    export function initDragging(container:HTMLElement, camera:THREE.Camera, draggables:[Draggable]) {
+        let dragSelection: Draggable = null
+        let mouseIsDown = false
+        const getXY = (evt: MouseEvent) => {
+            let offset = getElementOffset(container)
+            return { x: evt.pageX - offset.x, y: evt.pageY - offset.y }
+        }
+        const getRaycaster = (evt: MouseEvent): THREE.Raycaster => {
+            let {x, y} = getXY(evt)
+            let x2 = (x / container.offsetWidth) * 2 - 1
+            let y2 = (y / container.offsetHeight) * 2 - 1
+            let mouse = new THREE.Vector2(x2, y2)
+            let raycaster = new THREE.Raycaster()
+            raycaster.setFromCamera(mouse, camera)
+            return raycaster
+        }
+        container.addEventListener('mousemove', (evt: MouseEvent) => {
+            let {x, y} = getXY(evt)
+            if (mouseIsDown) {
+                if (dragSelection) {
+                    dragSelection.dragged(getRaycaster(evt))
+                }
+            }
+        })
+        container.addEventListener('mousedown', (evt) => {
+            let {x, y} = getXY(evt)
+
+            dragSelection = null
+            const raycaster = getRaycaster(evt)
+            for (let i = 0; i < draggables.length && dragSelection == null; i++) {
+                dragSelection = draggables[i].hitTestDraggable(raycaster)
+            }
+
+            if (dragSelection) {
+                dragSelection.dragStart(raycaster)
+            }
+            mouseIsDown = true
+        })
+        document.addEventListener('mouseup', () => {
+            if (dragSelection) {
+                dragSelection.dragEnd()
+                dragSelection = null
+                mouseIsDown = false
+            }
+        })
 
     }
 }    
