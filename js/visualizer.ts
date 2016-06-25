@@ -88,12 +88,11 @@ module visualizing {
 
             // Potential Visualizer
             this.potentialVis_ = new PotentialVisualizer(this.params)
-            this.potentialVis_.addToGroup(this.topGroup_)
+            this.topGroup_.add(this.potentialVis_.group)
 
             // Wavefunction Visualizer
             const centerY = this.params.height / 2
             this.wavefunctionAvg_ = new WavefunctionVisualizer(this.params, 0xFF7777, this.animator_)
-
             this.wavefunctionAvg_.addToGroup(this.topGroup_, centerY)
 
             // Turning Points
@@ -318,6 +317,7 @@ module visualizing {
             this.wavefunctionAvg_.setState(state)
             this.setCameraRotation(state.cameraRotationRadians)
             this.computeAndShowWavefunctions()
+            this.animator_.scheduleRerender()
         }
 
         public setShowPsi(flag: boolean) {
@@ -355,13 +355,17 @@ module visualizing {
         }
         
         public sketchPotential() {
-            this.state_.potential = []
-            this.potentialVis_.beginSketch()
-            this.animator_.scheduleRerender()
+            this.state_.modify(this.params, (st:State) => {
+                st.potential = []
+                st.potentialBuilder = null
+                st.sketching = true
+            })
         }
 
         public loadPotentialFromBuilder(pbf:algorithms.PotentialBuilderFunc) {
             this.state_.modify(this.params, (st:State) => {
+                st.sketching = false
+                st.dragLocations = []
                 st.potentialBuilder = pbf
             })
         }

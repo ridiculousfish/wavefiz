@@ -394,7 +394,9 @@ module visualizing {
         }
 
         private rebuildPotentialIfNeeded(params:Parameters, oldState:State) {
-            if (this.potentialParameter !== oldState.potentialParameter || 
+            if (! this.potentialBuilder) {
+                this.potential = []
+            } else if (this.potentialParameter !== oldState.potentialParameter || 
                     this.potentialBuilder !== oldState.potentialBuilder) {
                 this.potential = buildPotential(params, this.potentialParameter, this.potentialBuilder)
             }
