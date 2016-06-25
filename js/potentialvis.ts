@@ -2,16 +2,16 @@
 
 module visualizing {
 
+    // This is the DOM id of the "Draw" text that appears
+    // when we start sketching
     const DRAW_TEXT_ID = "draw_text"
     
     export class PotentialVisualizer {
-        private dragLocations_: Vector3[] = []
         private dragLine_: VisLine
         private potentialLine_: VisLine
         private background_: THREE.Mesh
         private sketchGrid_: THREE.GridHelper
-        private sketching_ = false
-        private DRAG_STROKE_WIDTH = 5
+        private state_: State = new State()
 
         // callback for when the potential is updated
         public potentialUpdatedCallback: ((n: Vector3[]) => void) = undefined
@@ -45,6 +45,14 @@ module visualizing {
             this.sketchGrid_.renderOrder = -9999
             this.sketchGrid_.rotation.x = Math.PI/2
             this.sketchGrid_.visible = false
+        }
+
+        public setState(state:State) {
+            this.state_ = state
+            this.setDrawTextShown(state.sketching && state.dragLocations.length == 0)
+            this.sketchGrid_.visible = this.state_.sketching
+            this.redrawPotentialMesh()
+            this.redrawDragLine() 
         }
 
         private interpolateY(p1: THREE.Vector3, p2: THREE.Vector3, x: number): number {
@@ -95,33 +103,37 @@ module visualizing {
 
         // Draggable implementations
         dragStart(raycaster: THREE.Raycaster) {
-            if (! this.sketching_) return
+            if (! this.state_.sketching) return
             this.clearDragLocations(false)
         }
 
         dragEnd() {
-            if (! this.sketching_) return
-            if (this.dragLocations_.length == 0) {
+            if (! this.state_.sketching) return
+            if (this.state_.dragLocations.length == 0) {
                 return
             }
-            this.sketching_ = false
-            this.setDrawTextShown(false)
-            this.sketchGrid_.visible = false
 
-            const locs = this.dragLocations_.slice()
-            this.potentialMesh_ = this.buildMeshFromDragPoints(locs)
-            this.clearDragLocations(true)
-            this.redrawPotentialMesh()
-            this.announceNewPotential(locs)
+            // v.x is in the range [0, params.width), v.y in [0, params.height), v.z is 0
+            // map to the range [0, 1]
+            const locs = this.state_.dragLocations
+            let samples = locs.map((vec:Vector3) => {
+                return {x: vec.x / this.params.width,
+                        y: 1.0 - vec.y / this.params.height}
+            })
+            this.state_.modify(this.params, (st:State) => {
+                st.sketching = false
+                st.dragLocations = []
+                st.potentialBuilder = algorithms.SampledPotential(samples)
+            })
         }
 
         dragged(raycaster: THREE.Raycaster) {
-            if (! this.sketching_) return
+            if (! this.state_.sketching) return
             let intersections = raycaster.intersectObject(this.background_, false)
             if (intersections.length > 0) {
                 this.setDrawTextShown(false)
                 let where = intersections[0].point
-                this.dragLocations_.push(vector3(where.x + this.params.width / 2, where.y + this.params.height / 2, 0))
+                this.state_.dragLocations.push(vector3(where.x + this.params.width / 2, where.y + this.params.height / 2, 0))
                 this.redrawDragLine()
             }
         }
@@ -132,28 +144,29 @@ module visualizing {
         }
 
         private clearDragLocations(animate: boolean) {
-            if (this.dragLocations_.length > 0) {
-                this.dragLocations_.length = 0
+            if (this.state_.dragLocations.length > 0) {
+                this.state_.dragLocations.length = 0
                 this.redrawDragLine()
             }
         }
 
         private redrawDragLine() {
-            const hasPoints = this.dragLocations_.length > 0
+            const hasPoints = this.state_.dragLocations.length > 0
             this.dragLine_.setVisible(hasPoints)
             if (hasPoints) {
                 this.dragLine_.update((i: number) => {
-                    return this.dragLocations_[Math.min(i, this.dragLocations_.length - 1)]
+                    return this.state_.dragLocations[Math.min(i, this.state_.dragLocations.length - 1)]
                 })
             }
         }
 
         private redrawPotentialMesh() {
-            const hasPotential = (this.potentialMesh_.length > 0)
+            const mesh = this.state_.potential
+            const hasPotential = (mesh.length > 0)
             this.potentialLine_.setVisible(hasPotential) 
             if (hasPotential) {
                 this.potentialLine_.update((index: number) => {
-                    const value = this.potentialMesh_[index]
+                    const value = mesh[index]
                     const x = this.params.centerForMeshIndex(index)
                     const y = this.params.convertYToVisualCoordinate(value)
                     const z = 0
@@ -185,10 +198,10 @@ module visualizing {
         }
 
         public beginSketch() {
-            this.sketching_ = true
-            this.setDrawTextShown(true)
-            this.setPotential([])
-            this.sketchGrid_.visible = true 
+            this.state_.modify(this.params, (st:State) => {
+                st.sketching = true
+                st.potential = []
+            }) 
         }
     }
 }

@@ -1,5 +1,6 @@
 /// <reference path="../typings/threejs/three.d.ts"/>
 /// <reference path="./algorithms.ts"/>
+/// <reference path="./potentials.ts"/>
 
 module visualizing {
 
@@ -24,40 +25,44 @@ module visualizing {
 
     /* A class to help with animations. Adds callbacks (which trigger requestAnimationFrame) */
     export interface AnimatorClient {
-        advanceAnimation(when: number)
+        prepareForRender()
     }
 
-    export class Animator {
+    export class Redrawer {
         private clients_: AnimatorClient[] = []
         private rerender_: () => void
         private elapsed_: number
         private lastNow_: number
-        private paused_ = false
+        private paused_ = true
+        private rerenderScheduled_ = false
 
         constructor(public params: Parameters, rerender: () => void) {
             this.rerender_ = rerender
             this.elapsed_ = 0
-            this.lastNow_ = Animator.now()
+            this.lastNow_ = Redrawer.now()
         }
 
         private static now(): number {
             return (performance || Date).now()
         }
 
-        schedule(client: AnimatorClient) {
-            if (this.clients_.length === 0 && !this.paused()) {
-                window.requestAnimationFrame(() => this.fireClients())
+        scheduleRerender() {
+            if (! this.rerenderScheduled_) {
+                this.rerenderScheduled_ = true
+                window.requestAnimationFrame(() => this.fireClientsAndRerender())
             }
+        }
+
+        addClient(client: AnimatorClient) {
             this.clients_.push(client)
+            this.scheduleRerender()
         }
 
         setPaused(flag: boolean) {
             this.paused_ = flag
             if (! flag) {
-                this.lastNow_ = Animator.now()
-                if (this.clients_.length > 0) {
-                    window.requestAnimationFrame(() => this.fireClients())
-                }
+                this.lastNow_ = Redrawer.now()
+                this.scheduleRerender()
             }
         }
 
@@ -73,25 +78,20 @@ module visualizing {
             return this.elapsed_
         }
 
-        fireClients() {
-            let locals = this.clients_
-            const now = Animator.now()
-            const dt = (now - this.lastNow_) / 1000.
-            this.lastNow_ = now
-            this.elapsed_ += dt * this.params.timescale
-            this.clients_ = []
-            let processed = []
-            locals.forEach((client: AnimatorClient) => {
-                // deduplicate to avoid multiple schedules of the same object
-                for (let i = 0; i < processed.length; i++) {
-                    if (processed[i] === client) {
-                        return
-                    }
-                }
-                client.advanceAnimation(this.elapsed_)
-                processed.push(client)
-            })
+        private fireClientsAndRerender() {
+            this.rerenderScheduled_ = false
+            let localClients = this.clients_.slice()
+            if (! this.paused_) {
+                const now = Redrawer.now()
+                const dt = (now - this.lastNow_) / 1000.
+                this.elapsed_ += dt * this.params.timescale
+                this.lastNow_ = now
+            }
+            localClients.forEach((client: AnimatorClient) => client.prepareForRender())
             this.rerender_()
+            if (! this.paused_) {
+                this.scheduleRerender()
+            }
         }
     }
     
@@ -321,17 +321,9 @@ module visualizing {
         public maxX: number = 25 // maximum X value
         public timescale: number = 4.0 // multiplier for time
         public energyScale: number = 5 // coefficient for energy in the visualizer, only affects label
-        public potentialParameter: number = .15 // single draggable parameter in our potential, in the range [0, 1)
         public meshDivision: number = 800 // how many points are in our mesh
         public psiScale: number = 250 // how much scale we visually apply to the wavefunction
         public absScale: number = 1.5 // how much additional scale we visually apply to the psiAbs and phiAbs
-
-        public showPsi = !false // show position psi(x)
-        public showPsiAbs = false // show position probability |psi(x)|^2
-        public showPhi = false // show momentum phi(x)
-        public showPhiAbs = false // show momentum probability |phi(x)|^2
-
-        public paused = false
 
         public centerForMeshIndex(idx: number): number {
             assert(idx >= 0 && idx < this.meshDivision, "idx out of range")
@@ -356,18 +348,57 @@ module visualizing {
     // Builds a potential based on a function
     // let f be a function that accepts an x position, and optionally the x fraction (in the range [0, 1))
     // returns the new potential
-    export function buildPotential(params:Parameters, f:algorithms.PotentialBuilderFunc) {
+    export function buildPotential(params:Parameters, potentialParam:number, f:algorithms.PotentialBuilderFunc): number[] {
         let potentialMesh: number[] = []
-        const potP = params.potentialParameter
         for (let i = 0; i < params.meshDivision; i++) {
             const x = i / params.meshDivision
-            potentialMesh.push(f(potP, x))
+            potentialMesh.push(f(potentialParam, x))
         }
         return potentialMesh
     }
 
     export class State {
-        potential: number[] = []
+
+        public static applyStateUpdate: (st:State) => void = function(st) {}
+
+        public cameraRotationRadians: number = 0
+
+        public potentialBuilder: algorithms.PotentialBuilderFunc = null
+        public potential: number[] = []
+        public dragLocations: Vector3[] = []
+        public sketching: boolean = false
+        public potentialParameter: number = .15 // single draggable parameter in our potential, in the range [0, 1)
+
+        public showPsi = !false // show position psi(x)
+        public showPsiAbs = false // show position probability |psi(x)|^2
+        public showPhi = false // show momentum phi(x)
+        public showPhiAbs = false // show momentum probability |phi(x)|^2
+
+        public paused = false
+
+        public copy(): State {
+            let clone = new State()
+            for (let key in this) {
+                if (this.hasOwnProperty(key)) {
+                    clone[key] = this[key]
+                }
+            }
+            return clone
+        }
+
+        public modify(params:Parameters, handler:(st:State) => void) {
+            let cp = this.copy()
+            handler(cp)
+            cp.rebuildPotentialIfNeeded(params, this)
+            State.applyStateUpdate(cp)
+        }
+
+        private rebuildPotentialIfNeeded(params:Parameters, oldState:State) {
+            if (this.potentialParameter !== oldState.potentialParameter || 
+                    this.potentialBuilder !== oldState.potentialBuilder) {
+                this.potential = buildPotential(params, this.potentialParameter, this.potentialBuilder)
+            }
+        }
     }
 
     export function assert(condition, message) {
@@ -392,7 +423,7 @@ module visualizing {
         // SHO-type potential
         const baseEnergy = 0.25
         const xScaleFactor = 1.0 / 4.0
-        const potential = buildPotential(params, (x: number) => {
+        const potential = buildPotential(params, .15, (x: number) => {
             // x is a value in [0, this.potential_.width)
             // we have a value of 1 at x = width/2
             const offsetX = params.width / 2

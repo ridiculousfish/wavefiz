@@ -16,7 +16,9 @@ module visualizing {
         private phiVis_ = new Visualizable()
         private phiAbsVis_ = new Visualizable()
 
-        constructor(public params: Parameters, public color: number, public animator: Animator) {
+        private state_ = new State()
+
+        constructor(public params: Parameters, public color: number, public animator: Redrawer) {
 
             const psiMaterial = {
                 color: this.color,
@@ -55,6 +57,12 @@ module visualizing {
             this.phiGraph_ = new VisLine(this.params.meshDivision, phiMaterial)
             this.phiAbsGraph_ = new VisLine(this.params.meshDivision, phiAbsMaterial)
             this.psiBaseline_ = new VisLine(2, baselineMaterial)
+
+            this.animator.addClient(this)
+        }
+
+        public setState(state:State) {
+            this.state_ = state
         }
 
         setWavefunction(psi: algorithms.GeneralizedWavefunction, potentialMinimumIndex: number) {
@@ -104,10 +112,9 @@ module visualizing {
             this.setWavefunction(null, -1)
         }
 
-        redraw(time: number = null) {
-            if (time === null) {
-                time = this.animator.lastTime()
-            }
+        redraw() {
+
+            const time = this.animator.lastTime()
             const cleanValue = (value: number) => {
                 // TODO: rationalize this
                 const limit = this.params.height / 1.9
@@ -119,7 +126,7 @@ module visualizing {
 
             let updateVisualizable = (vis: Visualizable, visLine: VisLine, show: boolean, scale: number) => {
                 visLine.setVisible(show)
-                if (show) {
+                if (show && vis.valueAt) {
                     visLine.update((index: number) => {
                         const x = this.params.centerForMeshIndex(index)
                         const yz = vis.valueAt(index, time)
@@ -132,18 +139,17 @@ module visualizing {
 
             let psiScale = this.params.psiScale
             let psiAbsScale = psiScale * this.params.absScale
-            updateVisualizable(this.psiVis_, this.psiGraph_, this.params.showPsi, psiScale)
-            updateVisualizable(this.psiAbsVis_, this.psiAbsGraph_, this.params.showPsiAbs, psiAbsScale)
-            updateVisualizable(this.phiVis_, this.phiGraph_, this.params.showPhi, psiScale)
-            updateVisualizable(this.phiAbsVis_, this.phiAbsGraph_, this.params.showPhiAbs, psiAbsScale)
+
+            updateVisualizable(this.psiVis_, this.psiGraph_, this.state_.showPsi, psiScale)
+            updateVisualizable(this.psiAbsVis_, this.psiAbsGraph_, this.state_.showPsiAbs, psiAbsScale)
+            updateVisualizable(this.phiVis_, this.phiGraph_, this.state_.showPhi, psiScale)
+            updateVisualizable(this.phiAbsVis_, this.phiAbsGraph_, this.state_.showPhiAbs, psiAbsScale)
 
             this.psiBaseline_.update((i: number) => vector3(i * this.params.width, 0, 0))
-
-            this.animator.schedule(this)
         }
 
-        advanceAnimation(when: number) {
-            this.redraw(when)
+        prepareForRender() {
+            this.redraw()
         }
 
         addToGroup(parentGroup: THREE.Group, yOffset: number) {

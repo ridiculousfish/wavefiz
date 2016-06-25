@@ -27,11 +27,10 @@ module visualizing {
         private topScene_: THREE.Scene = new THREE.Scene()
         private topGroup_: THREE.Group = new THREE.Group()
         private camera_: THREE.Camera
-        private potentialVis_: PotentialVisualizer
-        private animator_: Animator
         
-        private potentialBuilder_ : algorithms.PotentialBuilderFunc
-
+        private potentialVis_: PotentialVisualizer
+        private animator_: Redrawer
+        
         private wavefunctionAvg_: WavefunctionVisualizer
 
         private energyVisualizer_: visualizing.EnergyVisualizer
@@ -44,13 +43,15 @@ module visualizing {
 
         public params = new Parameters()
 
-        public state = new State()
+        public state_ = new State()
 
         constructor(container: HTMLElement, potentialDragger: HTMLElement, energyContainer: HTMLElement, energyDraggerPrototype: HTMLElement) {
             this.container_ = container
 
+            State.applyStateUpdate = (st:State) => this.setState(st)
+
             // Animator
-            this.animator_ = new Animator(this.params, () => this.render())
+            this.animator_ = new Redrawer(this.params, () => this.doRender())
 
             let renderer = new THREE.WebGLRenderer({ antialias: true })
             renderer.setClearColor(0x222222, 1)
@@ -76,26 +77,17 @@ module visualizing {
             // Potential slider
             let potentialSliderUpdated = (slider: ui.Slider, position: number) => {
                 let value = position / this.params.width
-                if (value != this.params.potentialParameter) {
-                    this.params.potentialParameter = value
-                    this.rebuildPotential()
+                if (value != this.state_.potentialParameter) {
+                    this.state_.modify(this.params, (st:State) => {
+                        st.potentialParameter = value 
+                    })
                 }
             }
             this.potentialSlider_ = new ui.Slider(ui.Orientation.Horizontal, potentialDragger, 0, 0, potentialSliderUpdated)
-            this.potentialSlider_.update(this.params.potentialParameter * this.params.width)
+            this.potentialSlider_.update(this.state_.potentialParameter * this.params.width)
 
             // Potential Visualizer
             this.potentialVis_ = new PotentialVisualizer(this.params)
-            this.potentialVis_.potentialUpdatedCallback = (v: Vector3[]) => {
-                // v.x is in the range [0, params.width), v.y in [0, params.height), v.z is 0
-                // map to the range [0, 1]
-                let samples = v.map((vec:Vector3) => {
-                    return {x: vec.x / this.params.width,
-                            y: 1.0 - vec.y / this.params.height}
-                })
-                this.potentialBuilder_ = algorithms.SampledPotential(samples)
-                this.rebuildPotential()
-            }
             this.potentialVis_.addToGroup(this.topGroup_)
 
             // Wavefunction Visualizer
@@ -163,7 +155,7 @@ module visualizing {
                     if (dragSelection) {
                         dragSelection.dragged(getRaycaster(evt))
                     }
-                    this.render()
+                    this.animator_.scheduleRerender()
                 }
             })
             element.addEventListener('mousedown', (evt) => {
@@ -180,14 +172,14 @@ module visualizing {
                     dragSelection.dragStart(raycaster)
                 }
                 mouseIsDown = true
-                this.render()
+                this.animator_.scheduleRerender()
             })
             document.addEventListener('mouseup', () => {
                 if (dragSelection) {
                     dragSelection.dragEnd()
                     dragSelection = null
                     mouseIsDown = false
-                    this.render()
+                    this.animator_.scheduleRerender()
                 }
             })
 
@@ -203,8 +195,8 @@ module visualizing {
             this.camera_.lookAt(new THREE.Vector3(0, 0, 0))
         }
 
-        private render() {
-            this.renderer_.render(this.topScene_, this.camera_);
+        private doRender() {
+            this.renderer_.render(this.topScene_, this.camera_)
         }
 
         private nextInterestingEnergy() {
@@ -260,22 +252,22 @@ module visualizing {
         }
 
         private computeAndShowWavefunctions() {
-            if (this.state.potential.length === 0) {
+            if (this.state_.potential.length === 0) {
                 return
             }
             
             if (this.energyBars_.length > 0) {
-                const center = algorithms.indexOfMinimum(this.state.potential)
+                const center = algorithms.indexOfMinimum(this.state_.potential)
                 
                 // determine max energy
                 let energies = this.energyBars_.map((bar) => bar.energy())
                 let maxEnergy = Math.max(...energies)
-                let maxTurningPoints = algorithms.classicalTurningPoints(this.state.potential, maxEnergy)
+                let maxTurningPoints = algorithms.classicalTurningPoints(this.state_.potential, maxEnergy)
                 
                 // update wavefunctions and collect them all
                 let psis = this.energyBars_.map((bar: EnergyBar) => {
                     const psiInputs = {
-                        potentialMesh: this.state.potential,
+                        potentialMesh: this.state_.potential,
                         energy: bar.energy(),
                         maxX: this.params.maxX
                     }
@@ -310,38 +302,46 @@ module visualizing {
             // update turning points based on maximum energy
             let maxEnergy = 0
             this.energyBars_.map((eb: EnergyBar) => maxEnergy = Math.max(maxEnergy, eb.energy()))
-            const maxTurningPoints = algorithms.classicalTurningPoints(this.state.potential, maxEnergy)
+            const maxTurningPoints = algorithms.classicalTurningPoints(this.state_.potential, maxEnergy)
 
             const leftV = this.params.convertXToVisualCoordinate(maxTurningPoints.left)
             const rightV = this.params.convertXToVisualCoordinate(maxTurningPoints.right)
             this.leftTurningPoint_.update((i: number) => vector3(leftV, i * this.params.height, 0))
             this.rightTurningPoint_.update((i: number) => vector3(rightV, i * this.params.height, 0))
 
-            this.render()
+            this.animator_.scheduleRerender()
+        }
+
+        public setState(state:State) {
+            this.state_ = state
+            this.potentialVis_.setState(state)
+            this.wavefunctionAvg_.setState(state)
+            this.setCameraRotation(state.cameraRotationRadians)
+            this.computeAndShowWavefunctions()
         }
 
         public setShowPsi(flag: boolean) {
-            this.params.showPsi = flag
-            this.computeAndShowWavefunctions()
+            this.state_.showPsi = flag
+            this.animator_.scheduleRerender()
         }
 
         public setShowPsiAbs(flag: boolean) {
-            this.params.showPsiAbs = flag
-            this.computeAndShowWavefunctions()
+            this.state_.showPsiAbs = flag
+            this.animator_.scheduleRerender()
         }
 
         public setShowPhi(flag: boolean) {
-            this.params.showPhi = flag
-            this.computeAndShowWavefunctions()
+            this.state_.showPhi = flag
+            this.animator_.scheduleRerender()
         }
 
         public setShowPhiAbs(flag: boolean) {
-            this.params.showPhiAbs = flag
-            this.computeAndShowWavefunctions()
+            this.state_.showPhiAbs = flag
+            this.animator_.scheduleRerender()
         }
 
         public setPaused(flag: boolean) {
-            this.params.paused = flag
+            this.state_.paused = flag
             this.animator_.setPaused(flag)
             if (flag) {
                 this.animator_.reset()
@@ -349,46 +349,41 @@ module visualizing {
         }
 
         public setRotation(rads: number) {
-            this.setCameraRotation(rads)
-            this.render()
-        }
-        
-        rebuildPotential() {
-            let mesh = buildPotential(this.params, this.potentialBuilder_)
-            this.state.potential = mesh
-            this.potentialVis_.setPotential(mesh)
-            this.computeAndShowWavefunctions()
-        }
-
-        public loadSHO() {
-            this.potentialBuilder_ = algorithms.SimpleHarmonicOscillator
-            this.rebuildPotential()
-        }
-
-        public loadISW() {
-            this.potentialBuilder_ = algorithms.InfiniteSquareWell
-            this.rebuildPotential()
-        }
-
-        public loadFSW() {
-            this.potentialBuilder_ = algorithms.FiniteSquareWell
-            this.rebuildPotential()
-        }
-
-        public load2SW() {
-            this.potentialBuilder_ = algorithms.TwoSquareWells
-            this.rebuildPotential()
-        }
-
-        public loadRandomPotential() {
-            this.potentialBuilder_ = algorithms.RandomPotential()
-            this.rebuildPotential()
+            this.state_.modify(this.params, (st:State) => {
+                st.cameraRotationRadians = rads
+            })
         }
         
         public sketchPotential() {
-            this.state.potential = []
+            this.state_.potential = []
             this.potentialVis_.beginSketch()
-            this.render()
+            this.animator_.scheduleRerender()
+        }
+
+        public loadPotentialFromBuilder(pbf:algorithms.PotentialBuilderFunc) {
+            this.state_.modify(this.params, (st:State) => {
+                st.potentialBuilder = pbf
+            })
+        }
+
+        public loadSHO() {
+            this.loadPotentialFromBuilder(algorithms.SimpleHarmonicOscillator)
+        }
+
+        public loadISW() {
+            this.loadPotentialFromBuilder(algorithms.InfiniteSquareWell)
+        }
+
+        public loadFSW() {
+            this.loadPotentialFromBuilder(algorithms.FiniteSquareWell)
+        }
+
+        public load2SW() {
+            this.loadPotentialFromBuilder(algorithms.TwoSquareWells)
+        }
+
+        public loadRandomPotential() {
+            this.loadPotentialFromBuilder(algorithms.RandomPotential())
         }
     }
 }
