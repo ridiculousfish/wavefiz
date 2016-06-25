@@ -96,7 +96,6 @@ module visualizing {
             delete this.bars_[bar.identifier]
             bar.slider.remove()
             bar.line.removeFromGroup(this.group)
-            this.container.removeChild(bar.slider.element)
         }
     }
 }

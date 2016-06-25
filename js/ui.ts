@@ -113,6 +113,8 @@ module ui {
         
         public remove() {
             this.endWatching()
+            let parent = this.element.parentNode
+            if (parent) parent.removeChild(this.element)
         }
         
         update(position:number, value:number = 0) {
