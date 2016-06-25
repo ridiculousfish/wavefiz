@@ -7,23 +7,9 @@
 /// <reference path='./ui.ts'/>
 
 module visualizing {
-
-    // returns the global offset of an HTML element
-    function getElementOffset(elem: HTMLElement) {
-        let x = 0
-        let y = 0
-        let cursor = elem as any
-        while (cursor != null) {
-            x += cursor.offsetLeft
-            y += cursor.offsetTop
-            cursor = cursor.offsetParent
-        }
-        return { x: x, y: y }
-    }
- 
+    
     export class Visualizer {
-        private container_: HTMLElement
-        private renderer_: THREE.Renderer
+
         private topScene_: THREE.Scene = new THREE.Scene()
         private topGroup_: THREE.Group = new THREE.Group()
         private camera_: THREE.Camera
@@ -38,86 +24,71 @@ module visualizing {
         
         private potentialSlider_ : ui.Slider
 
-        private leftTurningPoint_: VisLine
-        private rightTurningPoint_: VisLine
+        private leftTurningPointLine_: VisLine
+        private rightTurningPointLine_: VisLine
 
-        public params = new Parameters()
+        private params_ = new Parameters()
 
-        public state_ = new State()
+        private state_ = new State()
 
         constructor(container: HTMLElement, potentialDragger: HTMLElement, energyContainer: HTMLElement, energyDraggerPrototype: HTMLElement) {
-            this.container_ = container
-
+            // Hackish
             State.applyStateUpdate = (st:State) => this.setState(st)
 
-            // Animator
-            this.animator_ = new Redrawer(this.params, () => this.doRender())
-
+            // Initialize our renderer
             let renderer = new THREE.WebGLRenderer({ antialias: true })
             renderer.setClearColor(0x222222, 1)
             renderer.setSize(container.offsetWidth, container.offsetHeight)
-            this.renderer_ = renderer
-            this.container_.appendChild(renderer.domElement)
+            container.appendChild(renderer.domElement)
 
-            const usePerspective = true
-            if (usePerspective) {
-                let fovDegrees = Math.atan2(this.params.height, this.params.width) * (180 / Math.PI) * 2.0
-                fovDegrees = Math.ceil(fovDegrees) // energy lines disappear without this, unclear why
-                this.camera_ = new THREE.PerspectiveCamera(fovDegrees, this.params.width / this.params.height, 50, 1000);
-                this.topGroup_.position.x = -this.params.width / 2
-                this.topGroup_.position.y = this.params.height / 2
-                this.topGroup_.scale.y = -1
-            } else {
-                this.camera_ = new THREE.OrthographicCamera(0, this.params.width, 0, this.params.height, 0.1, 10000)
-            }
+            // Create the camera
+            let fovDegrees = Math.atan2(this.params_.height, this.params_.width) * (180 / Math.PI) * 2.0
+            fovDegrees = Math.ceil(fovDegrees) // energy lines disappear without this, unclear why
+            this.camera_ = new THREE.PerspectiveCamera(fovDegrees, this.params_.width / this.params_.height, 50, 1000);
             this.setCameraRotation(0)
 
+            // Position our top group such that it appears centered in the camera
+            this.topGroup_.position.x = -this.params_.width / 2
+            this.topGroup_.position.y = this.params_.height / 2
+            this.topGroup_.scale.y = -1
             this.topScene_.add(this.topGroup_)
+
+            // Initialize our animator
+            this.animator_ = new Redrawer(this.params_, () => {
+                renderer.render(this.topScene_, this.camera_)
+            })
             
-            // Potential slider
+            // Build the potential slider
+            // This is the slider that appears on the bottom of the visualizer,
+            // and that sets the value of the potential parameter
             let potentialSliderUpdated = (slider: ui.Slider, position: number) => {
-                let value = position / this.params.width
-                if (value != this.state_.potentialParameter) {
-                    this.state_.modify(this.params, (st:State) => {
-                        st.potentialParameter = value 
-                    })
-                }
+                let value = position / this.params_.width
+                this.state_.modify(this.params_, (st:State) => {
+                    st.potentialParameter = value 
+                })
             }
             this.potentialSlider_ = new ui.Slider(ui.Orientation.Horizontal, potentialDragger, 0, 0, potentialSliderUpdated)
-            this.potentialSlider_.update(this.state_.potentialParameter * this.params.width)
+            this.potentialSlider_.update(this.state_.potentialParameter * this.params_.width)
 
             // Potential Visualizer
-            this.potentialVis_ = new PotentialVisualizer(this.params)
+            this.potentialVis_ = new PotentialVisualizer(this.params_)
             this.topGroup_.add(this.potentialVis_.group)
 
             // Wavefunction Visualizer
-            const centerY = this.params.height / 2
-            this.wavefunctionAvg_ = new WavefunctionVisualizer(this.params, 0xFF7777, this.animator_)
+            const centerY = this.params_.height / 2
+            this.wavefunctionAvg_ = new WavefunctionVisualizer(this.params_, 0xFF7777, this.animator_)
             this.wavefunctionAvg_.addToGroup(this.topGroup_, centerY)
 
-            // Turning Points
-            for (let j = 0; j < 2; j++) {
-                let tp = new VisLine(2, {
-                    color: 0x000000,
-                    linewidth: 1,
-                    transparent: true,
-                    opacity: .5
-                })
-                tp.update((i: number) => vector3(this.params.width / 2, i * this.params.height, 0))
-                tp.addToGroup(this.topGroup_)
-                if (j === 0) {
-                    this.leftTurningPoint_ = tp
-                } else {
-                    this.rightTurningPoint_ = tp
-                }
-            }
+            // Build our two turning point lines
+            this.leftTurningPointLine_ = this.createTurningPointLine()
+            this.rightTurningPointLine_ = this.createTurningPointLine()
 
             // Energy dragger
             let positionUpdated = (slider: ui.Slider, position: number) => {
                 // the user dragged the energy to a new value, expressed our "height" coordinate system
                 // compute a new wavefunction
                 // TODO: untangle this
-                const energy = this.params.convertYFromVisualCoordinate(position)
+                const energy = this.params_.convertYFromVisualCoordinate(position)
                 this.energyBars_.forEach((bar: EnergyBar) => {
                     if (bar.slider === slider) {
                         bar.setPositionAndEnergy(position, energy)
@@ -125,16 +96,16 @@ module visualizing {
                 })
                 this.computeAndShowWavefunctions()
             }
-            this.energyVisualizer_ = new visualizing.EnergyVisualizer(energyContainer, energyDraggerPrototype, this.params, positionUpdated)
+            this.energyVisualizer_ = new visualizing.EnergyVisualizer(energyContainer, energyDraggerPrototype, this.params_, positionUpdated)
 
             // Start listening to events
-            this.initEvents()
+            this.initEvents(container)
         }
 
-        private initEvents() {
+        private initEvents(container:HTMLElement) {
             let mouseIsDown = false
             let dragSelection: Draggable = null
-            const element = this.container_
+            const element = container
             const getXY = (evt: MouseEvent) => {
                 let offset = getElementOffset(element)
                 return { x: evt.pageX - offset.x, y: evt.pageY - offset.y }
@@ -181,21 +152,28 @@ module visualizing {
                     this.animator_.scheduleRerender()
                 }
             })
+        }
 
+        private createTurningPointLine(): VisLine {
+            let tp = new VisLine(2, {
+                color: 0x000000,
+                linewidth: 1,
+                transparent: true,
+                opacity: .5
+            })
+            tp.update((i: number) => vector3(this.params_.width / 2, i * this.params_.height, 0))
+            tp.addToGroup(this.topGroup_)
+            return tp
         }
 
         private setCameraRotation(rads: number) {
             // rotate about the y axis
             // rotation of 0 => z = 1 * scale
-            const scale = this.params.cameraDistance
+            const scale = this.params_.cameraDistance
             const x = Math.sin(rads) * scale
             const z = Math.cos(rads) * scale
             this.camera_.position.set(x, 0, z)
             this.camera_.lookAt(new THREE.Vector3(0, 0, 0))
-        }
-
-        private doRender() {
-            this.renderer_.render(this.topScene_, this.camera_)
         }
 
         private nextInterestingEnergy() {
@@ -231,9 +209,9 @@ module visualizing {
 
         public addEnergySlider() {
             const energy = this.nextInterestingEnergy()
-            const position = this.params.convertYToVisualCoordinate(energy)
-            const slider = this.energyVisualizer_.addSlider(position, energy * this.params.energyScale)
-            const bar = new EnergyBar(slider, position, energy, this.params)
+            const position = this.params_.convertYToVisualCoordinate(energy)
+            const slider = this.energyVisualizer_.addSlider(position, energy * this.params_.energyScale)
+            const bar = new EnergyBar(slider, position, energy, this.params_)
             this.energyBars_.push(bar)
             bar.line.addToGroup(this.topGroup_)
             this.computeAndShowWavefunctions()
@@ -268,7 +246,7 @@ module visualizing {
                     const psiInputs = {
                         potentialMesh: this.state_.potential,
                         energy: bar.energy(),
-                        maxX: this.params.maxX
+                        maxX: this.params_.maxX
                     }
                     
                     // Here we have a choice as to our turning points, which affects how we stitch
@@ -303,10 +281,10 @@ module visualizing {
             this.energyBars_.map((eb: EnergyBar) => maxEnergy = Math.max(maxEnergy, eb.energy()))
             const maxTurningPoints = algorithms.classicalTurningPoints(this.state_.potential, maxEnergy)
 
-            const leftV = this.params.convertXToVisualCoordinate(maxTurningPoints.left)
-            const rightV = this.params.convertXToVisualCoordinate(maxTurningPoints.right)
-            this.leftTurningPoint_.update((i: number) => vector3(leftV, i * this.params.height, 0))
-            this.rightTurningPoint_.update((i: number) => vector3(rightV, i * this.params.height, 0))
+            const leftV = this.params_.convertXToVisualCoordinate(maxTurningPoints.left)
+            const rightV = this.params_.convertXToVisualCoordinate(maxTurningPoints.right)
+            this.leftTurningPointLine_.update((i: number) => vector3(leftV, i * this.params_.height, 0))
+            this.rightTurningPointLine_.update((i: number) => vector3(rightV, i * this.params_.height, 0))
 
             this.animator_.scheduleRerender()
         }
@@ -349,13 +327,13 @@ module visualizing {
         }
 
         public setRotation(rads: number) {
-            this.state_.modify(this.params, (st:State) => {
+            this.state_.modify(this.params_, (st:State) => {
                 st.cameraRotationRadians = rads
             })
         }
         
         public sketchPotential() {
-            this.state_.modify(this.params, (st:State) => {
+            this.state_.modify(this.params_, (st:State) => {
                 st.potential = []
                 st.potentialBuilder = null
                 st.sketching = true
@@ -363,7 +341,7 @@ module visualizing {
         }
 
         public loadPotentialFromBuilder(pbf:algorithms.PotentialBuilderFunc) {
-            this.state_.modify(this.params, (st:State) => {
+            this.state_.modify(this.params_, (st:State) => {
                 st.sketching = false
                 st.dragLocations = []
                 st.potentialBuilder = pbf
@@ -390,4 +368,20 @@ module visualizing {
             this.loadPotentialFromBuilder(algorithms.RandomPotential())
         }
     }
+
+    // Helper function
+    // returns the global offset of an HTML element
+    function getElementOffset(elem: HTMLElement) {
+        let x = 0
+        let y = 0
+        let cursor = elem as any
+        while (cursor != null) {
+            x += cursor.offsetLeft
+            y += cursor.offsetTop
+            cursor = cursor.offsetParent
+        }
+        return { x: x, y: y }
+    }
+
+
 }
