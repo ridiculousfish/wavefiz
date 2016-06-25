@@ -54,7 +54,6 @@ module visualizing {
             // Remove energy bars not found in the energy state
             Object.keys(this.bars_).forEach((identifier:string) => {
                 if (! (identifier in energies)) {
-                    console.log("Removing " + identifier + " in " + this.bars_[identifier])
                     this.removeBar(this.bars_[identifier])
                 }
             })
