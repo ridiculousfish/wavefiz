@@ -31,7 +31,7 @@ prerequisites:
 	echo "npm install uglify-js -g"
 
 .PHONY: stage
-stage: $(VISUALIZE_JS)
+stage: $(VISUALIZE_JS) $(HTML_SRCS)
 	rm -Rf $(STAGE_DIR)
 	mkdir -p $(STAGE_DIR)
 	cp $(HTML_SRCS) $(STAGE_DIR)
