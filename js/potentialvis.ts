@@ -30,7 +30,7 @@ module visualizing {
 
         constructor(public params: Parameters) {
             // Construct the line showing the potential
-            this.potentialLine_ = new VisLine(this.params.meshDivision, {
+            this.potentialLine_ = VisLine.create(this.params.meshDivision, {
                 color: 0xFF00FF,
                 linewidth: 5,
                 depthWrite: false
@@ -39,7 +39,7 @@ module visualizing {
             this.potentialLine_.addToGroup(this.group)
 
             // Construct the line showing the current sketch 
-            this.sketchLine_ = new VisLine(this.params.meshDivision, {
+            this.sketchLine_ = VisLine.create(this.params.meshDivision, {
                 color: 0x00FFFF,
                 linewidth: 8
             })

@@ -52,11 +52,11 @@ module visualizing {
                 depthTest: false
             }
 
-            this.psiGraph_ = new VisLine(this.params.meshDivision, psiMaterial)
-            this.psiAbsGraph_ = new VisLine(this.params.meshDivision, psiAbsMaterial)
-            this.phiGraph_ = new VisLine(this.params.meshDivision, phiMaterial)
-            this.phiAbsGraph_ = new VisLine(this.params.meshDivision, phiAbsMaterial)
-            this.psiBaseline_ = new VisLine(2, baselineMaterial)
+            this.psiGraph_ = VisLine.create(this.params.meshDivision, psiMaterial)
+            this.psiAbsGraph_ = VisLine.create(this.params.meshDivision, psiAbsMaterial)
+            this.phiGraph_ = VisLine.create(this.params.meshDivision, phiMaterial)
+            this.phiAbsGraph_ = VisLine.create(this.params.meshDivision, phiAbsMaterial)
+            this.psiBaseline_ = VisLine.create(2, baselineMaterial)
 
             this.animator.addClient(this)
         }

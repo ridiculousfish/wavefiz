@@ -15,7 +15,7 @@ module visualizing {
         
         constructor(public identifier:string, public slider: ui.Slider,
                     group: THREE.Group, public params: Parameters) {
-            this.line = new VisLine(2, { color: 0xFF0000 })
+            this.line = VisLine.create(2, { color: 0xFF0000 })
             this.line.addToGroup(group)
         }
 

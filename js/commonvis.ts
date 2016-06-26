@@ -94,13 +94,37 @@ module visualizing {
             }
         }
     }
+
+    function useNativeLines() {
+        return true
+    }
     
-    /* Use native lines */
-    export class VisLineNative {
-        public geometry: THREE.Geometry
-        public line: THREE.Line
-        constructor(public length: number, material: THREE.LineBasicMaterialParameters) {
-            this.geometry = new THREE.Geometry()
+    // Base class for drawing lines
+    export abstract class VisLine {
+        constructor(protected length:number) {}
+
+        public abstract update(cb: (index) => THREE.Vector3);
+        public abstract setVisible(flag:boolean);
+        public abstract setRenderOrder(val:number);
+        public abstract addToGroup(group:THREE.Group);
+        public abstract removeFromGroup(group:THREE.Group);
+
+        // Creation entry point, that chooses the best subclass
+        public static create(length: number, material: THREE.LineBasicMaterialParameters): VisLine {
+            if (useNativeLines()) {
+                return new VisLineNative(length, material)
+            } else {
+                return new VisLineShader(length, material)
+            }
+        }
+    }
+
+    // Use native lines
+    class VisLineNative extends VisLine {
+        private geometry: THREE.Geometry = new THREE.Geometry()
+        private line: THREE.Line
+        constructor(length: number, material: THREE.LineBasicMaterialParameters) {
+            super(length)
             const zero = new THREE.Vector3(0, 0, 0)
             for (let i = 0; i < length; i++) {
                 this.geometry.vertices.push(zero)
@@ -204,11 +228,12 @@ module visualizing {
         } 
     }
     
-    /* Use shaders */
-    export class VisLine {
+    // Use shaders
+    export class VisLineShader extends VisLine {
         public geometry = new THREE.BufferGeometry()
         public mesh: THREE.Mesh
-        constructor(public length: number, material: THREE.LineBasicMaterialParameters) {
+        constructor(length: number, material: THREE.LineBasicMaterialParameters) {
+            super(length)
             // Length is the length of the path
             // Use two vertices for each element of our path
             // (and each vertex has 3 coordinates)

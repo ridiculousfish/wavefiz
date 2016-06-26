@@ -100,7 +100,7 @@ module visualizing {
         }
 
         private createTurningPointLine(): VisLine {
-            let tp = new VisLine(2, {
+            let tp = VisLine.create(2, {
                 color: 0x000000,
                 linewidth: 1,
                 transparent: true,
