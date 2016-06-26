@@ -9,27 +9,37 @@
 module visualizing {
     
     // Top level visualization entry point.
-    // Coordinates multiple visualizations
+    // This coordinates multiple visualizations
     export class Visualizer {
 
+        // Our parameters and state
+        private params_ = new Parameters()
+        private state_ = new State(this.params_)
+
+        // The full scene that our GL renderer draws
         private topScene_: THREE.Scene = new THREE.Scene()
-        private topGroup_: THREE.Group = new THREE.Group()
+
+        // The camera
         private camera_: THREE.Camera
-        
+
+        // Group containing our visualizers' groups
+        private group_: THREE.Group = new THREE.Group()
+
+        // The object responsible for scheduling renderings,
+        // and keeping track of time
         private animator_: Redrawer
         
+        // Our visualizers
         private potentialVisualizer_: PotentialVisualizer
         private wavefunctionAvg_: WavefunctionVisualizer
         private energyVisualizer_: EnergyVisualizer
 
+        // Lines representing the classical turning points
         private leftTurningPointLine_: VisLine
         private rightTurningPointLine_: VisLine
 
+        // The slider at the bottom, for adjusting the potential
         private potentialSlider_: ui.Slider
-
-        private params_ = new Parameters()
-
-        private state_ = new State(this.params_)
 
         constructor(container: HTMLElement, potentialDragger: HTMLElement, energyContainer: HTMLElement, energyDraggerPrototype: HTMLElement) {
             // Hackish
@@ -47,10 +57,10 @@ module visualizing {
             this.camera_ = new THREE.PerspectiveCamera(fovDegrees, this.params_.width / this.params_.height, 50, 1000);
 
             // Position our top group such that it appears centered in the camera
-            this.topGroup_.position.x = -this.params_.width / 2
-            this.topGroup_.position.y = this.params_.height / 2
-            this.topGroup_.scale.y = -1
-            this.topScene_.add(this.topGroup_)
+            this.group_.position.x = -this.params_.width / 2
+            this.group_.position.y = this.params_.height / 2
+            this.group_.scale.y = -1
+            this.topScene_.add(this.group_)
 
             // Initialize our animator / redrawer
             this.animator_ = new Redrawer(this.params_, () => {
@@ -70,13 +80,13 @@ module visualizing {
             // Build the potential visualizer
             // This draws the line showing the potential
             this.potentialVisualizer_ = new PotentialVisualizer(this.params_)
-            this.topGroup_.add(this.potentialVisualizer_.group)
+            this.group_.add(this.potentialVisualizer_.group)
 
             // Build a wavefunction visualizer
             // This draws the line showing the wavefunction
             const centerY = this.params_.height / 2
             this.wavefunctionAvg_ = new WavefunctionVisualizer(this.params_, 0xFF7777, this.animator_)
-            this.wavefunctionAvg_.addToGroup(this.topGroup_, centerY)
+            this.wavefunctionAvg_.addToGroup(this.group_, centerY)
 
             // Energy visualizer
             let positionUpdated = (slider: ui.Slider, position: number) => {
@@ -87,7 +97,7 @@ module visualizing {
             }
             this.energyVisualizer_ = new visualizing.EnergyVisualizer(
                     energyContainer, energyDraggerPrototype, this.params_, positionUpdated)
-            this.topGroup_.add(this.energyVisualizer_.group)
+            this.group_.add(this.energyVisualizer_.group)
 
             // Build our two turning point lines
             // These show the classical turning points, where the energy equals the potential
@@ -109,7 +119,7 @@ module visualizing {
                 opacity: .5
             })
             tp.update((i: number) => vector3(this.params_.width / 2, i * this.params_.height, 0))
-            tp.addToGroup(this.topGroup_)
+            tp.addToGroup(this.group_)
             return tp
         }
 
