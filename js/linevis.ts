@@ -10,6 +10,7 @@ module visualizing {
     // Base class for drawing lines
     export abstract class VisLine {
         protected object:THREE.Object3D
+        private parent: THREE.Group = null
         constructor(protected length:number) {}
 
         public abstract update(cb: (index) => THREE.Vector3);
@@ -22,21 +23,26 @@ module visualizing {
             this.object.renderOrder = val
         }
 
-        public addToGroup(group:THREE.Group) {
-            group.add(this.object)
-        }
-
-        public removeFromGroup(group:THREE.Group) {
-            group.remove(this.object)
+        public remove() {
+            if (this.parent) {
+                this.parent.remove(this.object)
+                this.parent = null
+            }
         }
 
         // Creation entry point, that chooses the best subclass
-        public static create(length: number, material: THREE.LineBasicMaterialParameters): VisLine {
+        public static create(length: number, parent: THREE.Group, material: THREE.LineBasicMaterialParameters): VisLine {
+            let result : VisLine
             if (useNativeLines()) {
-                return new VisLineNative(length, material)
+                result = new VisLineNative(length, material)
             } else {
-                return new VisLineShader(length, material)
+                result = new VisLineShader(length, material)
             }
+            if (parent) {
+                result.parent = parent
+                parent.add(result.object)
+            }
+            return result
         }
     }
 

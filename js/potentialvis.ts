@@ -30,20 +30,18 @@ module visualizing {
 
         constructor(public params: Parameters) {
             // Construct the line showing the potential
-            this.potentialLine_ = VisLine.create(this.params.meshDivision, {
+            this.potentialLine_ = VisLine.create(this.params.meshDivision, this.group, {
                 color: 0xFF00FF,
                 linewidth: 5,
                 depthWrite: false
             })
             this.potentialLine_.setRenderOrder(-5000)
-            this.potentialLine_.addToGroup(this.group)
 
             // Construct the line showing the current sketch 
-            this.sketchLine_ = VisLine.create(this.params.meshDivision, {
+            this.sketchLine_ = VisLine.create(this.params.meshDivision, this.group, {
                 color: 0x00FFFF,
                 linewidth: 8
             })
-            this.sketchLine_.addToGroup(this.group)
 
             // Construct our background
             let planeGeo = new THREE.PlaneGeometry(this.params.width * 2, this.params.height * 2)

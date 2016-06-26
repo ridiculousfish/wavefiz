@@ -15,8 +15,7 @@ module visualizing {
         
         constructor(public identifier:string, public slider: ui.Slider,
                     group: THREE.Group, public params: Parameters) {
-            this.line = VisLine.create(2, { color: 0xFF0000 })
-            this.line.addToGroup(group)
+            this.line = VisLine.create(2, group, { color: 0xFF0000 })
         }
 
         public setEnergy(energy: number) {
@@ -37,10 +36,59 @@ module visualizing {
         
         constructor(public container: HTMLElement,
                     public sliderPrototype: HTMLElement,
-                    public params:visualizing.Parameters,
-                    public positionUpdated: (slider:ui.Slider, position:number) => void) {
+                    public params:visualizing.Parameters) {
             assert(this.container != null, "Energy slider could not find container")
             assert(this.sliderPrototype != null, "Energy slider could not find prototype")
+        }
+
+        private nextInterestingEnergy() {
+            // Find the point in [0, 1) furthest from all other points
+            // This is naturally in the midpoint between its two closest neighbors
+            // This means we can only track one distance
+            let usedEnergies = this.state_.energyValues()
+            
+            // hack for initial energy
+            if (usedEnergies.length == 0) {
+                return 0.3
+            }
+            
+            // treat us as if there's a point at each end
+            usedEnergies.push(0)
+            usedEnergies.push(1)
+            usedEnergies.sort()
+            
+            let indexOfLargestInterval = -1 
+            let lengthOfLargestInterval = -1
+            for (let i=0; i + 1 < usedEnergies.length; i++) {
+                let length = usedEnergies[i+1] - usedEnergies[i]
+                assert(length >= 0, "Array not sorted?")
+                if (length > lengthOfLargestInterval) {
+                    lengthOfLargestInterval = length
+                    indexOfLargestInterval = i
+                }
+            }
+            let result = usedEnergies[indexOfLargestInterval] + lengthOfLargestInterval/2.0
+            assert(result >= 0 && result < 1, "energy out of range?")
+            return result
+        }
+
+        public addEnergySlider() {
+            const energy = this.nextInterestingEnergy()
+            this.state_.modify((st:State) => {
+                st.energies[State.newIdentifier()] = energy
+            })
+        }
+
+        public removeEnergySlider() {
+            // Remove the most recently added energy bar, which is the one with the highest identifier
+            // Don't delete the last energy!
+            const energyIDs = Object.keys(this.state_.energies).map((val) => parseInt(val, 10))
+            if (energyIDs.length > 1) {
+                const maxID = energyIDs.reduce((a, b) => Math.max(a, b), 0)
+                this.state_.modify((st:State) => {                      
+                    delete st.energies[maxID]
+                })
+            }
         }
 
         public setState(state:State) {
@@ -71,7 +119,7 @@ module visualizing {
             assert(! (identifier in this.bars_))
 
             let sliderElem = this.sliderPrototype.cloneNode(true) as HTMLElement
-            let slider = new ui.Slider(ui.Orientation.Vertical, sliderElem, 0 /*position*/, 0/*value*/)
+            let slider = new ui.Slider(ui.Orientation.Vertical, sliderElem)
             this.container.appendChild(sliderElem)
 
             // The slider prototype is hidden, so make sure it shows up
@@ -94,7 +142,7 @@ module visualizing {
             assert(bar.identifier in this.bars_)
             delete this.bars_[bar.identifier]
             bar.slider.remove()
-            bar.line.removeFromGroup(this.group)
+            bar.line.remove()
         }
     }
 }

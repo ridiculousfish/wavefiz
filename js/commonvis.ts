@@ -8,10 +8,6 @@ module visualizing {
         return new THREE.Vector3(x, y, z)
     }
 
-    export class Visualizable {
-        valueAt: (index: number, time: number) => algorithms.Complex = undefined
-    }
-
     /* A class to help with animations. Adds callbacks (which trigger requestAnimationFrame) */
     export interface AnimatorClient {
         prepareForRender()

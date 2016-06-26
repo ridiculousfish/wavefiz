@@ -86,6 +86,7 @@ module ui {
     
     export class Slider {
         private unconstrainedPosition:number = -1
+        private position:number = 0
         
         static draggedSlider:Slider = null
         static lastPosition:number = -1
@@ -93,12 +94,8 @@ module ui {
 
         public draggedToPositionHandler: (position:number) => void = () => {} 
         
-        constructor(public orientation:Orientation,
-                    public element:HTMLElement,
-                    public position:number,
-                    public value:number) {
+        constructor(public orientation:Orientation, public element:HTMLElement) {
             this.beginWatching()
-            this.update(position, value)
             
             if (! Slider.globalInitDone) {
                 Slider.globalInitDone = true
@@ -118,7 +115,6 @@ module ui {
         }
         
         update(position:number, value:number = 0) {
-            this.value = value
             this.position = position
             const valueStr = value.toFixed(2)
             const labelFieldNodeList = this.element.getElementsByClassName("value_text")
@@ -148,18 +144,15 @@ module ui {
             this.element.ontouchcancel = null
         }
         
-        
         private startDragging(evt:MouseEvent|TouchEvent) {
             Slider.draggedSlider = this
             Slider.lastPosition = this.getEventPosition(evt)
             this.unconstrainedPosition = this.position
-            //this.container.style.cursor = "ns-resize"
             evt.preventDefault() // keeps the cursor from becoming an IBeam
         }
         
         private stopDragging() {
             Slider.draggedSlider = null
-            //this.container.style.cursor = "default"
         }
         
         private tryDrag(evt:MouseEvent|TouchEvent) {

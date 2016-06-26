@@ -70,7 +70,7 @@ module visualizing {
             // Build the potential slider
             // This is the slider that appears on the bottom of the visualizer,
             // and that sets the value of the potential parameter
-            this.potentialSlider_ = new ui.Slider(ui.Orientation.Horizontal, potentialDragger, 0, 0)
+            this.potentialSlider_ = new ui.Slider(ui.Orientation.Horizontal, potentialDragger)
             this.potentialSlider_.draggedToPositionHandler = (position: number) => {
                 this.state_.modify((st:State) => {
                     st.potentialParameter = position / this.params_.width 
@@ -86,17 +86,11 @@ module visualizing {
             // This draws the line showing the wavefunction
             const centerY = this.params_.height / 2
             this.wavefunctionAvg_ = new WavefunctionVisualizer(this.params_, 0xFF7777, this.animator_)
-            this.wavefunctionAvg_.addToGroup(this.group_, centerY)
+            this.wavefunctionAvg_.group.position.y = centerY
+            this.group_.add(this.wavefunctionAvg_.group)
 
-            // Energy visualizer
-            let positionUpdated = (slider: ui.Slider, position: number) => {
-                // the user dragged the energy to a new value, expressed our "height" coordinate system
-                // compute a new wavefunction
-                // TODO: untangle this
-                const energy = this.params_.convertYFromVisualCoordinate(position)
-            }
-            this.energyVisualizer_ = new visualizing.EnergyVisualizer(
-                    energyContainer, energyDraggerPrototype, this.params_, positionUpdated)
+            this.energyVisualizer_ = 
+                new EnergyVisualizer(energyContainer, energyDraggerPrototype, this.params_)
             this.group_.add(this.energyVisualizer_.group)
 
             // Build our two turning point lines
@@ -112,14 +106,13 @@ module visualizing {
         }
 
         private createTurningPointLine(): VisLine {
-            let tp = VisLine.create(2, {
+            let tp = VisLine.create(2, this.group_, {
                 color: 0x000000,
                 linewidth: 1,
                 transparent: true,
                 opacity: .5
             })
-            tp.update((i: number) => vector3(this.params_.width / 2, i * this.params_.height, 0))
-            tp.addToGroup(this.group_)
+            tp.update((i: number) => vector3(0, i * this.params_.height, 0))
             return tp
         }
 
@@ -134,59 +127,16 @@ module visualizing {
             this.camera_.lookAt(new THREE.Vector3(0, 0, 0))
         }
 
-        private nextInterestingEnergy() {
-            // Find the point in [0, 1) furthest from all other points
-            // This is naturally in the midpoint between its two closest neighbors
-            // This means we can only track one distance
-            let usedEnergies = this.state_.energyValues()
-            
-            // hack for initial energy
-            if (usedEnergies.length == 0) {
-                return 0.3
-            }
-            
-            // treat us as if there's a point at each end
-            usedEnergies.push(0)
-            usedEnergies.push(1)
-            usedEnergies.sort()
-            
-            let indexOfLargestInterval = -1 
-            let lengthOfLargestInterval = -1
-            for (let i=0; i + 1 < usedEnergies.length; i++) {
-                let length = usedEnergies[i+1] - usedEnergies[i]
-                assert(length >= 0, "Array not sorted?")
-                if (length > lengthOfLargestInterval) {
-                    lengthOfLargestInterval = length
-                    indexOfLargestInterval = i
-                }
-            }
-            let result = usedEnergies[indexOfLargestInterval] + lengthOfLargestInterval/2.0
-            assert(result >= 0 && result < 1, "energy out of range?")
-            return result
-        }
-
-        // Entry point from HTML
+        // Entry points from HTML
         public addEnergySlider() {
-            const energy = this.nextInterestingEnergy()
-            this.state_.modify((st:State) => {
-                st.energies[State.newIdentifier()] = energy
-            })
+            this.energyVisualizer_.addEnergySlider()
         }
 
         public removeEnergySlider() {
-            // Remove the most recently added energy bar, which
-            // is the one with the highest identifier
-            // Don't delete the last energy!
-            const energyIDs = Object.keys(this.state_.energies).map(parseInt)
-            if (energyIDs.length > 1) {
-                const maxID = energyIDs.reduce((a, b) => Math.max(a, b), 0)
-                this.state_.modify((st:State) => {                      
-                    delete st.energies[maxID]
-                })
-            }
+            this.energyVisualizer_.removeEnergySlider()
         }
 
-        private computeAndShowWavefunctions() {
+        private updateWavefunctions() {
             if (this.state_.potential.length === 0) {
                 return
             }
@@ -229,19 +179,12 @@ module visualizing {
             }
             this.wavefunctionAvg_.setVisible(energies.length > 0)
 
-            {
-                // document.getElementById("statusfield").textContent = ""
-            }
-
             // update turning points based on maximum energy
             const maxTurningPoints = algorithms.classicalTurningPoints(this.state_.potential, maxEnergy)
-
             const leftV = this.params_.convertXToVisualCoordinate(maxTurningPoints.left)
             const rightV = this.params_.convertXToVisualCoordinate(maxTurningPoints.right)
             this.leftTurningPointLine_.update((i: number) => vector3(leftV, i * this.params_.height, 0))
             this.rightTurningPointLine_.update((i: number) => vector3(rightV, i * this.params_.height, 0))
-
-            this.animator_.scheduleRerender()
         }
 
         public setState(state:State) {
@@ -252,7 +195,7 @@ module visualizing {
             this.animator_.setPaused(state.paused)
             this.potentialSlider_.update(state.potentialParameter * this.params_.width)
             this.applyCameraRotation()
-            this.computeAndShowWavefunctions()
+            this.updateWavefunctions()
             this.animator_.scheduleRerender()
         }
 

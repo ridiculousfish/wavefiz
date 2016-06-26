@@ -3,23 +3,34 @@
 
 module visualizing {
 
+    // WavefunctionVisualizer presents a wavefunction
+    // It can show psi and psiAbs (position-space wavefunction)
+    // It can also show phi and phiAbs (momentum-space wavefunction)
     export class WavefunctionVisualizer {
-        private group_: THREE.Group = new THREE.Group()
+        // The group containing all of our visual elements
+        // The parent visualizer should add this to the appropriate scene
+        public group: THREE.Group = new THREE.Group()
+
+        // Our wavefunction lines
         private psiGraph_: VisLine
         private psiAbsGraph_: VisLine
         private phiGraph_: VisLine
         private phiAbsGraph_: VisLine
+
+        // Baseline, which looks nice
         private psiBaseline_: VisLine
 
+        // These "visualizables" are the glue between our wavefunction
+        // and the data each graph displays
         private psiVis_ = new Visualizable()
         private psiAbsVis_ = new Visualizable()
         private phiVis_ = new Visualizable()
         private phiAbsVis_ = new Visualizable()
 
+        // state tracks which graphs are visible
         private state_ = new State(this.params)
 
         constructor(public params: Parameters, public color: number, public animator: Redrawer) {
-
             const psiMaterial = {
                 color: this.color,
                 linewidth: 5,
@@ -52,11 +63,11 @@ module visualizing {
                 depthTest: false
             }
 
-            this.psiGraph_ = VisLine.create(this.params.meshDivision, psiMaterial)
-            this.psiAbsGraph_ = VisLine.create(this.params.meshDivision, psiAbsMaterial)
-            this.phiGraph_ = VisLine.create(this.params.meshDivision, phiMaterial)
-            this.phiAbsGraph_ = VisLine.create(this.params.meshDivision, phiAbsMaterial)
-            this.psiBaseline_ = VisLine.create(2, baselineMaterial)
+            this.psiGraph_ = VisLine.create(this.params.meshDivision, this.group, psiMaterial)
+            this.psiAbsGraph_ = VisLine.create(this.params.meshDivision, this.group, psiAbsMaterial)
+            this.phiGraph_ = VisLine.create(this.params.meshDivision, this.group, phiMaterial)
+            this.phiAbsGraph_ = VisLine.create(this.params.meshDivision, this.group, phiAbsMaterial)
+            this.psiBaseline_ = VisLine.create(2, this.group, baselineMaterial)
 
             this.animator.addClient(this)
         }
@@ -65,15 +76,32 @@ module visualizing {
             this.state_ = state
         }
 
-        setWavefunction(psi: algorithms.GeneralizedWavefunction, potentialMinimumIndex: number) {
-            if (psi == null) {
+        public setVisible(flag: boolean) {
+            this.group.visible = flag
+        }
+
+        // Sets the wavefunction. Note that the wavefunction is not stored in the 'state' object.
+        public setWavefunction(psi: algorithms.GeneralizedWavefunction, potentialMinimumIndex: number) {
+            if (! psi) {
                 this.psiVis_.valueAt = null
                 this.psiAbsVis_.valueAt = null
                 this.phiVis_.valueAt = null
                 this.phiAbsVis_.valueAt = null
-                return
             } else {
                 assert(psi.length === this.params.meshDivision, "Wavefunction has wrong length")
+
+                // The phi (momentum-space) values are the Fourier transform of the psi (position-space) values
+                // The fourier transform is expensive, so perform it only if requested (and cache the result)
+                let freqWavefunctionVal: algorithms.GeneralizedWavefunction = null
+                let freqWavefunction = () => {
+                    if (freqWavefunctionVal === null) {
+                        const scale = 0.5
+                        freqWavefunctionVal = psi.fourierTransformOptimized(potentialMinimumIndex, scale)
+                    }
+                    return freqWavefunctionVal
+                }
+
+                // Set everyone's valueAts
                 this.psiVis_.valueAt = (index: number, time: number) => {
                     return psi.valueAt(index, time)
                 }
@@ -81,35 +109,14 @@ module visualizing {
                     let mag = psi.valueAt(index, time).magnitudeSquared()
                     return new algorithms.Complex(mag, 0)
                 }
-
-                // perform fourier transform only if necessary
-                let freqWavefunctionVal: algorithms.GeneralizedWavefunction = null
-                let freqWavefunction = () => {
-                    if (freqWavefunctionVal == null) {
-                        const scale = 0.5
-                        freqWavefunctionVal = psi.fourierTransformOptimized(potentialMinimumIndex, scale)
-                    }
-                    return freqWavefunctionVal
-                }
-
-                const phiHeightScale = .9
                 this.phiVis_.valueAt = (index: number, time: number) => {
-                    return freqWavefunction().valueAt(index, time).multipliedByReal(phiHeightScale)
+                    return freqWavefunction().valueAt(index, time)
                 }
                 this.phiAbsVis_.valueAt = (index: number, time: number) => {
-                    let mag = freqWavefunction().valueAt(index, time).magnitudeSquared() * phiHeightScale
+                    let mag = freqWavefunction().valueAt(index, time).magnitudeSquared()
                     return new algorithms.Complex(mag, 0)
                 }
             }
-            this.redraw()
-        }
-
-        setVisible(flag: boolean) {
-            this.group_.visible = flag
-        }
-
-        clear() {
-            this.setWavefunction(null, -1)
         }
 
         redraw() {
@@ -118,9 +125,7 @@ module visualizing {
             const cleanValue = (value: number) => {
                 // TODO: rationalize this
                 const limit = this.params.height / 1.9
-                if (isNaN(value)) {
-                    value = limit
-                }
+                if (isNaN(value)) value = limit
                 return Math.max(-limit, Math.min(limit, value))
             }
 
@@ -151,17 +156,9 @@ module visualizing {
         prepareForRender() {
             this.redraw()
         }
+    }
 
-        addToGroup(parentGroup: THREE.Group, yOffset: number) {
-            [this.psiGraph_,
-                this.psiAbsGraph_,
-                this.phiGraph_,
-                this.phiAbsGraph_,
-                this.psiBaseline_].forEach((vl: VisLine) => {
-                    vl.addToGroup(this.group_)
-                })
-            this.group_.position.y = yOffset
-            parentGroup.add(this.group_)
-        }
+    class Visualizable {
+        valueAt: (index: number, time: number) => algorithms.Complex = null
     }
 }
