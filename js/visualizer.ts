@@ -177,7 +177,6 @@ module visualizing {
                 let genPsi = new algorithms.GeneralizedWavefunction(psis)
                 this.wavefunctionAvg_.setWavefunction(genPsi, center)
             }
-            this.wavefunctionAvg_.setVisible(energies.length > 0)
 
             // update turning points based on maximum energy
             const maxTurningPoints = algorithms.classicalTurningPoints(this.state_.potential, maxEnergy)

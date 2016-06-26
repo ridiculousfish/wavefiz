@@ -10,7 +10,7 @@ module visualizing {
 
     /* A class to help with animations. Adds callbacks (which trigger requestAnimationFrame) */
     export interface AnimatorClient {
-        prepareForRender()
+        prepareForRender(time:number)
     }
 
     export class Redrawer {
@@ -60,10 +60,6 @@ module visualizing {
             return this.paused_
         }
 
-        lastTime(): number {
-            return this.elapsed_
-        }
-
         private fireClientsAndRerender() {
             this.rerenderScheduled_ = false
             let localClients = this.clients_.slice()
@@ -73,7 +69,7 @@ module visualizing {
                 this.elapsed_ += dt * this.params.timescale
                 this.lastNow_ = now
             }
-            localClients.forEach((client: AnimatorClient) => client.prepareForRender())
+            localClients.forEach((client: AnimatorClient) => client.prepareForRender(this.elapsed_))
             this.rerender_()
             if (! this.paused_) {
                 this.scheduleRerender()
@@ -89,9 +85,10 @@ module visualizing {
         public maxX: number = 25 // maximum X value
         public timescale: number = 4.0 // multiplier for time
         public energyScale: number = 5 // coefficient for energy in the visualizer, only affects label
+        public frequencyScale: number = .5 // coefficient for frequency when taking the fourier transform, relates to mass
         public meshDivision: number = 800 // how many points are in our mesh
         public psiScale: number = 250 // how much scale we visually apply to the wavefunction
-        public absScale: number = 1.5 // how much additional scale we visually apply to the psiAbs and phiAbs
+        public psiAbsScale: number = this.psiScale * 1.5 // how much scale we visually apply to the psiAbs and phiAbs
 
         public centerForMeshIndex(idx: number): number {
             assert(idx >= 0 && idx < this.meshDivision, "idx out of range")

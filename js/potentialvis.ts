@@ -85,7 +85,8 @@ module visualizing {
             }
         }
 
-        // Called from state update. Update the line representing our potential
+        // Update the line representing our potential
+        // Called from state update
         private redrawPotentialLine() {
             const mesh = this.state_.potential
             const hasPotential = (mesh.length > 0)
@@ -102,7 +103,8 @@ module visualizing {
             }
         }
 
-        // Called from state update, update the "Draw" text overlay
+        // Hide or show the "Draw" text overlay
+        // Called from state update
         private setDrawTextShown(flag:boolean) {
             document.getElementById(DRAW_TEXT_ID).style['visibility'] = flag ? 'visible' : 'hidden'
         }

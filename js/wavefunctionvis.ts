@@ -3,34 +3,44 @@
 
 module visualizing {
 
+    // Helper function type
+    // Inputs a number and time, outputs a complex value 
+    type ValueAt = (index: number, time: number) => algorithms.Complex
+
+    // Higher level function! Given a ValueAt, returns a new ValueAt representing its magnitude
+    function magnitudeSquaredOf(originalFunc:ValueAt): ValueAt {
+        return (index:number, time:number) => {
+            let mag2 = originalFunc(index, time).magnitudeSquared()
+            return new algorithms.Complex(mag2, 0)
+        }
+    }
+
     // WavefunctionVisualizer presents a wavefunction
-    // It can show psi and psiAbs (position-space wavefunction)
-    // It can also show phi and phiAbs (momentum-space wavefunction)
+    // It can show psi and psiAbs (position-space wavefunction), and also
+    // phi and phiAbs (momentum-space wavefunction)
+    // This operates a little differently in that it doesn't do anything in setState()
+    // This is because its rendering is time-dependent. Thus it does all of its work
+    // at draw time, in prepareForRender().
     export class WavefunctionVisualizer {
         // The group containing all of our visual elements
         // The parent visualizer should add this to the appropriate scene
         public group: THREE.Group = new THREE.Group()
 
-        // Our wavefunction lines
-        private psiGraph_: VisLine
-        private psiAbsGraph_: VisLine
-        private phiGraph_: VisLine
-        private phiAbsGraph_: VisLine
-
         // Baseline, which looks nice
         private psiBaseline_: VisLine
 
-        // These "visualizables" are the glue between our wavefunction
-        // and the data each graph displays
-        private psiVis_ = new Visualizable()
-        private psiAbsVis_ = new Visualizable()
-        private phiVis_ = new Visualizable()
-        private phiAbsVis_ = new Visualizable()
+        // These "visualizables" are the glue between the abstract wavefunction
+        // and our four presented wavefunction graphs
+        private psiVis_: Visualizable
+        private psiAbsVis_: Visualizable
+        private phiVis_: Visualizable
+        private phiAbsVis_: Visualizable
 
-        // state tracks which graphs are visible
+        // The state tracks which of our four graphs are visible
         private state_ = new State(this.params)
 
         constructor(public params: Parameters, public color: number, public animator: Redrawer) {
+            // Set up materials for our four graphs, and the baseline
             const psiMaterial = {
                 color: this.color,
                 linewidth: 5,
@@ -63,24 +73,31 @@ module visualizing {
                 depthTest: false
             }
 
-            this.psiGraph_ = VisLine.create(this.params.meshDivision, this.group, psiMaterial)
-            this.psiAbsGraph_ = VisLine.create(this.params.meshDivision, this.group, psiAbsMaterial)
-            this.phiGraph_ = VisLine.create(this.params.meshDivision, this.group, phiMaterial)
-            this.phiAbsGraph_ = VisLine.create(this.params.meshDivision, this.group, phiAbsMaterial)
+            // Our baseline doesn't change, so we can just update it once
             this.psiBaseline_ = VisLine.create(2, this.group, baselineMaterial)
+            this.psiBaseline_.update((i: number) => vector3(i * this.params.width, 0, 0))
 
+            // Create our Visualizables 
+            this.psiVis_ = new Visualizable(this.params.psiScale, this.params, this.group, psiMaterial)
+            this.phiVis_ = new Visualizable(this.params.psiScale, this.params, this.group, phiMaterial)
+            this.psiAbsVis_ = new Visualizable(this.params.psiAbsScale, this.params, this.group, psiAbsMaterial)
+            this.phiAbsVis_ = new Visualizable(this.params.psiAbsScale, this.params, this.group, phiAbsMaterial)
+
+            // Get told when our animator is going to redraw
             this.animator.addClient(this)
         }
 
+        // Set our global state.
         public setState(state:State) {
             this.state_ = state
+            this.psiVis_.visible = this.state_.showPsi
+            this.psiAbsVis_.visible = this.state_.showPsiAbs
+            this.phiVis_.visible = this.state_.showPhi
+            this.phiAbsVis_.visible = this.state_.showPhiAbs
         }
 
-        public setVisible(flag: boolean) {
-            this.group.visible = flag
-        }
-
-        // Sets the wavefunction. Note that the wavefunction is not stored in the 'state' object.
+        // Sets the wavefunction. Note that the wavefunction is not stored in the 'state' object,
+        // since it requires some computation
         public setWavefunction(psi: algorithms.GeneralizedWavefunction, potentialMinimumIndex: number) {
             if (! psi) {
                 this.psiVis_.valueAt = null
@@ -92,73 +109,69 @@ module visualizing {
 
                 // The phi (momentum-space) values are the Fourier transform of the psi (position-space) values
                 // The fourier transform is expensive, so perform it only if requested (and cache the result)
-                let freqWavefunctionVal: algorithms.GeneralizedWavefunction = null
+                let freqWavefunctionCache: algorithms.GeneralizedWavefunction = null
                 let freqWavefunction = () => {
-                    if (freqWavefunctionVal === null) {
-                        const scale = 0.5
-                        freqWavefunctionVal = psi.fourierTransformOptimized(potentialMinimumIndex, scale)
+                    if (freqWavefunctionCache === null) {
+                        freqWavefunctionCache = 
+                            psi.fourierTransformOptimized(potentialMinimumIndex, this.params.frequencyScale)
                     }
-                    return freqWavefunctionVal
+                    return freqWavefunctionCache
                 }
 
                 // Set everyone's valueAts
-                this.psiVis_.valueAt = (index: number, time: number) => {
-                    return psi.valueAt(index, time)
-                }
-                this.psiAbsVis_.valueAt = (index: number, time: number) => {
-                    let mag = psi.valueAt(index, time).magnitudeSquared()
-                    return new algorithms.Complex(mag, 0)
-                }
-                this.phiVis_.valueAt = (index: number, time: number) => {
-                    return freqWavefunction().valueAt(index, time)
-                }
-                this.phiAbsVis_.valueAt = (index: number, time: number) => {
-                    let mag = freqWavefunction().valueAt(index, time).magnitudeSquared()
-                    return new algorithms.Complex(mag, 0)
-                }
+                const psiValueAt = (index: number, time: number) => psi.valueAt(index, time)
+                const phiValueAt = (index: number, time: number) => freqWavefunction().valueAt(index, time)
+                
+                this.psiVis_.valueAt = psiValueAt
+                this.psiAbsVis_.valueAt = magnitudeSquaredOf(psiValueAt)
+                this.phiVis_.valueAt = phiValueAt
+                this.phiAbsVis_.valueAt = magnitudeSquaredOf(phiValueAt)
             }
         }
 
-        redraw() {
-
-            const time = this.animator.lastTime()
-            const cleanValue = (value: number) => {
-                // TODO: rationalize this
-                const limit = this.params.height / 1.9
-                if (isNaN(value)) value = limit
-                return Math.max(-limit, Math.min(limit, value))
-            }
-
-            let updateVisualizable = (vis: Visualizable, visLine: VisLine, show: boolean, scale: number) => {
-                visLine.setVisible(show)
-                if (show && vis.valueAt) {
-                    visLine.update((index: number) => {
-                        const x = this.params.centerForMeshIndex(index)
-                        const yz = vis.valueAt(index, time)
-                        const y = -scale * yz.re
-                        const z = scale * yz.im
-                        return new THREE.Vector3(x, cleanValue(y), cleanValue(z))
-                    })
-                }
-            }
-
-            let psiScale = this.params.psiScale
-            let psiAbsScale = psiScale * this.params.absScale
-
-            updateVisualizable(this.psiVis_, this.psiGraph_, this.state_.showPsi, psiScale)
-            updateVisualizable(this.psiAbsVis_, this.psiAbsGraph_, this.state_.showPsiAbs, psiAbsScale)
-            updateVisualizable(this.phiVis_, this.phiGraph_, this.state_.showPhi, psiScale)
-            updateVisualizable(this.phiAbsVis_, this.phiAbsGraph_, this.state_.showPhiAbs, psiAbsScale)
-
-            this.psiBaseline_.update((i: number) => vector3(i * this.params.width, 0, 0))
-        }
-
-        prepareForRender() {
-            this.redraw()
+        // Called by the redrawer right before it triggers rerendering
+        // Here we tell our four visualizables to update
+        public prepareForRender(time:number) {
+            this.psiVis_.update(time)
+            this.psiAbsVis_.update(time)
+            this.phiVis_.update(time)
+            this.phiAbsVis_.update(time)
         }
     }
 
+    // A Visualizable wraps up a Line, and a function to calculate a (complex) value
+    // at a given x position and time
     class Visualizable {
-        valueAt: (index: number, time: number) => algorithms.Complex = null
+        public valueAt: ValueAt = null
+        public visible: boolean = true
+        private line_: VisLine
+
+        constructor(private scale: number, private params_: Parameters,
+                    group: THREE.Group, material: THREE.LineBasicMaterialParameters) {
+            this.line_ = VisLine.create(this.params_.meshDivision, group, material)
+        }
+
+        // Entry point for updating our line according to our valueAt function
+        // valueAt produces a complex value. We show the real part on the y axis,
+        // and the imaginary part on the z axis
+        public update(time:number) {
+            this.line_.setVisible(this.visible)
+            if (this.visible && this.valueAt) {
+                this.line_.update((index: number) => {
+                    const x = this.params_.centerForMeshIndex(index)
+                    const yz = this.valueAt(index, time)
+                    const y = -this.scale * yz.re
+                    const z = this.scale * yz.im
+                    return vector3(x, this.clamp(y), this.clamp(z))
+                })
+            }
+        }
+
+        // Ensure NaNs don't sneak in, and that we don't send extreme values to the GL renderer        
+        private clamp(value:number): number {
+            const limit = this.params_.height / 2
+            if (isNaN(value)) value = limit
+            return Math.max(-limit, Math.min(limit, value))
+        }
     }
 }
