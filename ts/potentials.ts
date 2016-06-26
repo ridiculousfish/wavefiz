@@ -75,7 +75,7 @@ module algorithms {
         const baseEnergy = 0.05
         const leftWellWidthFactor = 1.0 / 6.0
         const barrierWidthFactor = 1.0 / 8.0
-        const rightWellWidthFactor = 1.0 - (leftWellWidthFactor + barrierWidthFactor) 
+        //const rightWellWidthFactor = 1.0 - (leftWellWidthFactor + barrierWidthFactor) 
         
         if (x < parameter || x >= 1.0 - parameter) {
             return 1000
@@ -110,7 +110,7 @@ module algorithms {
 
     export function SampledPotential(samples:Point2[]) : PotentialBuilderFunc {
         assert(samples.length > 0)
-        return (parameter:number, x:number) => {
+        return (parameterUnused:number, x:number) => {
             const idx = binarySearch(samples, x)
             const sample = samples[idx]
             if (x < sample.x || idx + 1 >= samples.length) {
@@ -172,7 +172,7 @@ module algorithms {
         }
         pivots.push({x: 1, y: 1, joinType: "line"})
 
-        return (parameter:number, x:number) => {
+        return (parameterUnused:number, x:number) => {
             // determine which pivot to use
             const pivotIdx = binarySearch(pivots, x)
             const nextIdx = pivotIdx + 1

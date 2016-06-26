@@ -1,17 +1,10 @@
 /// <reference path='./visualizer.ts'/>
 
 module ui {
-    
-    function assert(condition:boolean, message?:string) {
-        if (!condition) {
-            throw message || "Assertion failed"
-        }
-    }
-    
-    export function setupRotatorKnob(rotator:HTMLElement, knob:HTMLElement, onRotate:(rad:number) => void) {
+        
+    export function setupRotatorKnob(rotator:HTMLElement, onRotate:(rad:number) => void) {
         let dragging = false
         let rotation = 0
-        let lastX = -1, lastY = -1
         
         const moveHandler = (evt:MouseEvent|TouchEvent) => {
           if (dragging) {
@@ -228,7 +221,6 @@ module ui {
             return raycaster
         }
         container.addEventListener('mousemove', (evt: MouseEvent) => {
-            let {x, y} = getXY(evt)
             if (mouseIsDown) {
                 if (dragSelection) {
                     dragSelection.dragged(getRaycaster(evt))
@@ -236,8 +228,6 @@ module ui {
             }
         })
         container.addEventListener('mousedown', (evt) => {
-            let {x, y} = getXY(evt)
-
             dragSelection = null
             const raycaster = getRaycaster(evt)
             for (let i = 0; i < draggables.length && dragSelection == null; i++) {

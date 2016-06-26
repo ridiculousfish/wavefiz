@@ -1,4 +1,9 @@
 visualizer.js
 .vscode
 *.map
-
+staged
+build
+intermediates
+reference/a.out
+reference/input.txt
+reference/output.txt

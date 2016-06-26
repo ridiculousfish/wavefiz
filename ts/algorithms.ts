@@ -61,13 +61,6 @@ module algorithms {
         energy: number
         maxX: number
     }
-
-    // Computes the time-dependent part of the Schrodinger equation at an energy eigenvalue
-    function computeTimeDependence(energy: number, time: number): Complex {
-        // e^(-iEt) -> cos(-eT) + i * sin(-Et)
-        const nEt = - energy * time
-        return Complex.exponential(nEt)
-    }
     
     function fourierTransform(spaceValues: ComplexArray, center: number, dx: number, c: number): ComplexArray {
         const length = spaceValues.length
@@ -101,7 +94,6 @@ module algorithms {
         let freqValuesRe = freqValues.res
         let freqValuesIm = freqValues.ims
         const spaceValuesRe = spaceValues.res
-        const spaceValuesIm = spaceValues.ims
         
         for (let arrayIdx = 0; arrayIdx < length; arrayIdx++) {
             // We are going to hold X constant and then run through the frequencies
@@ -134,37 +126,6 @@ module algorithms {
         for (let arrayIdx = 0; arrayIdx < length; arrayIdx++) {
             freqValuesRe[arrayIdx] *= multiplier
             freqValuesIm[arrayIdx] *= multiplier 
-        }
-
-        return freqValues
-    }
-
-    
-    function fourierTransformOptimized1(spaceValues: ComplexArray, center: number, dx: number, c: number): ComplexArray {
-        const length = spaceValues.length
-        assert(length > 0 && center < length, "center out of bounds")
-        let freqValues = zerosComplex(length)
-        for (let arrayIdx = 0; arrayIdx < length; arrayIdx++) {
-            const p = arrayIdx - center
-            const k = p * dx
-            const negCK = -c * k
-            let phiReal = 0, phiIm = 0
-            for (let i = 0; i < length; i++) {
-                const spaceValue = spaceValues.at(i).re // derp
-                const x = (i - center) * dx
-                const exp = negCK * x
-                phiReal += spaceValue * Math.cos(exp)
-                phiIm += spaceValue * Math.sin(exp)
-            }
-            freqValues.res[arrayIdx] = phiReal
-            freqValues.ims[arrayIdx] = phiIm
-        }
-        let multiplier = 1
-        multiplier *= dx // for integral
-        multiplier *= Math.sqrt(2 * Math.PI)
-        for (let arrayIdx = 0; arrayIdx < length; arrayIdx++) {
-            freqValues.res[arrayIdx] *= multiplier
-            freqValues.ims[arrayIdx] *= multiplier
         }
 
         return freqValues
@@ -332,7 +293,7 @@ module algorithms {
 
         // computes the discontinuity in the two derivatives at the given location
         // we don't actually care if it's right or left
-        private derivativeDiscontinuity(psi: number[], x: number, dx: number, onRight: boolean): number {
+        private derivativeDiscontinuity(psi: number[], x: number, dx: number): number {
             if (x === 0 || x + 1 === psi.length) {
                 // this indicates the turning points are at the very edges
                 // don't try to be clever here
@@ -369,8 +330,8 @@ module algorithms {
             normalizeReals(psi, dx)
 
             // compute discontinuities
-            const leftDiscont = this.derivativeDiscontinuity(psi, left, dx, false)
-            const rightDiscont = this.derivativeDiscontinuity(psi, right, dx, true)
+            const leftDiscont = this.derivativeDiscontinuity(psi, left, dx)
+            const rightDiscont = this.derivativeDiscontinuity(psi, right, dx)
 
             let md = new WavefunctionMetadata(this.energy, left, right, leftDiscont, rightDiscont)
             let complexPsi = ComplexArray.zeros(psi.length)

@@ -111,7 +111,7 @@ module visualizing {
 
         // Draggable implementation
         // Here the user has started dragging
-        public dragStart(raycaster: THREE.Raycaster) {
+        public dragStart(raycasterUnused: THREE.Raycaster) {
             if (this.state_.sketching) {
                 this.state_.modify((st:State) => {
                     st.sketchLocations = []

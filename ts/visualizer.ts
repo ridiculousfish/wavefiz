@@ -146,8 +146,6 @@ module visualizing {
             if (energies.length > 0) {
                 const center = algorithms.indexOfMinimum(this.state_.potential)
                 
-                let maxTurningPoints = algorithms.classicalTurningPoints(this.state_.potential, maxEnergy)
-                
                 // update wavefunctions and collect them all
                 let psis = energies.map((energy: number) => {
                     const psiInputs = {
@@ -165,6 +163,7 @@ module visualizing {
                     // suppressed at our turning points, but the effect will be that small adjustments
                     // in energy will result in large swings towards the edges of the total wavefunction:
                     // 
+                    // let maxTurningPoints = algorithms.classicalTurningPoints(this.state_.potential, maxEnergy)
                     // let resolvedWavefunction = algorithms.resolvedAveragedNumerov(psiInputs, maxTurningPoints)
                     //
                     // The other possibility is to resolve each wavefunction component at its own classical

@@ -126,7 +126,7 @@ module visualizing {
 
         constructor(private params_:Parameters) { }
 
-        public static applyStateUpdate: (st:State) => void = function(st) {}
+        public static applyStateUpdate: (st:State) => void = () => {}
 
         public cameraRotationRadians: number = 0
 
@@ -229,13 +229,13 @@ module visualizing {
         let psi = algorithms.classicallyResolvedAveragedNumerov(input)
         const maxIter = forProfiling ? 1024 : 32
         let duration1 = timeThing(maxIter, () => {
-            let phi = psi.fourierTransformOptimized(center, .5)
+            psi.fourierTransformOptimized(center, .5)
         })
         
         let text = duration1.toFixed(2) + " ms"
         if (!forProfiling) {
             let duration2 = timeThing(maxIter, () => {
-                let phi = psi.fourierTransform(center, .5)
+                psi.fourierTransform(center, .5)
             })
             text += "/ " + duration2.toFixed(2) + " ms"
         }

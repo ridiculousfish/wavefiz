@@ -1,27 +1,48 @@
 INTERMEDIATE_DIR := ./intermediates
 BUILD_DIR := ./build
+STAGE_DIR := ./staged
+VISUALIZE_JS := $(BUILD_DIR)/visualize.js
+TS_SRCS := $(shell echo ts/*.ts)
+JS_SRCS := $(patsubst ts/%.ts,$(INTERMEDIATE_DIR)/%.js,$(TS_SRCS))
+HTML_SRCS := html/index.html html/tutorial.html
 
 .PHONY: default
-default: uglify
+default: $(VISUALIZE_JS)
 
-.PHONY: uglify
-uglify: typescriptify | $(BUILD_DIR)
-	uglifyjs --lint --screw-ie8 --output $(BUILD_DIR)/visualize.js $(INTERMEDIATE_DIR)/*.js
-	
-.PHONY: typescriptify
-typescriptify: | $(INTERMEDIATE_DIR)
-	tsc --outDir $(INTERMEDIATE_DIR) js/*.ts
+.PHONY: lint
+lint: $(JS_SRCS)
+	uglifyjs --lint --output $(VISUALIZE_JS) $^
+
+# Hack to ensure just a single invocation of tsc
+.INTERMEDIATE: hack_js.intermediate | $(INTERMEDIATE_DIR)
+hack_js.intermediate: $(TS_SRCS)
+	tsc --outDir $(INTERMEDIATE_DIR) $^
+
+$(JS_SRCS): hack_js.intermediate
+
+$(VISUALIZE_JS): $(JS_SRCS) | $(BUILD_DIR)
+	uglifyjs --compress --mangle  --output $@ $^
 
 $(INTERMEDIATE_DIR) $(BUILD_DIR):
 	mkdir -p $@
 
-.PHONY: clean	
-clean:
-	rm -rf js/*.js js/*.js.map $(INTERMEDIATE_DIR) $(BUILD_DIR)
+prerequisites:
+	echo "npm install -g typescript"
+	echo "npm install uglify-js -g"
+
+.PHONY: stage
+stage: $(VISUALIZE_JS)
+	rm -Rf $(STAGE_DIR)
+	mkdir -p $(STAGE_DIR)
+	cp $(HTML_SRCS) $(STAGE_DIR)
+	mkdir  $(STAGE_DIR)/js/
+	cp $(VISUALIZE_JS) ./external_js/*.js  $(STAGE_DIR)/js/
 
 .PHONY: deploy
-deploy:
-	rsync -avze ssh --include "*/" --include "*.js" --include "*.html" --include "*.css" --exclude "*" --prune-empty-dirs . ridiculousfish.com:/home/pammon/webapps/main/wavefiz
+deploy: stage
+	rsync -avze ssh --prune-empty-dirs $(STAGE_DIR)/ ridiculousfish.com:/home/pammon/webapps/main/wavefiz
 
-prerequisites:
-	echo "npm install uglify-js -g"
+	
+.PHONY: clean
+clean:
+	rm -rf $(INTERMEDIATE_DIR) $(BUILD_DIR) $(STAGE_DIR)
