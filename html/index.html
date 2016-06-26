@@ -290,12 +290,12 @@
         <button class="menu_button"><div style="position: relative; top: 1px">V</div>
             <div style="position: absolute; top:0px; left: 0px;height: 0px;">
                 <ul class="menu">
-                    <li class="menu-item" onClick="loadSHO()"><span class="glyph">&#x22c3;</span>Simple Harmonic Oscillator</li>
-                    <li class="menu-item" onClick="loadISW()"><span class="glyph">&#x2a06;</span>Infinite Square Well</li>
-                    <li class="menu-item" onClick="loadFSW()"><span class="glyph" style="transform: scaleY(-1);">&#x238d;</span>Finite Square Well</li>
-                    <li class="menu-item" onClick="load2SW()" style="margin-top: -5px;"><span class="glyph" style="transform: rotate(90deg); position: relative; top: 5px;">&#x2203;</span>Two Square Wells</li>
-                    <li class="menu-item" onClick="loadRandomPotential()"><span class="glyph">?</span>Random</li>
-                    <li class="menu-item" onClick="sketchPotential()"><span class="glyph">&#x270E;</span>Your Sketch</li>
+                    <li class="menu-item" onClick="Vis.loadSHO()"><span class="glyph">&#x22c3;</span>Simple Harmonic Oscillator</li>
+                    <li class="menu-item" onClick="Vis.loadISW()"><span class="glyph">&#x2a06;</span>Infinite Square Well</li>
+                    <li class="menu-item" onClick="Vis.loadFSW()"><span class="glyph" style="transform: scaleY(-1);">&#x238d;</span>Finite Square Well</li>
+                    <li class="menu-item" onClick="Vis.load2SW()" style="margin-top: -5px;"><span class="glyph" style="transform: rotate(90deg); position: relative; top: 5px;">&#x2203;</span>Two Square Wells</li>
+                    <li class="menu-item" onClick="Vis.loadRandomPotential()"><span class="glyph">?</span>Random</li>
+                    <li class="menu-item" onClick="Vis.sketchPotential()"><span class="glyph">&#x270E;</span>Your Sketch</li>
                 </ul>
             </div>
         </button>
@@ -312,8 +312,8 @@
         <div id="rotator" class="noselect">
             <div id="rotator_knob"></div>
         </div>
-        <button class="square_button" onClick="addEnergySlider()"><div>+</div></button>
-        <button class="square_button" onClick="removeEnergySlider()"><div>-</div></button>
+        <button class="square_button" onClick="Vis.addEnergySlider()"><div>+</div></button>
+        <button class="square_button" onClick="Vis.removeEnergySlider()"><div>-</div></button>
     </div>
     <span id="statusfield"></span>
     <script type="text/javascript" src="js/three.min.js"></script>
@@ -329,18 +329,9 @@
         var energy_dragger_prototype = document.getElementById("energy_dragger_prototype")
         
         var Vis = new visualizing.Visualizer(vis_container, potential_container, energy_container, energy_dragger_prototype)
-        function loadSHO() { Vis.loadSHO() }
-        function loadISW() { Vis.loadISW() }
-        function loadFSW() { Vis.loadFSW() }
-        function load2SW() { Vis.load2SW() }
-        function loadRandomPotential() { Vis.loadRandomPotential() }
-        function sketchPotential() { Vis.sketchPotential() }
-        function addEnergySlider() { Vis.addEnergySlider() }
-        function removeEnergySlider() { Vis.removeEnergySlider() }
-        loadSHO()
-        addEnergySlider()
+        Vis.loadSHO()
+        Vis.addEnergySlider()
 
-        
         function togglePsi(cb) { Vis.setShowPsi(cb.checked) }
         function togglePsiAbs(cb) { Vis.setShowPsiAbs(cb.checked) }
         function togglePhi(cb) { Vis.setShowPhi(cb.checked) }
