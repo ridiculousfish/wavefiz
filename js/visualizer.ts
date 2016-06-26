@@ -312,18 +312,4 @@ module visualizing {
             this.loadPotentialFromBuilder(algorithms.RandomPotential())
         }
     }
-
-    // Helper function
-    // returns the global offset of an HTML element
-    function getElementOffset(elem: HTMLElement) {
-        let x = 0
-        let y = 0
-        let cursor = elem as any
-        while (cursor != null) {
-            x += cursor.offsetLeft
-            y += cursor.offsetTop
-            cursor = cursor.offsetParent
-        }
-        return { x: x, y: y }
-    }
 }
