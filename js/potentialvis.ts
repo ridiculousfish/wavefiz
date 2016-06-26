@@ -26,7 +26,7 @@ module visualizing {
         private sketchGrid_: THREE.GridHelper
 
         // The state of the visualizer
-        private state_: State = new State()
+        private state_: State = new State(this.params)
 
         constructor(public params: Parameters) {
             // Construct the line showing the potential
@@ -113,7 +113,7 @@ module visualizing {
         // Here the user has started dragging
         public dragStart(raycaster: THREE.Raycaster) {
             if (this.state_.sketching) {
-                this.state_.modify(this.params, (st:State) => {
+                this.state_.modify((st:State) => {
                     st.sketchLocations = []
                 })
             }
@@ -127,7 +127,7 @@ module visualizing {
             if (intersections.length > 0) {
                 const where = intersections[0].point
                 const newLoc = vector3(where.x + this.params.width / 2, where.y + this.params.height / 2, 0) 
-                this.state_.modify(this.params, (st:State) => {
+                this.state_.modify((st:State) => {
                     st.sketchLocations = st.sketchLocations.concat([newLoc]) 
                 })
             }
@@ -143,10 +143,10 @@ module visualizing {
             // by interpolating between sampled points.
             // Our drag locations have x in the range [0, params.width), and y in [0, params.height)
             // map to the range [0, 1], and flip the y coordinate so that zero is at the bottom
-            let samples = this.state_.sketchLocations.map((vec:Vector3) => {
+            let samples = this.state_.sketchLocations.map((vec:THREE.Vector3) => {
                 return {x: vec.x / this.params.width, y: 1.0 - vec.y / this.params.height}
             })
-            this.state_.modify(this.params, (st:State) => {
+            this.state_.modify((st:State) => {
                 st.sketching = false
                 st.sketchLocations = []
                 // If we have no samples, it's because the user didn't draw any
@@ -158,7 +158,7 @@ module visualizing {
         }
 
         // Perform hit testing
-        public hitTestDraggable(raycaster: THREE.Raycaster): Draggable {
+        public hitTestDraggable(raycaster: THREE.Raycaster): ui.Draggable {
             let intersections = raycaster.intersectObject(this.background_, false)
             return intersections.length > 0 ? this : null
         }

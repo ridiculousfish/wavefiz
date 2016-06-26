@@ -1,4 +1,4 @@
-/// <reference path='./visualizer.ts'/>
+/// <reference path='./linevis.ts'/>
 /// <reference path='./ui.ts'/>
 
 module visualizing {
@@ -33,7 +33,7 @@ module visualizing {
         public group: THREE.Group = new THREE.Group()
 
         private bars_: { [key:string]:EnergyBar; } = {}
-        private state_: State = new State()
+        private state_: State = new State(this.params)
         
         constructor(public container: HTMLElement,
                     public sliderPrototype: HTMLElement,
@@ -84,7 +84,7 @@ module visualizing {
             // Set our callback
             slider.draggedToPositionHandler = (position:number) => {
                 const energy = this.params.convertYFromVisualCoordinate(position) // in range [0, 1)
-                this.state_.modify(this.params, (st:State) => {
+                this.state_.modify((st:State) => {
                     st.energies[identifier] = energy
                 })
             }

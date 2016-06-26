@@ -8,6 +8,8 @@
 
 module visualizing {
     
+    // Top level visualization entry point.
+    // Coordinates multiple visualizations
     export class Visualizer {
 
         private topScene_: THREE.Scene = new THREE.Scene()
@@ -27,7 +29,7 @@ module visualizing {
 
         private params_ = new Parameters()
 
-        private state_ = new State()
+        private state_ = new State(this.params_)
 
         constructor(container: HTMLElement, potentialDragger: HTMLElement, energyContainer: HTMLElement, energyDraggerPrototype: HTMLElement) {
             // Hackish
@@ -60,7 +62,7 @@ module visualizing {
             // and that sets the value of the potential parameter
             this.potentialSlider_ = new ui.Slider(ui.Orientation.Horizontal, potentialDragger, 0, 0)
             this.potentialSlider_.draggedToPositionHandler = (position: number) => {
-                this.state_.modify(this.params_, (st:State) => {
+                this.state_.modify((st:State) => {
                     st.potentialParameter = position / this.params_.width 
                 })
             }
@@ -156,7 +158,7 @@ module visualizing {
         // Entry point from HTML
         public addEnergySlider() {
             const energy = this.nextInterestingEnergy()
-            this.state_.modify(this.params_, (st:State) => {
+            this.state_.modify((st:State) => {
                 st.energies[State.newIdentifier()] = energy
             })
         }
@@ -168,7 +170,7 @@ module visualizing {
             const energyIDs = Object.keys(this.state_.energies).map(parseInt)
             if (energyIDs.length > 1) {
                 const maxID = energyIDs.reduce((a, b) => Math.max(a, b), 0)
-                this.state_.modify(this.params_, (st:State) => {                      
+                this.state_.modify((st:State) => {                      
                     delete st.energies[maxID]
                 })
             }
@@ -237,6 +239,7 @@ module visualizing {
             this.potentialVisualizer_.setState(state)
             this.wavefunctionAvg_.setState(state)
             this.energyVisualizer_.setState(state)
+            this.animator_.setPaused(state.paused)
             this.potentialSlider_.update(state.potentialParameter * this.params_.width)
             this.applyCameraRotation()
             this.computeAndShowWavefunctions()
@@ -244,41 +247,37 @@ module visualizing {
         }
 
         public setShowPsi(flag: boolean) {
-            this.state_.showPsi = flag
-            this.animator_.scheduleRerender()
+            this.state_.modify((st:State) => st.showPsi = flag)
         }
 
         public setShowPsiAbs(flag: boolean) {
-            this.state_.showPsiAbs = flag
-            this.animator_.scheduleRerender()
+            this.state_.modify((st:State) => st.showPsiAbs = flag)
         }
 
         public setShowPhi(flag: boolean) {
-            this.state_.showPhi = flag
-            this.animator_.scheduleRerender()
+            this.state_.modify((st:State) => st.showPhi = flag)
         }
 
         public setShowPhiAbs(flag: boolean) {
-            this.state_.showPhiAbs = flag
-            this.animator_.scheduleRerender()
+            this.state_.modify((st:State) => st.showPhiAbs = flag)
         }
 
         public setPaused(flag: boolean) {
-            this.state_.paused = flag
-            this.animator_.setPaused(flag)
             if (flag) {
+                // If we're pausing, jump back to time 0
                 this.animator_.reset()
             }
+            this.state_.modify((st:State) => st.paused = flag)
         }
 
         public setRotation(rads: number) {
-            this.state_.modify(this.params_, (st:State) => {
+            this.state_.modify((st:State) => {
                 st.cameraRotationRadians = rads
             })
         }
         
         public sketchPotential() {
-            this.state_.modify(this.params_, (st:State) => {
+            this.state_.modify((st:State) => {
                 st.potential = []
                 st.potentialBuilder = null
                 st.sketching = true
@@ -286,7 +285,7 @@ module visualizing {
         }
 
         public loadPotentialFromBuilder(pbf:algorithms.PotentialBuilderFunc) {
-            this.state_.modify(this.params_, (st:State) => {
+            this.state_.modify((st:State) => {
                 st.sketching = false
                 st.sketchLocations = []
                 st.potentialBuilder = pbf

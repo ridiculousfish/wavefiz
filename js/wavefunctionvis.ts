@@ -16,7 +16,7 @@ module visualizing {
         private phiVis_ = new Visualizable()
         private phiAbsVis_ = new Visualizable()
 
-        private state_ = new State()
+        private state_ = new State(this.params)
 
         constructor(public params: Parameters, public color: number, public animator: Redrawer) {
 
@@ -79,7 +79,7 @@ module visualizing {
                 }
                 this.psiAbsVis_.valueAt = (index: number, time: number) => {
                     let mag = psi.valueAt(index, time).magnitudeSquared()
-                    return new Complex(mag, 0)
+                    return new algorithms.Complex(mag, 0)
                 }
 
                 // perform fourier transform only if necessary
@@ -98,7 +98,7 @@ module visualizing {
                 }
                 this.phiAbsVis_.valueAt = (index: number, time: number) => {
                     let mag = freqWavefunction().valueAt(index, time).magnitudeSquared() * phiHeightScale
-                    return new Complex(mag, 0)
+                    return new algorithms.Complex(mag, 0)
                 }
             }
             this.redraw()
