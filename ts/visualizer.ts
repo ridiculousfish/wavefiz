@@ -186,10 +186,17 @@ module visualizing {
         // Note that states are immutable
         public setState(state:State) {
             this.state_ = state
+
+            // Propogate state down
             this.potentialVisualizer_.setState(state)
             this.wavefunctionAvg_.setState(state)
             this.energyVisualizer_.setState(state)
+
+            // Update potential slider
+            // Hide the slider if the potential builder does not take the user-defined parameter
             this.potentialSlider_.setPosition(state.potentialParameter * this.params_.width)
+            this.potentialSlider_.setVisible(state.potentialBuilder && state.potentialBuilder.length > 1)
+
             this.applyStateToWavefunction()
             this.applyCameraRotation()
             this.animator_.setPaused(state.paused)

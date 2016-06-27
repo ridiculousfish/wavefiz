@@ -124,6 +124,10 @@ module ui {
             }
         }
 
+        public setVisible(flag:boolean) {
+            this.element.style.visibility = flag ? "visible" : "hidden"
+        }
+
         private beginWatching() {
             this.element.onmousedown = (evt:MouseEvent) => this.startDragging(evt)
             this.element.ontouchstart = (evt:TouchEvent) => this.startDragging(evt)

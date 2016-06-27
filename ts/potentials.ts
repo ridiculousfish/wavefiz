@@ -166,7 +166,7 @@ module algorithms {
             }
         }
 
-        // Last pivot must not be flat
+        // Join from second to last to last pivot must not be flat
         let secondToLast = pivots[pivots.length - 2] 
         while (secondToLast.joinType == "flat") {
             secondToLast.joinType = randomJoinType()
