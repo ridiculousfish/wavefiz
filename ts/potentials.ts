@@ -1,6 +1,8 @@
+// Set of interesting potentials
+
 module algorithms {
 
-    export interface Point2 {
+    interface Point2 {
         x: number,
         y: number
     }
@@ -15,46 +17,51 @@ module algorithms {
         }
     }
 
-    export interface PotentialBuilderFunc {
-        (parameter:number, x:number):number 
-    }
+    // Our (scalar) potentials are represented as functions
+    // Each takes an X value, representing the X position,
+    // and a user-settable parameter whose interpretation is up to the potential
+    // (e.g. the width of the well in the case of a square well)
+    // Both parameter and X are in the range [0, 1)
+    export interface PotentialBuilderFunc { (x:number, parameter:number):number }
 
-    function symmetrize(parameter) {
-        // parameter is in the range [0, 1)
-        // assume we have a symmetric potential
-        // put it in the range [0, .5)
-        if (parameter > 0.5) {
-            parameter = 1.0 - parameter
-        }
-        return parameter
+    // Helper function. Many potentials are symmetric
+    // If the parameter is larger than 0.5, mirror it around the center
+    function symmetrize(param) {
+        return param <= 0.5 ? param : 1.0 - param   
     }
     
-    export const SimpleHarmonicOscillator = (parameter:number, x:number) => {
-        parameter = symmetrize(parameter)
-        const baseEnergy = 0.04 
+    // Classic harmonic oscillator potential
+    // This looks like V = base + distanceFromCenter^2
+    // The parameter adjusts the steepness
+    export const SimpleHarmonicOscillator = (x:number, param:number) => {
+        const steepness = symmetrize(param)
+        const baseEnergy = 0.04
         // x is a value in [0, 1)
         // minimum at x = 0.5
-        // formula is, when x = parameter, base + steepness * (x * x / 2) = 1
-        // solving: steepness = (1 - base) / (x * x / 2)
-        const offsetX = 0.5
-        const vparam = parameter - offsetX
-        const steepness = Math.min(1E5, (1.0 - baseEnergy) / (vparam * vparam / 2))
-        const vx = x - offsetX
-        return baseEnergy + steepness * (vx * vx / 2.0)
+        // formula is, when x = parameter, base + steepnessCoeff * (x * x / 2) = 1
+        // solving: steepnessCoeff = (1 - base) / (x * x / 2)
+        const offsetToCenter = 0.5
+        const vparam = steepness - offsetToCenter
+        const steepnessCoeff = Math.min(1E5, (1.0 - baseEnergy) / (vparam * vparam / 2))
+        const vx = x - offsetToCenter
+        return baseEnergy + steepnessCoeff * (vx * vx / 2.0)
     }
     
-    export const InfiniteSquareWell = (widthRatio:number, x:number) => {
-        widthRatio = symmetrize(widthRatio)
+    // Classic infinite square well
+    // The parameter is (half of) the width of the well
+    export const InfiniteSquareWell = (x:number, param: number) => {
+        const widthRatio = symmetrize(param)
         const baseEnergy = 0.05
         // x is a value in [0, 1)
         if (x < widthRatio || x > 1.0 - widthRatio) {
-            return 1000
+            return 1000 // "infinity"
         }
         return baseEnergy
     }
     
-    export const FiniteSquareWell = (widthRatio:number, x:number) => {
-        widthRatio = symmetrize(widthRatio)
+    // Like infinite square well, but it tops out at .8 instead of infinity
+    export const FiniteSquareWell = (x:number, param: number) => {
+        const widthRatio = symmetrize(param)
         const baseEnergy = 0.05
         // x is a value in [0, 1)
         if (x < widthRatio || x > 1.0 - widthRatio) {
@@ -63,19 +70,20 @@ module algorithms {
         return baseEnergy
     }
     
-    export const TwoSquareWells = (parameter:number, x:number) => {
-        parameter = symmetrize(parameter)
-        // Two adjacent square wells
+    // Two adjacent square wells
+    export const TwoSquareWells = (x:number, param:number) => {
+        const widthFactor = symmetrize(param)
         const baseEnergy = 0.05
         const leftWellWidthFactor = 1.0 / 6.0
         const barrierWidthFactor = 1.0 / 8.0
         //const rightWellWidthFactor = 1.0 - (leftWellWidthFactor + barrierWidthFactor) 
         
-        if (x < parameter || x >= 1.0 - parameter) {
+        // If we're outside both wells, return "infinity""
+        if (x < widthFactor || x >= 1.0 - widthFactor) {
             return 1000
         }
-        const intervalLength = 1.0 - 2 * parameter
-        let vx = (x - parameter) / intervalLength
+        const intervalLength = 1.0 - 2 * widthFactor
+        let vx = (x - widthFactor) / intervalLength
         if (vx < leftWellWidthFactor) {
             return baseEnergy
         }
@@ -86,25 +94,14 @@ module algorithms {
         return baseEnergy // right well
     }
 
-    function binarySearch<T extends Point2>(vals:T[], x: number): number {
-        assert(vals.length > 0)
-        let left = 0, right = vals.length
-        while (left + 1 < right) {
-            const mid = Math.floor(left + (right - left) / 2)
-            const trial = vals[mid]
-            if (trial.x <= x) {
-                left =  mid
-            } else {
-                // trial.x > x
-                right = mid
-            }
-        }
-        return left
-    }
-
+    // Potential built from sampling at a list of points
+    // Takes ownership of the samples array
+    // The parameter is unused
     export function SampledPotential(samples:Point2[]) : PotentialBuilderFunc {
         assert(samples.length > 0)
-        return (parameterUnused:number, x:number) => {
+        // we are going to binary search on samples, so it better be sorted
+        samples.sort((a: Point2, b:Point2) => a.x - b.x)
+        return (x:number) => {
             const idx = binarySearch(samples, x)
             const sample = samples[idx]
             if (x < sample.x || idx + 1 >= samples.length) {
@@ -118,6 +115,7 @@ module algorithms {
         }
     }
 
+    // Potential built "randomly"
     export function RandomPotential() : PotentialBuilderFunc {
         // Hackish?
         interface Pivot {
@@ -127,7 +125,7 @@ module algorithms {
             control?: number
         }
 
-        let bezier = (p0:number, p1:number, p2:number, t:number) => {
+        function bezier(p0:number, p1:number, p2:number, t:number) {
             const omt = 1 - t
             return omt * (omt*p0 + t*p1) + t*(omt*p1 + t*p2)
         }
@@ -136,16 +134,25 @@ module algorithms {
         const minPivotCount = 8, maxPivotCount = 24
         const pivotCount = Math.floor(Math.random() * (maxPivotCount - minPivotCount) + minPivotCount)
 
+        // Make a random join type
+        // Note we bias towards bezier, since it looks the most interesting
+        function randomJoinType() {
+            switch ((Math.random() * 5) | 0) {
+                case 0: return "line"
+                case 1: return "flat"
+                default: return "bezier"
+            }
+        }
+
         // Build pivots
         // Have an initial one
-        let joinTypes = ["line", "flat", "bezier", "bezier", "bezier"]
         let pivots : Pivot[] = []
         pivots.push({x: 0, y: 1, joinType: "line"})
         for (let i=0; i < pivotCount; i++) {
             pivots.push({
                 x: Math.random() * .95,
                 y: Math.pow(Math.random(), 1.5),
-                joinType: joinTypes[Math.floor(Math.random()*joinTypes.length)],
+                joinType: randomJoinType(),
                 control: Math.random()
             })
         }
@@ -162,11 +169,11 @@ module algorithms {
         // Last pivot must not be flat
         let secondToLast = pivots[pivots.length - 2] 
         while (secondToLast.joinType == "flat") {
-            secondToLast.joinType = joinTypes[Math.floor(Math.random()*joinTypes.length)]
+            secondToLast.joinType = randomJoinType()
         }
         pivots.push({x: 1, y: 1, joinType: "line"})
 
-        return (parameterUnused:number, x:number) => {
+        return (x:number) => {
             // determine which pivot to use
             const pivotIdx = binarySearch(pivots, x)
             const nextIdx = pivotIdx + 1
@@ -191,4 +198,20 @@ module algorithms {
         }
     }
 
+    // Helper function. Given a sorted list of Point2-things, and an x position,
+    // return the index of the last (rightmost) point left of (or at) the given x position
+    // If every point is to the right of the given position, returns 0
+    function binarySearch<T extends Point2>(vals:T[], x: number): number {
+        assert(vals.length > 0)
+        let left = 0, right = vals.length
+        while (left + 1 < right) {
+            const mid = (left + (right - left)/2) | 0 
+            if (vals[mid].x <= x) {
+                left =  mid
+            } else {
+                right = mid
+            }
+        }
+        return left
+    }
 }

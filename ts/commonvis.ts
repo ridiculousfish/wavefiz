@@ -121,7 +121,7 @@ module visualizing {
         let potentialMesh: number[] = []
         for (let i = 0; i < params.meshDivision; i++) {
             const x = i / params.meshDivision
-            potentialMesh.push(f(potentialParam, x))
+            potentialMesh.push(f(x, potentialParam))
         }
         return potentialMesh
     }

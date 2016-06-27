@@ -154,8 +154,10 @@ module visualizing {
         // valueAt produces a complex value. We show the real part on the y axis,
         // and the imaginary part on the z axis
         public update(time:number) {
-            this.line_.setVisible(this.visible)
-            if (this.visible && this.valueAt) {
+            if (!this.visible || this.valueAt === null) {
+                this.line_.setVisible(false)
+            } else {
+                this.line_.setVisible(true)
                 this.line_.update((index: number) => {
                     const x = this.params_.centerForMeshIndex(index)
                     const yz = this.valueAt(index, time)

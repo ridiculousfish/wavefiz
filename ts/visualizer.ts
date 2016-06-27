@@ -124,10 +124,11 @@ module visualizing {
         // Called from state update - reflect the state's potential and energies
         private applyStateToWavefunction() {
             if (this.state_.potential.length === 0) {
+                this.wavefunctionAvg_.setWavefunction(null, 0)
                 return
             }
             
-            // QM 101!
+            // QM 101
             // We have a list of energies.
             // Each of those energies produces a wavefunction, given our potential
             // These wavefunctions satisfy the time-independent Schrödinger equation

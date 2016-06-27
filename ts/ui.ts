@@ -233,7 +233,7 @@ module ui {
         container.addEventListener('mousedown', (evt) => {
             dragSelection = null
             const raycaster = getRaycaster(evt)
-            for (let i = 0; i < draggables.length && dragSelection == null; i++) {
+            for (let i = 0; i < draggables.length && dragSelection === null; i++) {
                 dragSelection = draggables[i].hitTestDraggable(raycaster)
             }
 
