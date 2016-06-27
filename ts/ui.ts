@@ -107,13 +107,8 @@ module ui {
             if (parent) parent.removeChild(this.element)
         }
         
-        update(position:number, value:number = 0) {
+        public setPosition(position:number) {
             this.position = position
-            const valueStr = value.toFixed(2)
-            const labelFieldNodeList = this.element.getElementsByClassName("value_text")
-            for (let i=0; i < labelFieldNodeList.length; i++) {
-                labelFieldNodeList[i].textContent = valueStr 
-            }
             if (this.isHorizontal()) {
                 this.element.style.left = position + "px"
             } else {
@@ -121,6 +116,14 @@ module ui {
             }
         }
         
+        public setValue(value:number) {
+            const valueStr = value.toFixed(2)
+            const labelFieldNodeList = this.element.getElementsByClassName("value_text")
+            for (let i=0; i < labelFieldNodeList.length; i++) {
+                labelFieldNodeList[i].textContent = valueStr 
+            }
+        }
+
         private beginWatching() {
             this.element.onmousedown = (evt:MouseEvent) => this.startDragging(evt)
             this.element.ontouchstart = (evt:TouchEvent) => this.startDragging(evt)

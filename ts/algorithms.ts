@@ -8,18 +8,19 @@ module algorithms {
         }
     }
 
-    function normalizeComplex(vals: ComplexArray, dx: number) {
+    // Given a ComplexArray, modify it in-place such that the sum is 1 
+    function normalizeComplexFunction(samples: ComplexArray, dx: number) {
         // norm is sum of dx * |vals|**2
         let norm = 0
-        for (let i = 0; i < vals.length; i++) {
-            norm += vals.at(i).magnitudeSquared()
+        for (let i = 0; i < samples.length; i++) {
+            norm += samples.at(i).magnitudeSquared()
         }
         norm *= dx
         norm = Math.sqrt(norm)
-        if (norm === 0) norm = 1 // gross
+        if (norm === 0) norm = 1
         const normRecip = 1.0 / norm
-        for (let i = 0; i < vals.length; i++) {
-            vals.set(i, vals.at(i).multipliedByReal(normRecip))
+        for (let i = 0; i < samples.length; i++) {
+            samples.set(i, samples.at(i).multipliedByReal(normRecip))
         }
     }
 
@@ -139,7 +140,7 @@ module algorithms {
             public rightDerivativeDiscontinuity: number) { }
     }
 
-    export class ResolvedWavefunction {
+    export class TimeIndependentWavefunction {
         phaser = 0
         constructor(public values: ComplexArray,
             public dx: number,
@@ -159,33 +160,29 @@ module algorithms {
             return ret.multiplied(Complex.exponential(this.phaser * x))
         }
 
-        asGeneralized(): GeneralizedWavefunction {
-            return new GeneralizedWavefunction([this])
-        }
-        
-        fourierTransform(center: number, scale: number): ResolvedWavefunction {
+        fourierTransform(center: number, scale: number): TimeIndependentWavefunction {
             let freqValues = fourierTransform(this.values, center, this.dx, scale)
-            normalizeComplex(freqValues, this.dx)
-            return new ResolvedWavefunction(freqValues, this.dx, this.md)
+            normalizeComplexFunction(freqValues, this.dx)
+            return new TimeIndependentWavefunction(freqValues, this.dx, this.md)
         }
                 
-        fourierTransformOptimized(center: number, scale: number): ResolvedWavefunction {
+        fourierTransformOptimized(center: number, scale: number): TimeIndependentWavefunction {
             let freqValues = fourierTransformOptimized(this.values, center, this.dx, scale)
-            normalizeComplex(freqValues, this.dx)
-            return new ResolvedWavefunction(freqValues, this.dx, this.md)
+            normalizeComplexFunction(freqValues, this.dx)
+            return new TimeIndependentWavefunction(freqValues, this.dx, this.md)
         }
 
     }
 
     // Represents a generalized solution to the Schrodinger equation as a sum of time-independent solutions
     // Assumes equal weights
-    export class GeneralizedWavefunction {
+    export class Wavefunction {
         public length: number
         public dx: number
-        constructor(public components: ResolvedWavefunction[]) {
-            assert(components.length > 0, "Empty components in GeneralizedWavefunction")
+        constructor(public components: TimeIndependentWavefunction[]) {
+            assert(components.length > 0, "Empty components in Wavefunction")
             this.length = components[0].values.length
-            this.components.forEach((psi: ResolvedWavefunction) => {
+            this.components.forEach((psi: TimeIndependentWavefunction) => {
                 assert(psi.values.length === this.length, "Not all lengths the same")
             })
             this.dx = this.components[0].dx
@@ -194,7 +191,7 @@ module algorithms {
         valueAt(x: number, time: number): Complex {
             assert(x === +x && x === (x | 0), "Non-integer passed to valueAt")
             let result = new Complex(0, 0)
-            this.components.forEach((psi: ResolvedWavefunction) => {
+            this.components.forEach((psi: TimeIndependentWavefunction) => {
                 result.addToSelf(psi.valueAt(x, time))
             })
             result.re /= this.components.length
@@ -210,20 +207,20 @@ module algorithms {
             return result
         }
 
-        fourierTransform(center: number, scale: number): GeneralizedWavefunction {
+        fourierTransform(center: number, scale: number): Wavefunction {
             let fourierComps = this.components.map((comp) => comp.fourierTransform(center, scale))
-            return new GeneralizedWavefunction(fourierComps)
+            return new Wavefunction(fourierComps)
         }
         
-        public fourierTransformOptimized(center: number, scale: number): GeneralizedWavefunction {
+        public fourierTransformOptimized(center: number, scale: number): Wavefunction {
             let fourierComps = this.components.map((comp) => comp.fourierTransformOptimized(center, scale))
-            return new GeneralizedWavefunction(fourierComps)
+            return new Wavefunction(fourierComps)
         }
 
     }
 
     // Given two ResolvedWavefunction, computes an average weighted by the discontinuities in their derivatives
-    export function averageResolvedWavefunctions(first: ResolvedWavefunction, second: ResolvedWavefunction): ResolvedWavefunction {
+    export function averageResolvedWavefunctions(first: TimeIndependentWavefunction, second: TimeIndependentWavefunction): TimeIndependentWavefunction {
         assert(first.values.length === second.values.length, "Wavefunctions have different lengths")
         const bad1 = first.md.leftDerivativeDiscontinuity
         const bad2 = second.md.leftDerivativeDiscontinuity
@@ -242,10 +239,10 @@ module algorithms {
             for (let i = 0; i < length; i++) {
                 values.set(i, first.values.at(i).added(second.values.at(i).multipliedByReal(k)))
             }
-            normalizeComplex(values, first.dx)
+            normalizeComplexFunction(values, first.dx)
         }
         normalizeSign(values, first.md.leftTurningPoint)
-        return new ResolvedWavefunction(values, first.dx, first.md)
+        return new TimeIndependentWavefunction(values, first.dx, first.md)
     }
 
     interface TurningPoints {
@@ -276,7 +273,7 @@ module algorithms {
 
     }
 
-    class UnresolvedWavefunction {
+    class ResolvableWavefunction {
         valuesFromCenter: number[] = []
         valuesFromEdge: number[] = []
         // F function used in Numerov
@@ -304,7 +301,7 @@ module algorithms {
 
         // scale the valuesFromEdge to match the valuesFromCenter at the given turning points,
         // then normalize the whole thing
-        resolveAtTurningPoints(tp: TurningPoints): ResolvedWavefunction {
+        resolveAtTurningPoints(tp: TurningPoints): TimeIndependentWavefunction {
             const left = Math.round(tp.left), right = Math.round(tp.right)
             const length = this.length()
             assert(left <= right, "left is not <= right")
@@ -338,28 +335,28 @@ module algorithms {
             for (let i=0; i < psi.length; i++) {
                 complexPsi.res[i] = psi[i]
             }
-            return new ResolvedWavefunction(complexPsi, dx, md)
+            return new TimeIndependentWavefunction(complexPsi, dx, md)
         }
 
-        resolveAtClassicalTurningPoints(): ResolvedWavefunction {
+        resolveAtClassicalTurningPoints(): TimeIndependentWavefunction {
             return this.resolveAtTurningPoints(classicalTurningPoints(this.potential, this.energy))
         }
     }
     
-    export function resolvedAveragedNumerov(input: IntegratorInput, tps: TurningPoints): ResolvedWavefunction {
+    export function resolvedAveragedNumerov(input: IntegratorInput, tps: TurningPoints): TimeIndependentWavefunction {
         let evenVal = numerov(input, true).resolveAtTurningPoints(tps)
         let oddVal = numerov(input, false).resolveAtTurningPoints(tps)
         return averageResolvedWavefunctions(evenVal, oddVal)        
     } 
 
-    export function classicallyResolvedAveragedNumerov(input: IntegratorInput): ResolvedWavefunction {
+    export function classicallyResolvedAveragedNumerov(input: IntegratorInput): TimeIndependentWavefunction {
         let tps = classicalTurningPoints(input.potentialMesh, input.energy)
         return resolvedAveragedNumerov(input, tps)
     }
 
     // calculates the wavefunction from a potential
     interface Integrator {
-        computeWavefunction(input: IntegratorInput): UnresolvedWavefunction
+        computeWavefunction(input: IntegratorInput): ResolvableWavefunction
     }
     
     export function NumerovIntegrator(even: boolean): Integrator {
@@ -396,18 +393,15 @@ module algorithms {
         return result
     }
 
-    function numerov(input: IntegratorInput, even: boolean): UnresolvedWavefunction {
-        // we start at the point of minimum energy
-        // and integrate left and right
-        // we require that the potential mesh have an ODD number of values,
-        // and assume that the wavefunction takes on the same value in the two adjacent to the center
+    function numerov(input: IntegratorInput, even: boolean): ResolvableWavefunction {
+        // We start at the point of minimum energy, and integrate left and right
         const potential = input.potentialMesh
         const length = potential.length
         assert(length >= 3, "PotentialMesh is too small")
-        const c = indexOfMinimum(potential) // minimum
+        const startIndex = indexOfMinimum(potential)
 
         // Fill wavefunction with all 0s
-        let wavefunction = new UnresolvedWavefunction(potential.slice(), input.energy, input.maxX)
+        let wavefunction = new ResolvableWavefunction(potential.slice(), input.energy, input.maxX)
         wavefunction.valuesFromCenter = zeros(length)
         wavefunction.valuesFromEdge = zeros(length)
 
@@ -434,21 +428,21 @@ module algorithms {
         // In the reference code, f is the potential, y is psi
         let psi = wavefunction.valuesFromCenter
         if (even) {
-            psi[c] = 1
-            psi[c + 1] = 0.5 * (12. - F(c) * 10.) * psi[c] / F(c + 1)
+            psi[startIndex] = 1
+            psi[startIndex + 1] = 0.5 * (12. - F(startIndex) * 10.) * psi[startIndex] / F(startIndex + 1)
         } else {
-            psi[c] = 0
-            psi[c + 1] = dx
+            psi[startIndex] = 0
+            psi[startIndex + 1] = dx
         }
 
         // rightwards integration
-        for (let i = c + 1; i + 1 < length; i++) {
+        for (let i = startIndex + 1; i + 1 < length; i++) {
             // y[i + 1] = ((12. - f[i] * 10.) * y[i] - f[i - 1] * y[i - 1]) / f[i + 1];
             step(psi, i, GoingRight)
         }
         // leftwards integration
-        // note we "start at" c+1
-        for (let i = c; i > 0; i--) {
+        // note we "start at" startIndex+1
+        for (let i = startIndex; i > 0; i--) {
             step(psi, i, GoingLeft)
         }
 
@@ -457,13 +451,13 @@ module algorithms {
         psi = wavefunction.valuesFromEdge
         psi[0] = even ? dx : -dx;
         psi[1] = (12. - 10. * F(0)) * psi[0] / F(1);
-        for (let i = 1; i < c; i++) {
+        for (let i = 1; i < startIndex; i++) {
             step(psi, i, GoingRight)
         }
 
         psi[length - 1] = dx;
         psi[length - 2] = (12. - 10. * F(length - 1)) * psi[length - 1] / F(length - 2);
-        for (let i = length - 2; i > c; i--) {
+        for (let i = length - 2; i > startIndex; i--) {
             step(psi, i, GoingLeft)
         }
 

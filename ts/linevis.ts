@@ -15,6 +15,14 @@ module visualizing {
 
         public abstract update(cb: (index) => THREE.Vector3);
 
+        public makeHorizontal(width, yOffset) {
+            this.update((i: number) => vector3(i * width, yOffset, 0))
+        }
+
+        public makeVertical(height, xOffset) {
+            this.update((i: number) => vector3(xOffset, i * height, 0))
+        }
+
         public setVisible(flag:boolean) {
             this.object.visible = flag
         }

@@ -6,7 +6,7 @@ module algorithms {
         }
     }
 
-    // represents a complex number with fields re and im
+    // Represents a complex number, with fields re and im
     export class Complex {
         constructor(public re: number, public im: number) { }
 
@@ -17,18 +17,6 @@ module algorithms {
 
         added(rhs: Complex) {
             return new Complex(this.re + rhs.re, this.im + rhs.im)
-        }
-
-        conjugated(): Complex {
-            return new Complex(this.re, -this.im)
-        }
-
-        subtracted(rhs: Complex): Complex {
-            return new Complex(this.re - rhs.re, this.im - rhs.im)
-        }
-
-        dividedByReal(val: number) {
-            return new Complex(this.re / val, this.im / val)
         }
 
         multiplied(rhs: Complex): Complex {
@@ -55,8 +43,6 @@ module algorithms {
 
     let FloatArray = Float64Array
     type FloatArray = Float64Array
-    //let FloatArray:number[] = []
-    //type FloatArray = number[]
 
     function newFloatArray(length: number): FloatArray {
         if (FloatArray == Float32Array || FloatArray == Float64Array) {

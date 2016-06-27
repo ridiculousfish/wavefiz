@@ -20,8 +20,9 @@ module visualizing {
 
         public setEnergy(energy: number) {
             const yPosition = this.params.convertYToVisualCoordinate(energy)
-            this.line.update((idx:number) => vector3(idx * this.params.width, yPosition, 0))
-            this.slider.update(yPosition, energy * this.params.energyScale)
+            this.line.makeHorizontal(this.params.width, yPosition)
+            this.slider.setPosition(yPosition)
+            this.slider.setValue(energy * this.params.energyScale)
         }
     }
     

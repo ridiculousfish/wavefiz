@@ -16,10 +16,8 @@ module visualizing {
         private params_ = new Parameters()
         private state_ = new State(this.params_)
 
-        // The full scene that our GL renderer draws
+        // The full scene that our GL renderer draws and the camera
         private topScene_: THREE.Scene = new THREE.Scene()
-
-        // The camera
         private camera_: THREE.Camera
 
         // Group containing our visualizers' groups
@@ -42,7 +40,8 @@ module visualizing {
         private potentialSlider_: ui.Slider
 
         constructor(container: HTMLElement, potentialDragger: HTMLElement, energyContainer: HTMLElement, energyDraggerPrototype: HTMLElement) {
-            // Hackish
+            // Hackish. Tell State what to do after an update.
+            // This will need to be more sophisticated if we ever have multiple visualizers
             State.applyStateUpdate = (st:State) => this.setState(st)
 
             // Initialize our renderer
@@ -84,19 +83,28 @@ module visualizing {
 
             // Build a wavefunction visualizer
             // This draws the line showing the wavefunction
-            const centerY = this.params_.height / 2
+            // Center it vertically
             this.wavefunctionAvg_ = new WavefunctionVisualizer(this.params_, 0xFF7777, this.animator_)
+            const centerY = this.params_.height / 2
             this.wavefunctionAvg_.group.position.y = centerY
             this.group_.add(this.wavefunctionAvg_.group)
 
+            // Build the energy visualizer
+            // This is responsible for the energy lines and sliders
             this.energyVisualizer_ = 
                 new EnergyVisualizer(energyContainer, energyDraggerPrototype, this.params_)
             this.group_.add(this.energyVisualizer_.group)
 
             // Build our two turning point lines
             // These show the classical turning points, where the energy equals the potential
-            this.leftTurningPointLine_ = this.createTurningPointLine()
-            this.rightTurningPointLine_ = this.createTurningPointLine()
+            let turningPointStyle = {
+                color: 0x000000,
+                linewidth: 1,
+                transparent: true,
+                opacity: .5
+            }
+            this.leftTurningPointLine_ = VisLine.create(2, this.group_, turningPointStyle)
+            this.rightTurningPointLine_ = VisLine.create(2, this.group_, turningPointStyle)
 
             // Our "sketch a potential" feature is impemented via dragging
             // Set that up
@@ -105,17 +113,7 @@ module visualizing {
             ui.initDragging(container, this.camera_, [this.potentialVisualizer_])
         }
 
-        private createTurningPointLine(): VisLine {
-            let tp = VisLine.create(2, this.group_, {
-                color: 0x000000,
-                linewidth: 1,
-                transparent: true,
-                opacity: .5
-            })
-            tp.update((i: number) => vector3(0, i * this.params_.height, 0))
-            return tp
-        }
-
+        // Called from state update - reflect the state's camera rotation
         private applyCameraRotation() {
             // rotate about the y axis
             // rotation of 0 => z = 1 * scale
@@ -127,33 +125,25 @@ module visualizing {
             this.camera_.lookAt(new THREE.Vector3(0, 0, 0))
         }
 
-        // Entry points from HTML
-        public addEnergySlider() {
-            this.energyVisualizer_.addEnergySlider()
-        }
-
-        public removeEnergySlider() {
-            this.energyVisualizer_.removeEnergySlider()
-        }
-
-        private updateWavefunctions() {
+        // Called from state update - reflect the state's potential and energies
+        private applyStateToWavefunction() {
             if (this.state_.potential.length === 0) {
                 return
             }
             
+            // QM 101!
+            // We have a list of energies.
+            // Each of those energies produces a wavefunction, given our potential
+            // These wavefunctions satisfy the time-independent Schrödinger equation
+            // We can mix (linearly-combine) one or more to get a wavefunction representing
+            // a mixture of the energies. (Here we always pick an even weighting).
             const energies = this.state_.energyValues()
-            const maxEnergy = energies.reduce((a, b) => Math.max(a, b), 0) // 0 if none
             if (energies.length > 0) {
                 const center = algorithms.indexOfMinimum(this.state_.potential)
                 
                 // update wavefunctions and collect them all
-                let psis = energies.map((energy: number) => {
-                    const psiInputs = {
-                        potentialMesh: this.state_.potential,
-                        energy: energy,
-                        maxX: this.params_.maxX
-                    }
-                    
+                let psis : algorithms.TimeIndependentWavefunction[] = []
+                energies.forEach((energy: number) => {                    
                     // Here we have a choice as to our turning points, which affects how we stitch
                     // our wavefunctions together.
                     //
@@ -161,42 +151,65 @@ module visualizing {
                     // classical turning points. This would result in a single "kink." However, in the
                     // classically forbidden region, we tend to get exponential blowup; this will be
                     // suppressed at our turning points, but the effect will be that small adjustments
-                    // in energy will result in large swings towards the edges of the total wavefunction:
+                    // in energy will result in large swings towards the edges of the total wavefunction.
                     // 
-                    // let maxTurningPoints = algorithms.classicalTurningPoints(this.state_.potential, maxEnergy)
-                    // let resolvedWavefunction = algorithms.resolvedAveragedNumerov(psiInputs, maxTurningPoints)
-                    //
                     // The other possibility is to resolve each wavefunction component at its own classical
                     // turning points, and then sum those. This will tend to produce multiple "kinks:" one per
-                    // wavefunction. In practice this isn't so bad.
-                    
-                    let resolvedWavefunction = algorithms.classicallyResolvedAveragedNumerov(psiInputs)
-                    return resolvedWavefunction  
+                    // wavefunction. In practice this isn't so bad and it does illustrate an important physical
+                    // principle: that you can't get a solution to the SE by mixing disallowed energies
+                    const psiInputs = {
+                        potentialMesh: this.state_.potential,
+                        energy: energy,
+                        maxX: this.params_.maxX
+                    } 
+                    let timeIndependentPsi = algorithms.classicallyResolvedAveragedNumerov(psiInputs)
+                    psis.push(timeIndependentPsi)
                 })
-                let genPsi = new algorithms.GeneralizedWavefunction(psis)
-                this.wavefunctionAvg_.setWavefunction(genPsi, center)
+
+                // Now we have the list of wavfunctions in "psis"
+                // Produce a single (time-dependent) wavefunction by mixing them
+                let timeDependentPsi = new algorithms.Wavefunction(psis)
+                this.wavefunctionAvg_.setWavefunction(timeDependentPsi, center)
             }
 
-            // update turning points based on maximum energy
-            const maxTurningPoints = algorithms.classicalTurningPoints(this.state_.potential, maxEnergy)
-            const leftV = this.params_.convertXToVisualCoordinate(maxTurningPoints.left)
-            const rightV = this.params_.convertXToVisualCoordinate(maxTurningPoints.right)
-            this.leftTurningPointLine_.update((i: number) => vector3(leftV, i * this.params_.height, 0))
-            this.rightTurningPointLine_.update((i: number) => vector3(rightV, i * this.params_.height, 0))
+            // Update our turning point lines
+            // Compute our maximum energy (or 0 if we have none)
+            // Update our turning point lines to show the points in our potential that equal those energies
+            // These are the classical turning points, that demarcate the classically forbidden region
+            const maxEnergy = energies.reduce((a, b) => Math.max(a, b), 0)
+            const turningPoints = algorithms.classicalTurningPoints(this.state_.potential, maxEnergy)
+            const leftX = this.params_.convertXToVisualCoordinate(turningPoints.left)
+            const rightX = this.params_.convertXToVisualCoordinate(turningPoints.right)
+            this.leftTurningPointLine_.makeVertical(this.params_.height, leftX)
+            this.rightTurningPointLine_.makeVertical(this.params_.height, rightX)
         }
 
+        // React-style state update
+        // Given a state object, apply it to ourselves and push it to everyone else
+        // Note that states are immutable
         public setState(state:State) {
             this.state_ = state
             this.potentialVisualizer_.setState(state)
             this.wavefunctionAvg_.setState(state)
             this.energyVisualizer_.setState(state)
-            this.animator_.setPaused(state.paused)
-            this.potentialSlider_.update(state.potentialParameter * this.params_.width)
+            this.potentialSlider_.setPosition(state.potentialParameter * this.params_.width)
+            this.applyStateToWavefunction()
             this.applyCameraRotation()
-            this.updateWavefunctions()
+            this.animator_.setPaused(state.paused)
             this.animator_.scheduleRerender()
         }
 
+        // Helper function to set a new potential
+        private loadPotentialFromBuilder(pbf:algorithms.PotentialBuilderFunc) {
+            this.state_.modify((st:State) => {
+                st.sketching = false
+                st.sketchLocations = []
+                st.potentialBuilder = pbf
+            })
+        }
+
+        // Public UI entry points
+        // These are invoked from the HTML
         public setShowPsi(flag: boolean) {
             this.state_.modify((st:State) => st.showPsi = flag)
         }
@@ -214,35 +227,15 @@ module visualizing {
         }
 
         public setPaused(flag: boolean) {
-            if (flag) {
-                // If we're pausing, jump back to time 0
-                this.animator_.reset()
-            }
+            // When pausing, reset to time zero
+            if (flag) this.animator_.reset()
             this.state_.modify((st:State) => st.paused = flag)
         }
 
         public setRotation(rads: number) {
-            this.state_.modify((st:State) => {
-                st.cameraRotationRadians = rads
-            })
+            this.state_.modify((st:State) => st.cameraRotationRadians = rads)
         }
         
-        public sketchPotential() {
-            this.state_.modify((st:State) => {
-                st.potential = []
-                st.potentialBuilder = null
-                st.sketching = true
-            })
-        }
-
-        public loadPotentialFromBuilder(pbf:algorithms.PotentialBuilderFunc) {
-            this.state_.modify((st:State) => {
-                st.sketching = false
-                st.sketchLocations = []
-                st.potentialBuilder = pbf
-            })
-        }
-
         public loadSHO() {
             this.loadPotentialFromBuilder(algorithms.SimpleHarmonicOscillator)
         }
@@ -261,6 +254,23 @@ module visualizing {
 
         public loadRandomPotential() {
             this.loadPotentialFromBuilder(algorithms.RandomPotential())
+        }
+
+        public addEnergySlider() {
+            this.energyVisualizer_.addEnergySlider()
+        }
+
+        public removeEnergySlider() {
+            this.energyVisualizer_.removeEnergySlider()
+        }
+
+        // Entry point to trigger sketching
+        public sketchPotential() {
+            this.state_.modify((st:State) => {
+                st.potential = []
+                st.potentialBuilder = null
+                st.sketching = true
+            })
         }
     }
 }
