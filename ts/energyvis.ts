@@ -7,11 +7,11 @@ module visualizing {
     // It wraps up a line and a slider
     // It also has an identifier, which acts as glue between the energies in the model and the UI
     class EnergyBar { 
-        public line: VisLine
+        public line: Polyline
         
         constructor(public identifier:string, public slider: ui.Slider,
                     group: THREE.Group, public params: Parameters) {
-            this.line = VisLine.create(2, group, { color: 0xFF0000 })
+            this.line = Polyline.create(2, group, { color: 0xFF0000 })
         }
 
         // Sets the energy, which means updating our line and slider 

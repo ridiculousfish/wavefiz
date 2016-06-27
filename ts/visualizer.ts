@@ -33,8 +33,8 @@ module visualizing {
         private energyVisualizer_: EnergyVisualizer
 
         // Lines representing the classical turning points
-        private leftTurningPointLine_: VisLine
-        private rightTurningPointLine_: VisLine
+        private leftTurningPointLine_: Polyline
+        private rightTurningPointLine_: Polyline
 
         // The slider at the bottom, for adjusting the potential
         private potentialSlider_: ui.Slider
@@ -103,8 +103,8 @@ module visualizing {
                 transparent: true,
                 opacity: .5
             }
-            this.leftTurningPointLine_ = VisLine.create(2, this.group_, turningPointStyle)
-            this.rightTurningPointLine_ = VisLine.create(2, this.group_, turningPointStyle)
+            this.leftTurningPointLine_ = Polyline.create(2, this.group_, turningPointStyle)
+            this.rightTurningPointLine_ = Polyline.create(2, this.group_, turningPointStyle)
 
             // Our "sketch a potential" feature is impemented via dragging
             // Set that up

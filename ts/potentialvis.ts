@@ -14,13 +14,13 @@ module visualizing {
         public group: THREE.Group = new THREE.Group()
 
         // The line that draws the potential
-        private potentialLine_: VisLine
+        private potentialLine_: Polyline
 
         // The background
         private background_: THREE.Mesh
         
         // When sketching a potential, this is the line that draws the sketch
-        private sketchLine_: VisLine
+        private sketchLine_: Polyline
 
         // When sketching, the "graph paper" mesh effect
         private sketchGrid_: THREE.GridHelper
@@ -30,7 +30,7 @@ module visualizing {
 
         constructor(public params: Parameters) {
             // Construct the line showing the potential
-            this.potentialLine_ = VisLine.create(this.params.meshDivision, this.group, {
+            this.potentialLine_ = Polyline.create(this.params.meshDivision, this.group, {
                 color: 0xFF00FF,
                 linewidth: 5,
                 depthWrite: false
@@ -38,7 +38,7 @@ module visualizing {
             this.potentialLine_.setRenderOrder(-5000)
 
             // Construct the line showing the current sketch 
-            this.sketchLine_ = VisLine.create(this.params.meshDivision, this.group, {
+            this.sketchLine_ = Polyline.create(this.params.meshDivision, this.group, {
                 color: 0x00FFFF,
                 linewidth: 8
             })

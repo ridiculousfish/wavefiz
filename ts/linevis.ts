@@ -12,7 +12,7 @@ module visualizing {
     // This could be a fancy function plot, or just a straight line.
     // Lines have a fixed count of points, but those points can change
     // We have a couple of strategies, depending on our client, hence this base class.
-    export abstract class VisLine {
+    export abstract class Polyline {
         // Our object is a mesh or similar
         // Base class methods like setVisible can operate on this without
         // knowing its dynamic type
@@ -66,12 +66,12 @@ module visualizing {
 
         // Creation entry point, that chooses the best subclass
         // Creates a line of the given length, adds it to the given parent group
-        public static create(length: number, parent: THREE.Group, material: THREE.LineBasicMaterialParameters): VisLine {
-            let result : VisLine
+        public static create(length: number, parent: THREE.Group, material: THREE.LineBasicMaterialParameters): Polyline {
+            let result : Polyline
             if (useNativeLines()) {
-                result = new VisLineNative(length, material)
+                result = new PolylineNative(length, material)
             } else {
-                result = new VisLineShader(length, material)
+                result = new PolylineShader(length, material)
             }
             if (parent) {
                 result.parent = parent
@@ -81,10 +81,10 @@ module visualizing {
         }
     }
 
-    // Line subclass that uses "native" WebGL lines
+    // Line subclass that uses native WebGL lines
     // Note that Chrome on Windows does not support these well
     // https://bugs.chromium.org/p/chromium/issues/detail?id=60124
-    class VisLineNative extends VisLine {
+    class PolylineNative extends Polyline {
         private geometry: THREE.Geometry = new THREE.Geometry()
         private line: THREE.Line
         constructor(length: number, material: THREE.LineBasicMaterialParameters) {
@@ -93,7 +93,6 @@ module visualizing {
             for (let i = 0; i < length; i++) {
                 this.geometry.vertices.push(zero)
             }
-            ;(this.geometry as any).dynamic = true
             this.line = new THREE.Line(this.geometry, new THREE.LineBasicMaterial(material))
 
             // tell our superclass which element to operate on
@@ -108,97 +107,39 @@ module visualizing {
             this.geometry.verticesNeedUpdate = true
         }
     }
-        
-    let Shaders = {
-        fragmentCode:
-        `
-            uniform vec3 color;
-            varying float projectedDepth;
 
-            void main() {
-                vec3 mungedColor = color;
-                //mungedColor += 10.0 * smoothstep(-50.0, 500., gl_FragCoord.z);
-                
-                //mungedColor *= (1.0 + smoothstep(-80.0, 80.0, zdepth)) / 2.0;
-                
-                float cameraDistance = 400.0;
-                float psiScale = 250.0;
-                float totalScale = psiScale * .5;
-                float depthScale = smoothstep(-totalScale, totalScale, cameraDistance - projectedDepth);
-                
-                mungedColor *= (1.0 + depthScale) / 2.0;
-                gl_FragColor = vec4(mungedColor, 1.0);
-            }
-        `,
-        
-        vertexCode:
-        `
-            attribute float direction;
-            uniform float thickness;
-            attribute vec3 next;
-            attribute vec3 prev;
-            varying float projectedDepth;
-            
-            void main() {
-                float aspect = 800.0 / 600.0;
-                vec2 aspectVec = vec2(aspect, 1.0);
-                mat4 projViewModel = projectionMatrix * modelViewMatrix;
-                vec4 previousProjected = projViewModel * vec4(prev, 1.0);
-                vec4 currentProjected = projViewModel * vec4(position, 1.0);
-                vec4 nextProjected = projViewModel * vec4(next, 1.0);
-                
-                projectedDepth = currentProjected.w;                
-
-                //get 2D screen space with W divide and aspect correction
-                vec2 currentScreen = currentProjected.xy / currentProjected.w * aspectVec;
-                vec2 previousScreen = previousProjected.xy / previousProjected.w * aspectVec;
-                vec2 nextScreen = nextProjected.xy / nextProjected.w * aspectVec;
-                
-                float len = thickness;
-                
-                // Use the average of the normals
-                // This helps us handle 90 degree turns correctly
-                vec2 dir1 = normalize(nextScreen - currentScreen);
-                vec2 dir2 = normalize(currentScreen - previousScreen);
-                vec2 dir = normalize(dir1 + dir2); 
-                vec2 normal = vec2(-dir.y, dir.x);
-                normal *= len/2.0;
-                normal.x /= aspect;
-                
-                vec4 offset = vec4(normal * direction, 0.0, 1.0);
-                gl_Position = currentProjected + offset;
-            }
-        `
-    }
-    
-    // does not handle copying within self
-    function copyToFrom(dst:Float32Array, src:Float32Array, dstStart:number, srcStart:number, amount:number = Number.MAX_VALUE) {
-        const effectiveAmount = Math.min(amount, dst.length - dstStart, src.length - srcStart)
-        for (let i=0; i < effectiveAmount; i++) {
-            dst[i + dstStart] = src[i + srcStart]
-        } 
-    }
-    
-    // Use shaders
-    export class VisLineShader extends VisLine {
+    // Line subclass that uses shaders
+    // This uses the "screen space projected lines" technique described here:
+    // https://mattdesl.svbtle.com/drawing-lines-is-hard
+    export class PolylineShader extends Polyline {
         public geometry = new THREE.BufferGeometry()
         public mesh: THREE.Mesh
+
         constructor(length: number, material: THREE.LineBasicMaterialParameters) {
             super(length)
+
             // Length is the length of the path
-            // Use two vertices for each element of our path
-            // (and each vertex has 3 coordinates)
+            // We use two vertices for each element of our path,
+            // and each vertex has 3 coordinates.
             const vertexCount = 2 * length
             let positions = new Float32Array(vertexCount*3)
             this.geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3))
             
+            // Determine the line thickness, or use 1
             let thickness = Math.max(1, material['linewidth'] || 0)
-            let depthWrite = material.hasOwnProperty('depthWrite') ? material["depthWrite"] : true
+            let depthWrite = material.hasOwnProperty('depthWrite') ? material['depthWrite'] : true
             
-            // set face indexes
-            // we draw two faces (triangles) between every two elements of the path
+            // Set face indexes
+            // we draw two faces (triangles) for each line segment of our path
             // each face has 3 vertices, since it's a triangle
-            const faceCount = 2 * (length - 1) 
+            //                                              
+            //    0__2                  
+            //    | /|
+            //    |/ |
+            //    1--3
+            //
+            const lineSegmentCount = length - 1
+            const faceCount = 2 * lineSegmentCount 
             let faces = new Uint32Array(3 * faceCount)
             let faceVertIdx = 0
             for (let i=0; i+1 < length; i++) {
@@ -212,7 +153,8 @@ module visualizing {
             }
             this.geometry.setIndex(new THREE.BufferAttribute(faces, 1));
             
-            // compute the "direction" attribute, alternating 1 and -1 for each vertex
+            // Compute the "direction" attribute, alternating 1 and -1 for each vertex
+            // This tells our shader which way to push each vertex along the normal
             let directions = new Float32Array(vertexCount)
             for (let i=0; i < length; i++) {
                 directions[i*2] = 1.0
@@ -221,13 +163,14 @@ module visualizing {
             this.geometry.addAttribute('direction', new THREE.BufferAttribute(directions, 1));
             
             // compute "next" and "previous" locations
+            // This is a separate vertex array that is just our original shifted
             // next is shifted left, and previous shifted right
             let nexts = new Float32Array(vertexCount*3)
             let prevs = new Float32Array(vertexCount*3)
             this.geometry.addAttribute('next', new THREE.BufferAttribute(nexts, 3))
             this.geometry.addAttribute('prev', new THREE.BufferAttribute(prevs, 3))
             
-            ;(this.geometry as any).dynamic = true
+            // Construct our shader
             let sm = new THREE.ShaderMaterial({
                 side:THREE.DoubleSide,
                 uniforms: {
@@ -245,34 +188,127 @@ module visualizing {
         }
         
         public update(cb: (index) => THREE.Vector3) {
-            let attrs = (this.geometry as any).attributes
-            let positions = attrs.position.array
-            let path : THREE.Vector3[] = []
-            for (let i = 0; i < this.length; i++) {
-                path.push(cb(i))
-            }
-            let positionIdx = 0
-            for (let i = 0; i < this.length; i++) {
-                let pt = path[i]
-                positions[positionIdx++] = pt.x
-                positions[positionIdx++] = pt.y
-                positions[positionIdx++] = pt.z
-                positions[positionIdx++] = pt.x
-                positions[positionIdx++] = pt.y
-                positions[positionIdx++] = pt.z
-            }
+            // The attributes of a geometry are runtime dynamic
+            // Do some casting shenanigans to get the types we want
+            let attrs = this.geometry.attributes as any as LineBufferAttributeSet
             
-            let nexts = attrs.next.array
-            copyToFrom(nexts, positions, 0, 6) // shifted left
-            copyToFrom(nexts, positions, nexts.length - 6, positions.length - 6) // duplicate 6 at end
+            // Helper function to set vertices at a given index
+            // Each point is associated with six vertices
+            function setVertices(vertices: Float32Array, pointIndex:number, point:THREE.Vector3) {
+                let vertexIdx = pointIndex * 6
+                const {x, y, z} = point
+                vertices[vertexIdx++] = x
+                vertices[vertexIdx++] = y
+                vertices[vertexIdx++] = z
+                vertices[vertexIdx++] = x
+                vertices[vertexIdx++] = y
+                vertices[vertexIdx++] = z
+            }
 
+            // Fetch our positions, prevs, and nexts array, and update them
+            let positions = attrs.position.array
             let prevs = attrs.prev.array
-            copyToFrom(prevs, positions, 6, 0) // shifted right
-            copyToFrom(prevs, positions, 0, 0, 6) // duplicate 6 at beginning
-            
+            let nexts = attrs.next.array
+            const lastIdx = this.length - 1
+            for (let i = 0; i < this.length; i++) {
+                const pt: THREE.Vector3 = cb(i)
+                // Our positions array stores the point
+                // Our nexts array is positions shifted left
+                // Our prevs array is positions shifted right
+                setVertices(positions, i, pt)
+                if (i > 0) setVertices(nexts, i-1, pt)
+                if (i < lastIdx) setVertices(prevs, i+1, pt)
+
+                // The first/last points logically have no previous/next point, respectively
+                // Just duplicate the current point for them
+                if (i === 0) setVertices(prevs, i, pt)
+                if (i === lastIdx) setVertices(nexts, i, pt)
+            }
+
             attrs.position.needsUpdate = true
             attrs.next.needsUpdate = true
             attrs.prev.needsUpdate = true    
         }
+    }
+
+    // The attributes that our line buffer uses
+    // These is a more convenient typing than what our threejs typing provides
+    interface LineBufferAttributeSet {
+        next: { array: Float32Array; needsUpdate: boolean; } 
+        prev: { array: Float32Array; needsUpdate: boolean; }
+        position: { array: Float32Array; needsUpdate: boolean; } 
+    }
+
+    // The shaders we use
+    const Shaders = {
+        // The fragment shader is responsible for shading more distant points darker,
+        // To give a 3d effect
+        // This is a sort of psuedo-lighting
+        // Note that we duplicate some fields from Parameters here
+        fragmentCode:
+        `
+            uniform vec3 color;
+            varying float projectedDepth; // depth of the corresponding vertex
+
+            void main() {
+                float cameraDistance = 400.0;
+                float psiScale = 250.0; // maximum size of psi
+                float totalScale = psiScale * .5; // maximum distance that psi can be from its baseline
+                float depthScale = smoothstep(-totalScale, totalScale, cameraDistance - projectedDepth);
+                
+                vec3 mungedColor = color * (1.0 + depthScale) / 2.0;
+                gl_FragColor = vec4(mungedColor, 1.0);
+            }
+        `,
+        
+        // The vertex shader is fancier
+        // This is responsible for drawing lines of fixed thickness, regardless of depth
+        // We have a path, containing a list of points
+        // Each point has two vertices at that point
+        // Each vertex is also given the previous and next vertex, along that path
+        // This allows us to compute the normal (in screen space!) of that path
+        // We then push the two points along the normal, in opposite directions
+        // See "Screen-Space Projected Lines" from https://mattdesl.svbtle.com/drawing-lines-is-hard
+        // Note that this shader also steals some values from the Params. These ought to be passed in.
+        vertexCode:
+        `
+            attribute float direction;
+            uniform float thickness;
+            attribute vec3 next;
+            attribute vec3 prev;
+            varying float projectedDepth;
+            
+            void main() {
+                float aspect = 800.0 / 600.0;
+                vec2 aspectVec = vec2(aspect, 1.0);
+                mat4 projViewModel = projectionMatrix * modelViewMatrix;
+                
+                // Project all of our points to model space
+                vec4 previousProjected = projViewModel * vec4(prev, 1.0);
+                vec4 currentProjected = projViewModel * vec4(position, 1.0);
+                vec4 nextProjected = projViewModel * vec4(next, 1.0);
+                
+                // Pass the projected depth to the fragment shader
+                projectedDepth = currentProjected.w;                
+
+                // Get 2D screen space with W divide and aspect correction
+                vec2 currentScreen = currentProjected.xy / currentProjected.w * aspectVec;
+                vec2 previousScreen = previousProjected.xy / previousProjected.w * aspectVec;
+                vec2 nextScreen = nextProjected.xy / nextProjected.w * aspectVec;
+                                
+                // Use the average of the normals
+                // This helps us handle 90 degree turns correctly
+                vec2 tangent1 = normalize(nextScreen - currentScreen);
+                vec2 tangent2 = normalize(currentScreen - previousScreen);
+                vec2 averageTangent = normalize(tangent1 + tangent2);
+                vec2 normal = vec2(-averageTangent.y, averageTangent.x);
+                normal *= thickness/2.0;
+                normal.x /= aspect;
+                
+                // Offset our position along the normal
+                vec4 offset = vec4(normal * direction, 0.0, 1.0);
+                gl_Position = currentProjected + offset;
+            }
+        `
     }
 }

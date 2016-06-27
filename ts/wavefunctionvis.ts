@@ -27,7 +27,7 @@ module visualizing {
         public group: THREE.Group = new THREE.Group()
 
         // Baseline, which looks nice
-        private psiBaseline_: VisLine
+        private psiBaseline_: Polyline
 
         // These "visualizables" are the glue between the abstract wavefunction
         // and our four presented wavefunction graphs
@@ -74,7 +74,7 @@ module visualizing {
             }
 
             // Our baseline doesn't change, so we can just update it once
-            this.psiBaseline_ = VisLine.create(2, this.group, baselineMaterial)
+            this.psiBaseline_ = Polyline.create(2, this.group, baselineMaterial)
             this.psiBaseline_.update((i: number) => vector3(i * this.params.width, 0, 0))
 
             // Create our Visualizables 
@@ -144,11 +144,11 @@ module visualizing {
     class Visualizable {
         public valueAt: ValueAt = null
         public visible: boolean = true
-        private line_: VisLine
+        private line_: Polyline
 
         constructor(private scale: number, private params_: Parameters,
                     group: THREE.Group, material: THREE.LineBasicMaterialParameters) {
-            this.line_ = VisLine.create(this.params_.meshDivision, group, material)
+            this.line_ = Polyline.create(this.params_.meshDivision, group, material)
         }
 
         // Entry point for updating our line according to our valueAt function
