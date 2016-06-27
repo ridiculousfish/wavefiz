@@ -126,8 +126,8 @@ module visualizing {
             this.geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3))
             
             // Determine the line thickness, or use 1
-            let thickness = Math.max(1, material['linewidth'] || 0)
-            let depthWrite = material.hasOwnProperty('depthWrite') ? material['depthWrite'] : true
+            const thickness = Math.max(1, material['linewidth'] || 0)
+            const depthWrite = material.hasOwnProperty('depthWrite') ? material['depthWrite'] : true
             
             // Set face indexes
             // we draw two faces (triangles) for each line segment of our path
@@ -139,7 +139,7 @@ module visualizing {
             //    1--3
             //
             const lineSegmentCount = length - 1
-            const faceCount = 2 * lineSegmentCount 
+            const faceCount = 2 * lineSegmentCount
             let faces = new Uint32Array(3 * faceCount)
             let faceVertIdx = 0
             for (let i=0; i+1 < length; i++) {
@@ -156,9 +156,8 @@ module visualizing {
             // Compute the "direction" attribute, alternating 1 and -1 for each vertex
             // This tells our shader which way to push each vertex along the normal
             let directions = new Float32Array(vertexCount)
-            for (let i=0; i < length; i++) {
-                directions[i*2] = 1.0
-                directions[i*2+1] = -1.0
+            for (let i=0; i < vertexCount; i++) {
+                directions[i] = (i & 1) ? -1.0 : 1.0
             }
             this.geometry.addAttribute('direction', new THREE.BufferAttribute(directions, 1));
             
