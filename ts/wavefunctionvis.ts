@@ -1,5 +1,4 @@
 /// <reference path='./algorithms.ts'/>
-/// <reference path='./commonvis.ts'/>
 
 module visualizing {
 

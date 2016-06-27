@@ -1,4 +1,3 @@
-/// <reference path='./linevis.ts'/>
 /// <reference path='./ui.ts'/>
 
 module visualizing {

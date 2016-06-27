@@ -1,6 +1,4 @@
 /// <reference path="../typings/threejs/three.d.ts"/>
-/// <reference path="./algorithms.ts"/>
-/// <reference path="./potentials.ts"/>
 
 module visualizing {
     function useNativeLines() {

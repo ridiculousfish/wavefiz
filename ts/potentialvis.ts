@@ -1,5 +1,3 @@
-/// <reference path='./commonvis.ts'/>
-
 module visualizing {
 
     // This is the DOM id of the "Draw" text that appears

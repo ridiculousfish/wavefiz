@@ -1,5 +1,3 @@
-/// <reference path='./complex.ts'/>
-
 module algorithms {
 
     export function assert(condition:boolean, message?:string) {
