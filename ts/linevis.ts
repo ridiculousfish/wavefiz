@@ -8,29 +8,55 @@ module visualizing {
     }
     
     // Base class for drawing lines
+    // "Line" here means a list of 3d points.
+    // This could be a fancy function plot, or just a straight line.
+    // Lines have a fixed count of points, but those points can change
+    // We have a couple of strategies, depending on our client, hence this base class.
     export abstract class VisLine {
+        // Our object is a mesh or similar
+        // Base class methods like setVisible can operate on this without
+        // knowing its dynamic type
         protected object:THREE.Object3D
+
+        // The group into which this line has been installed
         private parent: THREE.Group = null
+        
+        // Lines have a fixed length. It cannot be updated.
+        // This reflects the GL observation that instead of resizing a buffer,
+        // you might as well create a new one
         constructor(protected length:number) {}
 
-        public abstract update(cb: (index) => THREE.Vector3);
+        // Entry point for line updates
+        // This takes a function which in turn takes the point index
+        // The output is the point 
+        public abstract update(cb: (index:number) => THREE.Vector3)
 
+        // Convenience function. Assuming this line is exactly 2 points long,
+        // make it horizontal from X=0 -> width, with Y=yOffset and Z=0
         public makeHorizontal(width, yOffset) {
+            assert(this.length == 2, "Line not of length 2")
             this.update((i: number) => vector3(i * width, yOffset, 0))
         }
 
+        // Convenience function. Assuming this line is exactly 2 points long,
+        // make it vertical from Y=0 -> width, with X=xOffset and Z=0
         public makeVertical(height, xOffset) {
+            assert(this.length == 2, "Line not of length 2")
             this.update((i: number) => vector3(xOffset, i * height, 0))
         }
 
+        // Make our line visible or not
         public setVisible(flag:boolean) {
             this.object.visible = flag
         }
         
+        // Set our line's render order
+        // Smaller values are rendered first
         public setRenderOrder(val:number) {
             this.object.renderOrder = val
         }
 
+        // Remove our line from its parent if it has one
         public remove() {
             if (this.parent) {
                 this.parent.remove(this.object)
@@ -39,6 +65,7 @@ module visualizing {
         }
 
         // Creation entry point, that chooses the best subclass
+        // Creates a line of the given length, adds it to the given parent group
         public static create(length: number, parent: THREE.Group, material: THREE.LineBasicMaterialParameters): VisLine {
             let result : VisLine
             if (useNativeLines()) {
@@ -54,7 +81,9 @@ module visualizing {
         }
     }
 
-    // Use native lines
+    // Line subclass that uses "native" WebGL lines
+    // Note that Chrome on Windows does not support these well
+    // https://bugs.chromium.org/p/chromium/issues/detail?id=60124
     class VisLineNative extends VisLine {
         private geometry: THREE.Geometry = new THREE.Geometry()
         private line: THREE.Line
@@ -63,14 +92,15 @@ module visualizing {
             const zero = new THREE.Vector3(0, 0, 0)
             for (let i = 0; i < length; i++) {
                 this.geometry.vertices.push(zero)
-            };
-            (this.geometry as any).dynamic = true
+            }
+            ;(this.geometry as any).dynamic = true
             this.line = new THREE.Line(this.geometry, new THREE.LineBasicMaterial(material))
 
             // tell our superclass which element to operate on
             this.object = this.line
         }
 
+        // Simple update() implementation
         public update(cb: (index) => THREE.Vector3) {
             for (let i = 0; i < this.length; i++) {
                 this.geometry.vertices[i] = cb(i)
@@ -162,8 +192,8 @@ module visualizing {
             let positions = new Float32Array(vertexCount*3)
             this.geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3))
             
-            let thickness = Math.max(1, material["linewidth"] || 0)
-            let depthWrite = material.hasOwnProperty("depthWrite") ? material["depthWrite"] : true
+            let thickness = Math.max(1, material['linewidth'] || 0)
+            let depthWrite = material.hasOwnProperty('depthWrite') ? material["depthWrite"] : true
             
             // set face indexes
             // we draw two faces (triangles) between every two elements of the path

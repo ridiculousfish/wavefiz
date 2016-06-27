@@ -1,10 +1,6 @@
-module algorithms {
+// Support for complex arithmetic
 
-    function assert(condition, message) {
-        if (!condition) {
-            throw message || "Assertion failed"
-        }
-    }
+module algorithms {
 
     // Represents a complex number, with fields re and im
     export class Complex {
@@ -36,14 +32,17 @@ module algorithms {
         }
 
         // Computes e^(i*power)
-        static exponential(power): Complex {
+        static exponential(power:number): Complex {
             return new Complex(Math.cos(power), Math.sin(power))
         }
     }
 
+    // Helper machinery around using FloatArray, which provides some performance benefits
+    // We can switch here between Float32 and Float64, or just number[]
     let FloatArray = Float64Array
     type FloatArray = Float64Array
 
+    // Construct a new FloatArray containing zeros
     function newFloatArray(length: number): FloatArray {
         if (FloatArray == Float32Array || FloatArray == Float64Array) {
             return new FloatArray(length)
@@ -56,6 +55,7 @@ module algorithms {
         }
     }
 
+    // Make an independent copy of a given FloatArray
     function copyFloatArray(arr: FloatArray): FloatArray {
         if (FloatArray == Float32Array || FloatArray == Float64Array) {
             return new FloatArray(arr)
@@ -64,6 +64,9 @@ module algorithms {
         }
     }
 
+    // ComplexArray efficiently stores an array of complex values,
+    // in two parallel FloatArrays
+    // ComplexArray cannot be resized
     export class ComplexArray {
         public length: number
         constructor(public res: FloatArray, public ims: FloatArray) {
@@ -71,24 +74,27 @@ module algorithms {
             this.length = res.length
         }
 
+        // Create a ComplexArray of the given length, filled with zeros
         public static zeros(length: number): ComplexArray {
             assert(length >= 0 && length === (length | 0), "Invalid length")
             let result = new ComplexArray(newFloatArray(length), newFloatArray(length))
             return result
         }
 
-        set(idx: number, value: Complex) {
+        // Return the value at a given index
+        public at(idx: number) {
+            return new Complex(this.res[idx], this.ims[idx])
+        }
+
+        // Set the complex value at a given index
+        public set(idx: number, value: Complex) {
             this.res[idx] = value.re
             this.ims[idx] = value.im
         }
 
-        at(idx: number) {
-            return new Complex(this.res[idx], this.ims[idx])
-        }
-
+        // Returns an independent copy of the ComplexArray
         slice(): ComplexArray {
             return new ComplexArray(copyFloatArray(this.res), copyFloatArray(this.ims))
         }
     }
-
 }

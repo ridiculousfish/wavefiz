@@ -139,8 +139,8 @@ module visualizing {
         }
     }
 
-    // A Visualizable wraps up a Line, and a function to calculate a (complex) value
-    // at a given x position and time
+    // A Visualizable takes a function to calculate a (complex) value
+    // at a given x position and time, and then plots that in a Line
     class Visualizable {
         public valueAt: ValueAt = null
         public visible: boolean = true
@@ -167,6 +167,8 @@ module visualizing {
             }
         }
 
+        // Helper function to maintain numerical sanity
+        // Things can get crazy when we try to compute wavefunctions where none should exist
         // Ensure NaNs don't sneak in, and that we don't send extreme values to the GL renderer        
         private clamp(value:number): number {
             const limit = this.params_.height / 2

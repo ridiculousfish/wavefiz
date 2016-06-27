@@ -2,10 +2,8 @@
 
 module algorithms {
 
-    function assert(condition, message) {
-        if (!condition) {
-            throw message || "Assertion failed"
-        }
+    export function assert(condition:boolean, message?:string) {
+        if (!condition) throw message || "Assertion failed"
     }
 
     // Given a ComplexArray, modify it in-place such that the sum is 1 

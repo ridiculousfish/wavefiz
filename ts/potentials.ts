@@ -1,11 +1,5 @@
 module algorithms {
 
-    function assert(condition:boolean, message?:string) {
-        if (!condition) {
-            throw message || "Assertion failed"
-        }
-    }
-
     export interface Point2 {
         x: number,
         y: number

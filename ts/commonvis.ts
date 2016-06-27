@@ -4,6 +4,10 @@
 
 module visualizing {
 
+    export function assert(condition:boolean, message?:string) {
+        if (!condition) throw message || "Assertion failed"
+    }
+
     export function vector3(x:number, y:number, z:number): THREE.Vector3 {
         return new THREE.Vector3(x, y, z)
     }
@@ -98,7 +102,7 @@ module visualizing {
 
         public convertYToVisualCoordinate(y: number) {
             // 0 is at top
-            return this.height * (1.0 - y);
+            return this.height * (1.0 - y)
         }
 
         public convertYFromVisualCoordinate(y: number) {
@@ -188,12 +192,6 @@ module visualizing {
         }
     }
 
-    export function assert(condition, message) {
-        if (!condition) {
-            throw message || "Assertion failed"
-        }
-    }
-    
     function timeThing(iters:number, funct: (() => void)) {
         const start = new Date().getTime()
         for (let iter=0; iter < iters; iter++) {
