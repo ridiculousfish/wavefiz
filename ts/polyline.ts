@@ -1,19 +1,25 @@
 /// <reference path="../typings/threejs/three.d.ts"/>
 
 module visualizing {
-    let PreferNativeLinesCache = undefined
-    function preferNativeLines():boolean {
-        if (PreferNativeLinesCache === undefined) {
-            // Look in the URI for a value "lines=native"
-            // Hackish approach
+    enum LineType {
+        None = 0,
+        Native = 1,
+        Shader = 2
+    }
+    let ExplicitLineTypeCache = undefined
+    function explicitLineType():LineType {
+        if (ExplicitLineTypeCache === undefined) {
+            // Look in the URI for a value "lines="
+            // Hackish!
             if (window.location.search.indexOf("lines=native") >= 0) {
-                PreferNativeLinesCache = true
+                ExplicitLineTypeCache = LineType.Native
+            } else if (window.location.search.indexOf("lines=shader") >= 0) {
+                ExplicitLineTypeCache = LineType.Shader
             } else {
-                // default to shader
-                PreferNativeLinesCache = false
+                ExplicitLineTypeCache = LineType.None
             }
         }
-        return PreferNativeLinesCache
+        return ExplicitLineTypeCache
     }
     
     // Base class for drawing lines
@@ -76,8 +82,19 @@ module visualizing {
         // Creation entry point, that chooses the best subclass
         // Creates a line of the given length, adds it to the given parent group
         public static create(length: number, parent: THREE.Group, material: THREE.LineBasicMaterialParameters): Polyline {
+            let lineType = explicitLineType()
+            if (lineType == LineType.None) {
+                // Hack for native lines
+                // This helps us on mobile
+                if (length == 2) {
+                    lineType = LineType.Native
+                } else {
+                    lineType = LineType.Shader
+                }
+            }
+
             let result: Polyline
-            if (preferNativeLines()) {
+            if (lineType === LineType.Native) {
                 result = new PolylineNative(length, material)
             } else {
                 result = new PolylineShader(length, material)

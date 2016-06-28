@@ -1,7 +1,11 @@
 /// <reference path='./visualizer.ts'/>
 
 module ui {
-        
+    
+    function assert(condition:boolean, message?:string) {
+        if (!condition) throw message || "Assertion failed"
+    }
+
     export function setupRotatorKnob(rotator:HTMLElement, onRotate:(rad:number) => void) {
         let dragging = false
         let rotation = 0
@@ -76,10 +80,17 @@ module ui {
         Horizontal,
         Vertical
     }
+
+    /* Attach event targets to the element with this class */
+    const SLIDER_TOUCH_EVENT_TARGET_CLASS = "touch_event_target"
+    const SLIDER_CLICK_EVENT_TARGET_CLASS = "click_event_target"
     
     export class Slider {
-        private unconstrainedPosition:number = -1
-        private position:number = 0
+        private unconstrainedPosition: number = -1
+        private position: number = 0
+
+        // Target for HTML event handlers
+        private target_: HTMLElement
         
         static draggedSlider:Slider = null
         static lastPosition:number = -1
@@ -93,7 +104,7 @@ module ui {
             if (! Slider.globalInitDone) {
                 Slider.globalInitDone = true
                 document.addEventListener('mousemove', (evt:MouseEvent) => {
-                        if (Slider.draggedSlider) Slider.draggedSlider.tryDrag(evt)
+                    if (Slider.draggedSlider) Slider.draggedSlider.tryDrag(evt)
                 })
                 document.addEventListener('mouseup', () => {
                     if (Slider.draggedSlider) Slider.draggedSlider.stopDragging()
@@ -128,20 +139,34 @@ module ui {
             this.element.style.visibility = flag ? "visible" : "hidden"
         }
 
-        private beginWatching() {
-            this.element.onmousedown = (evt:MouseEvent) => this.startDragging(evt)
-            this.element.ontouchstart = (evt:TouchEvent) => this.startDragging(evt)
-            this.element.ontouchmove = (evt:TouchEvent) => this.tryDrag(evt)
-            this.element.ontouchend = () => this.stopDragging()
-            this.element.ontouchcancel = () => this.stopDragging()
+        private eventTargets() : {touch:HTMLElement, click:HTMLElement} {
+            const getChild = (cn:string) => this.element.getElementsByClassName(cn)[0]
+            return {
+                touch: getChild(SLIDER_TOUCH_EVENT_TARGET_CLASS) as HTMLElement,
+                click: getChild(SLIDER_CLICK_EVENT_TARGET_CLASS) as HTMLElement
+            }
         }
-        
+
+        private beginWatching() {
+            let {touch, click} = this.eventTargets()
+            click.onmousedown = (evt:MouseEvent) => this.startDragging(evt)
+            Array(touch, click).forEach((target:HTMLElement) => {
+                target.ontouchstart = (evt:TouchEvent) => this.startDragging(evt)
+                target.ontouchmove = (evt:TouchEvent) => this.tryDrag(evt)
+                target.ontouchend = () => this.stopDragging()
+                target.ontouchcancel = () => this.stopDragging()
+            })
+        }
+
         private endWatching() {
-            this.element.onmousedown = null
-            this.element.ontouchstart = null
-            this.element.ontouchmove = null
-            this.element.ontouchend = null
-            this.element.ontouchcancel = null
+            let {touch, click} = this.eventTargets()
+            Array(touch, click).forEach((target:HTMLElement) => {
+                click.onmousedown = null
+                touch.ontouchstart = null
+                touch.ontouchmove = null
+                touch.ontouchend = null
+                touch.ontouchcancel = null
+            })
         }
         
         private startDragging(evt:MouseEvent|TouchEvent) {
@@ -159,6 +184,7 @@ module ui {
             if (this !== Slider.draggedSlider) {
                 return
             }
+            evt.preventDefault() // prevents scrolling on mobile?
             const position = this.getEventPosition(evt)
             const positionChange = position - Slider.lastPosition
             Slider.lastPosition = position

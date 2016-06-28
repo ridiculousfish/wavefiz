@@ -5,6 +5,7 @@
     <style>
         body {
             padding-left: 10px;
+			min-width: 1400px;
         }
         .options {
             font-family: Times, serif;
@@ -126,16 +127,20 @@
         }
         #tut_wrapper {
             flex-grow: 1;
+			/* https://coderwall.com/p/c-aqqw/scrollable-iframe-on-mobile-safari */
+			overflow: auto;
+			-webkit-overflow-scrolling: touch;
+			height: 630px;
         }
         #tut_wrapper iframe {
             border-style: none;
             display:block;
             width: 100%;
-            height: 630px;
+            height: 100%;
             padding: 0;
             margin: 0;
         }
-        .dragger, #outer_container, .noselect {            
+        .dragger, #outer_container, .noselect, .dragger * {            
             /* Defeat text selection */
             -webkit-touch-callout: none;
             -webkit-user-select: none;
@@ -147,7 +152,6 @@
         .dragger {
             display: inline-block;
             position: absolute;
-            cursor: ns-resize;
         }
         
         .dragger div {
@@ -176,7 +180,6 @@
         /* Horizontal dragging */
         .horizontal {
             transform: rotate(90deg);
-            cursor: ew-resize;
         }
         .horizontal .grip {
             width: 14px;
@@ -184,15 +187,36 @@
         
         /* Center us vertically */
         .dragger > .centerer {
-            padding: 10px; /* big touch surface */
             position: relative;
-            right: 10px;
-            bottom: 21px;
+            bottom: 13px;
         }
         
         .horizontal > .centerer {
             /* Additional horizontal centering */
             top: 5px;
+        }
+
+        .dragger .click_event_target, .dragger .touch_event_target {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            left: 0px;
+            top: -5px;
+            padding: 5px 0;
+        }
+
+        .dragger .click_event_target {
+            cursor: ns-resize;
+        }
+
+        .horizontal .click_event_target {
+            cursor: ew-resize;
+        }
+
+        .dragger .touch_event_target {
+            /* Bigger touch targets */
+            top: -20px;
+            padding: 20px 5px;
         }
 
         #rotator {
@@ -270,6 +294,8 @@
                     <div class="centerer">
                         <div class="grip"></div>
                         <div class="value_text">12345</div>
+                        <div class="touch_event_target"></div>
+                        <div class="click_event_target"></div>
                     </div>
                 </div>
             </div>
@@ -277,6 +303,8 @@
                 <div id="potential_dragger" class="dragger horizontal">
                     <div class="centerer">
                         <div class="grip"></div>
+                        <div class="touch_event_target"></div>
+                        <div class="click_event_target"></div>
                     </div>
                 </div>
             </div>
