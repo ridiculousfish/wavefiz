@@ -74,8 +74,8 @@ module algorithms {
     export const TwoSquareWells = (x:number, param:number) => {
         const widthFactor = symmetrize(param)
         const baseEnergy = 0.05
-        const leftWellWidthFactor = 1.0 / 6.0
-        const barrierWidthFactor = 1.0 / 8.0
+        const leftWellWidthFactor = 1.0 / 3.5
+        const barrierWidthFactor = 1.0 / 10.0
         //const rightWellWidthFactor = 1.0 - (leftWellWidthFactor + barrierWidthFactor) 
         
         // If we're outside both wells, return "infinity""

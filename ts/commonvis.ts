@@ -82,7 +82,6 @@ module visualizing {
     }
 
     export class Parameters {
-        public xScale = 1
         public width: number = 800 // in "pixels"
         public height: number = 600 // in "pixels"
         public cameraDistance = 400 // how far back the camera is

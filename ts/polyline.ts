@@ -1,8 +1,19 @@
 /// <reference path="../typings/threejs/three.d.ts"/>
 
 module visualizing {
-    function useNativeLines() {
-        return false
+    let PreferNativeLinesCache = undefined
+    function preferNativeLines():boolean {
+        if (PreferNativeLinesCache === undefined) {
+            // Look in the URI for a value "lines=native"
+            // Hackish approach
+            if (window.location.search.indexOf("lines=native") >= 0) {
+                PreferNativeLinesCache = true
+            } else {
+                // default to shader
+                PreferNativeLinesCache = false
+            }
+        }
+        return PreferNativeLinesCache
     }
     
     // Base class for drawing lines
@@ -65,8 +76,8 @@ module visualizing {
         // Creation entry point, that chooses the best subclass
         // Creates a line of the given length, adds it to the given parent group
         public static create(length: number, parent: THREE.Group, material: THREE.LineBasicMaterialParameters): Polyline {
-            let result : Polyline
-            if (useNativeLines()) {
+            let result: Polyline
+            if (preferNativeLines()) {
                 result = new PolylineNative(length, material)
             } else {
                 result = new PolylineShader(length, material)
