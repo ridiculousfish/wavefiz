@@ -199,7 +199,22 @@ module visualizing {
         const end = new Date().getTime()
         const duration = (end - start) / iters
         return duration
-    } 
+    }
+
+    function arraysAreClose(arr1: algorithms.ComplexArray, arr2: algorithms.ComplexArray) {
+        if (arr1.length != arr2.length) return false
+        const eps = .0001
+        for (let i=0; i < arr1.length; i++) {
+            let val1 = arr1.at(i), val2 = arr2.at(i)
+            if (Math.abs(val1.re - val2.re) > eps) {
+                return false
+            }
+            if (Math.abs(val1.im - val2.im) > eps) {
+                return false
+            }
+        }
+        return true
+    }
     
     function benchmarkImpl(forProfiling: boolean):string {
         const params = new Parameters()
@@ -208,9 +223,9 @@ module visualizing {
         const baseEnergy = 0.25
         const xScaleFactor = 1.0 / 4.0
         const potential = buildPotential(params, .15, (x: number) => {
-            // x is a value in [0, this.potential_.width)
-            // we have a value of 1 at x = width/2
-            const offsetX = params.width / 2
+            // x is a value in [0, 1)
+            // we have a value of 1 at x = 0.5
+            const offsetX = 0.5
             const scaledX = (x - offsetX)
             return baseEnergy + xScaleFactor * (scaledX * scaledX / 2.0)
         })
@@ -225,16 +240,30 @@ module visualizing {
         
         let psi = algorithms.classicallyResolvedAveragedNumerov(input)
         const maxIter = forProfiling ? 1024 : 32
-        let duration1 = timeThing(maxIter, () => {
-            psi.fourierTransformOptimized(center, .5)
-        })
-        
-        let text = duration1.toFixed(2) + " ms"
+
+        let text = ""
+
+        const dx = .1, dfreq = .01
+
+        // Verify correctness
+        const values = psi.values
+        let expected = algorithms.fourierTransformNaive(values.res, center, dx, dfreq)
+        if (! arraysAreClose(expected, algorithms.fourierTransform(values.res, center,  dx, dfreq))) {
+            text += "fourierTransform produces wrong result\n"
+        }
+
+        {
+            let duration1 = timeThing(maxIter, () => {
+                algorithms.fourierTransform(values.res, center,  dx, dfreq)
+            })
+            text += "fourierTransform: " + duration1.toFixed(2) + " ms     "
+        }
+
         if (!forProfiling) {
             let duration2 = timeThing(maxIter, () => {
-                psi.fourierTransform(center, .5)
+                algorithms.fourierTransformNaive(values.res, center, dx, dfreq)
             })
-            text += "/ " + duration2.toFixed(2) + " ms"
+            text += "fourierTransformNaive: " + duration2.toFixed(2) + " ms"
         }
 
         return text 

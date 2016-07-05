@@ -2,10 +2,6 @@
 
 module ui {
     
-    function assert(condition:boolean, message?:string) {
-        if (!condition) throw message || "Assertion failed"
-    }
-
     export function setupRotatorKnob(rotator:HTMLElement, onRotate:(rad:number) => void) {
         let dragging = false
         let rotation = 0

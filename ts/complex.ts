@@ -39,8 +39,13 @@ module algorithms {
 
     // Helper machinery around using FloatArray, which provides some performance benefits
     // We can switch here between Float32 and Float64, or just number[]
-    let FloatArray = Float64Array
-    type FloatArray = Float64Array
+    // In current tests, the naive number[] beats FloatArray
+    
+    // export let FloatArray = Float64Array
+    // export type FloatArray = Float64Array
+
+    export let FloatArray = null
+    export type FloatArray = number[]
 
     // Construct a new FloatArray containing zeros
     function newFloatArray(length: number): FloatArray {

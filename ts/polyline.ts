@@ -206,6 +206,7 @@ module visualizing {
                 fragmentShader: Shaders.fragmentCode,
                 depthWrite: depthWrite
             })
+            sm.transparent = true
             this.mesh = new THREE.Mesh(this.geometry, sm)
 
             // tell superclass which object to operate on
@@ -230,7 +231,7 @@ module visualizing {
                 vertices[vertexIdx++] = z
             }
 
-            // Fetch our positions, prevs, and nexts array, and update them
+            // Fetch and update our positions, prevs, and nexts arrays
             let positions = attrs.position.array
             let prevs = attrs.prev.array
             let nexts = attrs.next.array
@@ -274,6 +275,7 @@ module visualizing {
         `
             uniform vec3 color;
             varying float projectedDepth; // depth of the corresponding vertex
+            varying float edgeiness;
 
             void main() {
                 float cameraDistance = 400.0;
@@ -282,7 +284,8 @@ module visualizing {
                 float depthScale = smoothstep(-totalScale, totalScale, cameraDistance - projectedDepth);
                 
                 vec3 mungedColor = color * (1.0 + depthScale) / 2.0;
-                gl_FragColor = vec4(mungedColor, 1.0);
+                float alpha = 1.0 - pow(abs(edgeiness), 4.0);
+                gl_FragColor = vec4(mungedColor, alpha);
             }
         `,
         
@@ -302,6 +305,7 @@ module visualizing {
             attribute vec3 next;
             attribute vec3 prev;
             varying float projectedDepth;
+            varying float edgeiness;
             
             void main() {
                 float aspect = 800.0 / 600.0;
@@ -329,6 +333,8 @@ module visualizing {
                 vec2 normal = vec2(-averageTangent.y, averageTangent.x);
                 normal *= thickness/2.0;
                 normal.x /= aspect;
+
+                edgeiness = direction;
                 
                 // Offset our position along the normal
                 vec4 offset = vec4(normal * direction, 0.0, 1.0);

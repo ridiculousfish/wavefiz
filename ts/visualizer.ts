@@ -41,7 +41,7 @@ module visualizing {
             State.applyStateUpdate = (st:State) => this.setState(st)
 
             // Initialize our renderer
-            let renderer = new THREE.WebGLRenderer({ antialias: true })
+            let renderer = new THREE.WebGLRenderer({ antialias: !true })
             renderer.setClearColor(0x222222, 1)
             renderer.setSize(container.offsetWidth, container.offsetHeight)
             container.appendChild(renderer.domElement)

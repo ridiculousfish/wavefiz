@@ -112,7 +112,7 @@ module visualizing {
                 let freqWavefunction = () => {
                     if (freqWavefunctionCache === null) {
                         freqWavefunctionCache = 
-                            psi.fourierTransformOptimized(potentialMinimumIndex, this.params.frequencyScale)
+                            psi.fourierTransform(potentialMinimumIndex, this.params.frequencyScale)
                     }
                     return freqWavefunctionCache
                 }

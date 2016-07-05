@@ -4,7 +4,9 @@ module algorithms {
         if (!condition) throw message || "Assertion failed"
     }
 
-    // Given a ComplexArray, modify it in-place such that the sum is 1 
+    // Given a function F, represented as samples in the given ComplexArray,
+    // modify it in-place such that the integral of |F|^2 over all space
+    // is 1
     function normalizeComplexFunction(samples: ComplexArray, dx: number) {
         // norm is sum of dx * |vals|**2
         let norm = 0
@@ -13,28 +15,33 @@ module algorithms {
         }
         norm *= dx
         norm = Math.sqrt(norm)
-        if (norm === 0) norm = 1
+        if (norm === 0) norm = 1 // handle the case of a zero function by pretending the norm is 1
         const normRecip = 1.0 / norm
         for (let i = 0; i < samples.length; i++) {
             samples.set(i, samples.at(i).multipliedByReal(normRecip))
         }
     }
 
-    function normalizeReals(vals: number[], dx: number) {
+    // Given a real function F, represented as samples in the given vals array,
+    // modify it in place such that the integral of |F|^2 over all space
+    // is 1
+    function normalizeRealFunction(samples: number[], dx: number) {
         // norm is sum of dx * vals**2
         let norm = 0
-        for (let i = 0; i < vals.length; i++) {
-            norm += vals[i] * vals[i]
+        for (let i = 0; i < samples.length; i++) {
+            norm += samples[i] * samples[i]
         }
         norm *= dx
         norm = Math.sqrt(norm)
-        if (norm === 0) norm = 1 // gross
+        if (norm === 0) norm = 1 // handle the case of a zero function by pretending the norm is 1
         const normRecip = 1.0 / norm
-        for (let i = 0; i < vals.length; i++) {
-            vals[i] *= normRecip
+        for (let i = 0; i < samples.length; i++) {
+            samples[i] *= normRecip
         }
     }
 
+    // Given a complex function F, represented as samples in the given ComplexArray,
+    // modify it in-place such that the first nonzero value on the left is positive 
     function normalizeSign(vals: ComplexArray, leftTurningPoint: number) {
         // make it positive on the left
         let wantsSignFlip = false
@@ -59,111 +66,117 @@ module algorithms {
         maxX: number
     }
     
-    function fourierTransform(spaceValues: ComplexArray, center: number, dx: number, c: number): ComplexArray {
+    // Naive reference function
+    export function fourierTransformNaive(spaceValues: FloatArray, center: number, dx: number, dfreq: number): ComplexArray {
         const length = spaceValues.length
         assert(length > 0 && center < length, "center out of bounds")
         let freqValues = ComplexArray.zeros(length)
+        const multiplier = dx / Math.sqrt(2 * Math.PI)
         for (let arrayIdx = 0; arrayIdx < length; arrayIdx++) {
-            const p = arrayIdx - center
-            const k = p * dx
+            const p = (arrayIdx - center) * dfreq
             let phi = new Complex(0, 0)
             for (let i = 0; i < length; i++) {
-                const spaceValue = spaceValues.at(i)
+                const spaceValue = spaceValues[i]
                 const x = (i - center) * dx
-                phi.addToSelf(Complex.exponential(-c * k * x).multiplied(spaceValue))
+                phi.addToSelf(Complex.exponential(-p * x).multipliedByReal(spaceValue))
             }
-            freqValues.set(arrayIdx, phi)
+            freqValues.set(arrayIdx, phi.multipliedByReal(multiplier))
         }
-        let multiplier = 1
-        multiplier *= dx // for integral
-        multiplier *= Math.sqrt(2 * Math.PI)
-        for (let arrayIdx = 0; arrayIdx < length; arrayIdx++) {
-            freqValues.set(arrayIdx, freqValues.at(arrayIdx).multipliedByReal(multiplier))
-        }
-
         return freqValues
     }
-    
-    function fourierTransformOptimized(spaceValues: ComplexArray, center: number, dx: number, c: number): ComplexArray {
+
+    // Computes the Fourier transform of the given function
+    export function fourierTransform(spaceValues: FloatArray, centerIndex: number, dx: number, dfreq: number): ComplexArray {
         const length = spaceValues.length
-        assert(length > 0 && center < length, "center out of bounds")
+        assert(length > 0 && centerIndex < length, "center out of bounds")
         let freqValues = zerosComplex(length)
         let freqValuesRe = freqValues.res
         let freqValuesIm = freqValues.ims
-        const spaceValuesRe = spaceValues.res
-        
-        for (let arrayIdx = 0; arrayIdx < length; arrayIdx++) {
-            // We are going to hold X constant and then run through the frequencies
-            // then for each successive frequency xi, we want to multiply by e^ -x * dx * c
-            // where dxi is the distance between successive values of xi
-            const x = (arrayIdx - center) * dx
-            // -x * dx * c is space between frequencies
-            let stepperPower = -x * dx * c
-            let stepperRe = Math.cos(stepperPower), stepperIm = Math.sin(stepperPower)
-            const fx = spaceValuesRe[arrayIdx]
-            
-            // compute initial exponential
-            let startFreq = (0 - center) * dx * c
-            let power = -x * startFreq
-            let exponentialRe = Math.cos(power)
-            let exponentialIm = Math.sin(power)
-            
-            for (let freqIndex = 0; freqIndex < length; freqIndex++) {
-                freqValuesRe[freqIndex] += fx * exponentialRe
-                freqValuesIm[freqIndex] += fx * exponentialIm
-                
-                let real = exponentialRe * stepperRe - exponentialIm * stepperIm
-                exponentialIm = exponentialRe * stepperIm + exponentialIm * stepperRe
-                exponentialRe = real
-            }
-        }
-        let multiplier = 1
-        multiplier *= dx // for integral
-        multiplier *= Math.sqrt(2 * Math.PI)
-        for (let arrayIdx = 0; arrayIdx < length; arrayIdx++) {
-            freqValuesRe[arrayIdx] *= multiplier
-            freqValuesIm[arrayIdx] *= multiplier 
-        }
 
+        // Initial space value at each iteration
+        const startX = -centerIndex * dx
+
+        // We have an overall multiplier of 1/sqrt(2*pi), which goes outside the integral
+        // We also have a Riemann sum, of width dx, which can be pulled out too
+        // Compute the overall multiplier
+        const coefficient = dx / Math.sqrt(2 * Math.PI) 
+        
+        let freq = -centerIndex * dfreq
+        for (let freqIndex = 0; freqIndex < length; freqIndex++, freq += dfreq) {
+            // {phiReal, phiImaginary} are the computed values of phi(freq)
+            // for each spaceIndex, we want to compute:
+            //    e^(-i * freq * spaceLocation) * spaceValues[spaceIndex]
+            // The freq is constant for this iteration, and we run through the space positions
+            // The difference between successive spaceLocations is dx
+            // Thus we have
+            //    e^(-i * freq * (spaceLocation + dx))
+            //    = e^(-i * freq * spaceLocation) * e^(-i * freq * dx)
+            // so we can step through the successive exponentials by multiplying by e^(-i * freq * dx)
+            // which is of course cos(-freq * dx) + i sin(-freq * dx)  
+
+            // Initial value of the exponential term in the expression
+            let exponentialReal = Math.cos(-startX * freq)
+            let exponentialImag = Math.sin(-startX * freq)
+
+            // Step values
+            const stepReal = Math.cos(-dx * freq)
+            const stepImag = Math.sin(-dx * freq)
+            
+            // Value of Riemann sum (i.e. phi) at our current frequency (freq)
+            let phiReal = 0
+            let phiImag = 0
+
+            for (let spaceIndex = 0; spaceIndex < length; spaceIndex++) {
+                // Pull out the spaceValue, aka psi(x). We only use the real part.
+                // Multiply that by our current exponential and add that to phi
+                const spaceValue = spaceValues[spaceIndex]
+                phiReal += spaceValue * exponentialReal
+                phiImag += spaceValue * exponentialImag
+
+                // Step our exponential
+                // Note that we are multiplying two complex numbers
+                // the formula is {c1.re*c2.re - c1.im*c2.im, c1.re*c2.im + c2.re*c1.im}
+                const tmpReal = exponentialReal * stepReal - exponentialImag * stepImag
+                exponentialImag = exponentialReal * stepImag + stepReal * exponentialImag
+                exponentialReal = tmpReal
+            }
+
+            // Multiply by coefficient and store
+            freqValuesRe[freqIndex] = coefficient * phiReal
+            freqValuesIm[freqIndex] = coefficient * phiImag
+        }
         return freqValues
     }
-    
-    export class WavefunctionMetadata {
-        constructor(public energy: number,
-            public leftTurningPoint: number,
-            public rightTurningPoint: number,
-            public leftDerivativeDiscontinuity: number,
-            public rightDerivativeDiscontinuity: number) { }
+
+    // Wraps up metadata about a wavefunction
+    interface WavefunctionMetadata {
+        energy: number
+        leftTurningPoint: number
+        rightTurningPoint: number
+        leftDerivativeDiscontinuity: number
+        rightDerivativeDiscontinuity: number
     }
-
+    
+    // Represents a solution to the time-independent Schrodinger equation
     export class TimeIndependentWavefunction {
-        phaser = 0
-        constructor(public values: ComplexArray,
-            public dx: number,
-            public md: WavefunctionMetadata) {
-
-
+        constructor(public values: ComplexArray, public dx: number, public md: WavefunctionMetadata) {
             assert(isFinite(md.energy), "Non-finite energy: " + md.energy)
             assert(isFinite(dx), "Non-finite dx: " + dx)
             assert(isFinite(md.leftDerivativeDiscontinuity), "Non-finite leftDerivativeDiscontinuity: " + md.leftDerivativeDiscontinuity)
             assert(isFinite(md.rightDerivativeDiscontinuity), "Non-finite rightDerivativeDiscontinuity: " + md.rightDerivativeDiscontinuity)
         }
 
+        // Returns the value of the wavefunction at a given time
+        // "Time independent" is a slight lie - really our time dependence is very simple
         valueAt(x: number, time: number): Complex {
             // e^(-iEt) -> cos(-eT) + i * sin(-Et)
             const nEt = - this.md.energy * time
-            let ret = this.values.at(x).multiplied(Complex.exponential(nEt))
-            return ret.multiplied(Complex.exponential(this.phaser * x))
+            return this.values.at(x).multiplied(Complex.exponential(nEt))
         }
-
+        
+        // Takes the Fourier transform, returning a new wavefunction
         fourierTransform(center: number, scale: number): TimeIndependentWavefunction {
-            let freqValues = fourierTransform(this.values, center, this.dx, scale)
-            normalizeComplexFunction(freqValues, this.dx)
-            return new TimeIndependentWavefunction(freqValues, this.dx, this.md)
-        }
-                
-        fourierTransformOptimized(center: number, scale: number): TimeIndependentWavefunction {
-            let freqValues = fourierTransformOptimized(this.values, center, this.dx, scale)
+            let freqValues = fourierTransform(this.values.res, center, this.dx, this.dx * scale)
             normalizeComplexFunction(freqValues, this.dx)
             return new TimeIndependentWavefunction(freqValues, this.dx, this.md)
         }
@@ -203,20 +216,15 @@ module algorithms {
             return result
         }
 
-        fourierTransform(center: number, scale: number): Wavefunction {
+        public fourierTransform(center: number, scale: number): Wavefunction {
             let fourierComps = this.components.map((comp) => comp.fourierTransform(center, scale))
-            return new Wavefunction(fourierComps)
-        }
-        
-        public fourierTransformOptimized(center: number, scale: number): Wavefunction {
-            let fourierComps = this.components.map((comp) => comp.fourierTransformOptimized(center, scale))
             return new Wavefunction(fourierComps)
         }
 
     }
 
     // Given two ResolvedWavefunction, computes an average weighted by the discontinuities in their derivatives
-    export function averageResolvedWavefunctions(first: TimeIndependentWavefunction, second: TimeIndependentWavefunction): TimeIndependentWavefunction {
+    export function averageTimeIndependentWavefunctions(first: TimeIndependentWavefunction, second: TimeIndependentWavefunction): TimeIndependentWavefunction {
         assert(first.values.length === second.values.length, "Wavefunctions have different lengths")
         const bad1 = first.md.leftDerivativeDiscontinuity
         const bad2 = second.md.leftDerivativeDiscontinuity
@@ -246,7 +254,7 @@ module algorithms {
         right: number
     }
 
-    export function classicalTurningPoints(potential: number[], energy: number): TurningPoints {
+    export function classicalTurningPoints(potential: number[], energy: number): {left:number, right:number} {
         const length = potential.length
         let left, right
         for (left = 0; left < length; left++) {
@@ -320,13 +328,20 @@ module algorithms {
 
             // normalize
             const dx = this.maxX / length
-            normalizeReals(psi, dx)
+            normalizeRealFunction(psi, dx)
 
             // compute discontinuities
             const leftDiscont = this.derivativeDiscontinuity(psi, left, dx)
             const rightDiscont = this.derivativeDiscontinuity(psi, right, dx)
 
-            let md = new WavefunctionMetadata(this.energy, left, right, leftDiscont, rightDiscont)
+            let md: WavefunctionMetadata = {
+                energy: this.energy,
+                leftTurningPoint: left,
+                rightTurningPoint: right,
+                leftDerivativeDiscontinuity: leftDiscont,
+                rightDerivativeDiscontinuity: rightDiscont
+            }
+
             let complexPsi = ComplexArray.zeros(psi.length)
             for (let i=0; i < psi.length; i++) {
                 complexPsi.res[i] = psi[i]
@@ -342,7 +357,7 @@ module algorithms {
     export function resolvedAveragedNumerov(input: IntegratorInput, tps: TurningPoints): TimeIndependentWavefunction {
         let evenVal = numerov(input, true).resolveAtTurningPoints(tps)
         let oddVal = numerov(input, false).resolveAtTurningPoints(tps)
-        return averageResolvedWavefunctions(evenVal, oddVal)        
+        return averageTimeIndependentWavefunctions(evenVal, oddVal)
     } 
 
     export function classicallyResolvedAveragedNumerov(input: IntegratorInput): TimeIndependentWavefunction {
@@ -460,11 +475,12 @@ module algorithms {
         return wavefunction
     }
 
-    function formatFloat(x: number): string {
-        return x.toFixed(2)
-    }
-
     export function algorithmTest() {
+
+        function formatFloat(x: number): string {
+            return x.toFixed(2)
+        }
+
         let lines: string[] = []        
         const width = 1025
         
