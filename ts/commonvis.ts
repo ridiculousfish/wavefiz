@@ -145,7 +145,7 @@ module visualizing {
         public showPhi = false; // show momentum phi(x)
         public showPhiAbs = false // show momentum probability |phi(x)|^2
 
-        public paused = true
+        public paused = false
 
         // The energies array is sparse
         // Keys are energy bar identifiers, values are numbers

@@ -5,7 +5,6 @@
     <style>
         body {
             padding-left: 10px;
-			min-width: 1400px;
         }
         .options {
             font-family: Times, serif;
@@ -119,6 +118,7 @@
         #outer_container {
             display: flex;
             flex-direction: row;
+            flex-wrap: wrap;
             width: 100%;
         }
         #ui_container {
@@ -126,6 +126,7 @@
             flex: none;
         }
         #tut_wrapper {
+            min-width: 250px;
             flex-grow: 1;
 			/* https://coderwall.com/p/c-aqqw/scrollable-iframe-on-mobile-safari */
 			overflow: auto;
@@ -308,12 +309,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-        <div id="tut_wrapper">
-            <iframe src="tutorial.html"></iframe>
-        </div>
-
-    </div>
     <div class="options noselect">
         <button class="menu_button"><div style="position: relative; top: 1px">V</div>
             <div style="position: absolute; top:0px; left: 0px;height: 0px;">
@@ -333,7 +328,7 @@
         <input type="checkbox" id="check_phi" name="phi" onClick="togglePhi(this)" /><label for="check_phi"><i>&phi;</i></label>
         <input type="checkbox" id="check_phiAbs" name="phiAbs" onClick="togglePhiAbs(this)" /><label for="check_phiAbs">|<i>&phi;</i>|<sup>2</sup></label>
         <div class="separator"></div>
-        <input type="checkbox" id="check_paused" name="paused" onClick="togglePaused(this)" /><label for="check_paused"><span class="playpause">&#x25B6;&#xFE0E;<!-- FE0E prevents emoji --></span></label>
+        <input type="checkbox" id="check_paused" name="paused" onClick="togglePaused(this)" checked /><label for="check_paused"><span class="playpause">&#x25B6;&#xFE0E;<!-- FE0E prevents emoji --></span></label>
         
         <div class="spacer"></div>
         
@@ -342,6 +337,13 @@
         </div>
         <button class="square_button" onClick="Vis.addEnergySlider()"><div>+</div></button>
         <button class="square_button" onClick="Vis.removeEnergySlider()"><div>-</div></button>
+    </div>
+
+        </div>
+        <div id="tut_wrapper">
+            <iframe src="tutorial.html"></iframe>
+        </div>
+
     </div>
     <span id="statusfield"></span>
     <script type="text/javascript" src="js/three.min.js"></script>
