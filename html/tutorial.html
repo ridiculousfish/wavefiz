@@ -20,9 +20,9 @@ ol {
 </style>
 </head>
 <body>
-    <p>Welcome to the Schrödinger Visualizer!</p>
-    <p>This simulates solutions to the one dimensional Schrödinger equation in various potentials. The goal is to build your intuition about quantum phenomena, in a way that easily relates to an undergraduate QM course.</p>
-    <p>Click and drag stuff to see what happens! Or if you want:</p>
+    <h3>Welcome to the Schrödinger Visualizer!</h3>
+    <p>This visualizes solutions to the one dimensional Schrödinger equation in various potentials. The goal is to build your intuition about quantum phenomena, in a way that easily relates to both "pop science" QM, and an undergraduate QM course.</p>
+    <p>Learn by exploration? Click stuff to see what happens.</p>
     <p>Learn by doing? <a class="trigger_link" href="#exercises">Try the exercises</a></p>
     <p>Like sightseeing? <a class="trigger_link" href="#" onClick="javascript:takeTheTour();">Take the Tour</a></p>
     <h2>What is the Schrödinger Equation?</h2>
@@ -92,12 +92,12 @@ ol {
     <h2 id="exercises">Exercises</h2>
     <ol>
         <h3>Stationary States</h3>
-        Load the Simple Harmonic Oscillator potential, with just the single energy bar. Move the energy bar up and down to try to find an energy that eliminates the "kink"" in the wavefunction. 
+        Use the "V" button to load the Simple Harmonic Oscillator potential, with just the single energy bar (the horizontal red line with the slider). Move the energy bar up and down to try to find an energy that eliminates the "kink" in the wavefunction. It might help to pause the simulation by clicking the Triangle button.
         <p><li>What is the <i>smallest</i> energy that eliminates the kink in the wavefunction?
         <p>Notice the gap between this energy and the bottom of the potential! This is the <i>ground state energy</i>. In a classical world, you can go all the way down to the minimum: your ball can rest at the bottom of the bowl. Not so in a quantum world! Your quantum state must have some kinetic energy.</li>
         <li>What other energies eliminate the kink in the wavefunction? Can you find a formula for them?</li>
         <p>The set of allowed energies is <i>quantized</i>. This means that if you want your system to have a definite energy, you can't pick any old energy. You must select from the allowed list of eigenenergies.
-        <p>This does NOT mean that the system can only have these energies! We can build a system whose energy expectation value is anything we please, as long as we stay above the ground state. However, these systems are necessarily a mixture of states with the given eigenenergies.
+        <p>This does NOT mean that the system can only have these energies! We can build a system whose energy expectation value is anything we please, as long as we stay above the ground state. However, these systems are necessarily a <i>mixture</i> of states with the given eigenenergies.
         <h3>Tunnelling</h3>
         <li>Locate the two points where the energy bar crosses the potential. (The thin black lines help you here). These are the <i>classical turning points</i>.
         
@@ -111,7 +111,7 @@ ol {
         <li>Does more energy make the wavefunction rotate faster or slower?</li>
         <li>Display <i>|&psi;|<sup>2</sup></i>. Why doesn't it move?</li>
         <li>Add another energy by clicking the + button. Can you make <i>|&psi;|<sup>2</sup></i> move now?</li>
-        <p>States with definite energy change their complex phase, but not their complex magnitude, at a given point in space. Or more informally, the wavefunction doesn't shrink or grow in time, it just goes around.</p>
+        <p>States with definite energy change their complex phase, but <i>not</i> their complex magnitude (at a given point in space). Or more informally, the wavefunction doesn't shrink or grow in time, it just goes around.</p>
         <p>But once you have two states, their phases <i>interfere</i>. When you add two complex numbers, the resulting magnitude may be bigger (constructive interference) or smaller (destructive interference) than the original magnitudes, depending on the phase.</p>
         <p>And if those states have different energies, their phase goes around at different speeds. This means the type of interference at each point changes in time. Now it is constructive; a moment later it is destructive.
         

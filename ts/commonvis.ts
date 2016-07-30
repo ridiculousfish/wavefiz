@@ -91,7 +91,7 @@ module visualizing {
         public frequencyScale: number = .5 // coefficient for frequency when taking the fourier transform, relates to mass
         public meshDivision: number = 800 // how many points are in our mesh
         public psiScale: number = 250 // how much scale we visually apply to the wavefunction
-        public psiAbsScale: number = this.psiScale * 1.5 // how much scale we visually apply to the psiAbs and phiAbs
+        public psiAbsScale: number = this.psiScale * 1.75 // how much scale we visually apply to the psiAbs and phiAbs
 
         public centerForMeshIndex(idx: number): number {
             assert(idx >= 0 && idx < this.meshDivision, "idx out of range")
