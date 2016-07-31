@@ -5,6 +5,7 @@ VISUALIZE_JS := $(BUILD_DIR)/visualize.js
 TS_SRCS := $(shell echo ts/*.ts)
 JS_SRCS := $(patsubst ts/%.ts,$(INTERMEDIATE_DIR)/%.js,$(TS_SRCS))
 HTML_SRCS := html/index.html html/tutorial.html
+CSS := css
 
 .PHONY: default
 default: $(VISUALIZE_JS)
@@ -35,6 +36,7 @@ stage: $(VISUALIZE_JS) $(HTML_SRCS)
 	rm -Rf $(STAGE_DIR)
 	mkdir -p $(STAGE_DIR)
 	cp $(HTML_SRCS) $(STAGE_DIR)
+	-test -d $(CSS) && cp -r $(CSS) $(STAGE_DIR)
 	mkdir  $(STAGE_DIR)/js/
 	cp $(VISUALIZE_JS) ./external_js/*.js  $(STAGE_DIR)/js/
 
