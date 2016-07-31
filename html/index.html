@@ -368,6 +368,15 @@
         function togglePhiAbs(cb) { Vis.setShowPhiAbs(cb.checked) }
 
         function togglePaused(cb) { Vis.setPaused(!cb.checked) }
+
+        function startTour() {}
+
+        window.addEventListener('message', function(evt) {
+            if (evt.data === 'start-tour') {
+                startTour()
+            }
+        })
+
         </script>
 </body>
 </html>

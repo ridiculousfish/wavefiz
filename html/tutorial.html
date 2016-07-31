@@ -18,13 +18,18 @@ ol {
     margin-left: 0;
 }
 </style>
+<script type="text/javascript">
+function postStartTourMessage() {
+	parent.postMessage('start-tour', '*')
+}
+</script>
 </head>
 <body>
     <h3>Welcome to the Schrödinger Visualizer!</h3>
     <p>This visualizes solutions to the one dimensional Schrödinger equation in various potentials. The goal is to build your intuition about quantum phenomena, in a way that easily relates to both "pop science" QM, and an undergraduate QM course.</p>
     <p>Learn by exploration? Click stuff to see what happens.</p>
     <p>Learn by doing? <a class="trigger_link" href="#exercises">Try the exercises</a></p>
-    <p>Like sightseeing? <a class="trigger_link" href="#" onClick="javascript:takeTheTour();">Take the Tour</a></p>
+    <p>Like sightseeing? <a class="trigger_link" href="#" onClick="javascript:postStartTourMessage();">Take the Tour</a></p>
     <h2>What is the Schrödinger Equation?</h2>
     <p>The Schrödinger equation describes how the wavefunction of a system evolves over time.</p>
     <p>In Newtonian mechanics, you are given some configuration of positions, velocity, masses, and forces, and by solving F=ma, you can determine the state of the system at some future time. In quantum mechanics, you are given some potential, and by solving the Schrödinger equation, you compute the wavefunction &psi;. The wavefunction, in turn, tells you what results you get for actual measurements - or more precisely, the probability of measuring those results.</p>
