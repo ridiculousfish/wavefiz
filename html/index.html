@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="css/introjs.css"> 
     <style>
         body {
             padding-left: 10px;
@@ -310,7 +311,7 @@
                 </div>
             </div>
     <div class="options noselect">
-        <button class="menu_button"><div style="position: relative; top: 1px">V</div>
+        <button id="potential_chooser" class="menu_button"><div style="position: relative; top: 1px">V</div>
             <div style="position: absolute; top:0px; left: 0px;height: 0px;">
                 <ul class="menu">
                     <li class="menu-item" onClick="Vis.loadSHO()"><span class="glyph">&#x22c3;</span>Simple Harmonic Oscillator</li>
@@ -346,6 +347,7 @@
 
     </div>
     <span id="statusfield"></span>
+    <script type="text/javascript" src="js/intro.min.js"></script>
     <script type="text/javascript" src="js/three.min.js"></script>
     <script type="text/javascript" src="js/visualize.js"></script>
     <script>
@@ -369,13 +371,33 @@
 
         function togglePaused(cb) { Vis.setPaused(!cb.checked) }
 
-        function startTour() {}
+        function startTour() {
+          var intro = introJs()
+          intro.setOptions({
+            showBullets: false,
+            steps: [
+              {
+                element: '#vis_container',
+                intro: "Here\'s where the action happens!<br>The visualizer shows the <i>wavefunction</i>, <i>potential</i>, and <i>energies</i>.",
+                position: 'right'
+              },
+              {
+                element: '#potential_chooser',
+                intro: 'Use the V to select from a list of potentials, or to create your own.',
+                position: 'right'
+              }
+            ]
+          })
+
+          intro.start()
+        }
 
         window.addEventListener('message', function(evt) {
             if (evt.data === 'start-tour') {
                 startTour()
             }
         })
+
 
         </script>
 </body>
