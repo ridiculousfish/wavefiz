@@ -13,7 +13,7 @@
             width: 900px;
             margin-top: 8px;
         }
-        .options > div, .options label, .options .square_button, .options .menu_button {
+        .options .option_item, .options label, .options .square_button, .options .menu_button {
             display: inline-block;
             vertical-align: middle;
         }
@@ -23,6 +23,12 @@
         .options label {
             margin-left: 30px;
         }
+        .options .first-after-sep {
+            margin-left: 0px;
+        }
+        #phi_container {
+           margin-left: 30px; 
+        }
         .options .spacer {
             flex-grow: 1;
         }
@@ -30,7 +36,7 @@
             width: 1px;
             border-left: dotted 2px #999;
             margin-left: 20px;
-            margin-right: -10px;
+            margin-right: 20px;
             height: 42px;
             align-self: center;
             position: relative;
@@ -283,6 +289,22 @@
         .menu_button:hover .menu, .menu:hover {
             display: block;
         }
+		
+		.introjs-tooltip {
+			background-color: #DDD;
+			border-radius: 7px;
+		}
+		
+		.introjs-arrow {
+		  border: 20px solid #DDD;
+	  	}
+		
+		.introjs-arrow.left, .introjs-arrow.left-bottom {
+		    left: -40px;
+			top: 50%;
+            transform: translateY(-50%);
+			border-right-color: #DDD;
+		}
     </style>
 </head>
 <body>
@@ -323,21 +345,25 @@
                 </ul>
             </div>
         </button>
-        <div class="separator"></div>
-        <input type="checkbox" id="check_psi" name="psi" onClick="togglePsi(this)" checked /><label for="check_psi"><i>&psi;</i></label>
-        <input type="checkbox" id="check_psiAbs" name="psiAbs" onClick="togglePsiAbs(this)" /><label for="check_psiAbs">|<i>&psi;</i>|<sup>2</sup></label>
-        <input type="checkbox" id="check_phi" name="phi" onClick="togglePhi(this)" /><label for="check_phi"><i>&phi;</i></label>
-        <input type="checkbox" id="check_phiAbs" name="phiAbs" onClick="togglePhiAbs(this)" /><label for="check_phiAbs">|<i>&phi;</i>|<sup>2</sup></label>
-        <div class="separator"></div>
-        <input type="checkbox" id="check_paused" name="paused" onClick="togglePaused(this)" checked /><label for="check_paused"><span class="playpause">&#x25B6;&#xFE0E;<!-- FE0E prevents emoji --></span></label>
+        <div class="option_item separator"></div>
+        <div id="psi_container">
+            <input type="checkbox" id="check_psi" name="psi" onClick="togglePsi(this)" checked /><label for="check_psi" class="first-after-sep"><i>&psi;</i></label><input type="checkbox" id="check_psiAbs" name="psiAbs" onClick="togglePsiAbs(this)" /><label for="check_psiAbs">|<i>&psi;</i>|<sup>2</sup></label>
+        </div>
+        <div id="phi_container">
+            <input type="checkbox" id="check_phi" name="phi" onClick="togglePhi(this)" /><label for="check_phi" class="first-after-sep"><i>&phi;</i></label><input type="checkbox" id="check_phiAbs" name="phiAbs" onClick="togglePhiAbs(this)" /><label for="check_phiAbs">|<i>&phi;</i>|<sup>2</sup></label>
+        </div>
+        <div class="option_item separator"></div>
+        <input type="checkbox" id="check_paused" name="paused" onClick="togglePaused(this)" checked /><label for="check_paused" class="first-after-sep" ><span class="playpause">&#x25B6;&#xFE0E;<!-- FE0E prevents emoji --></span></label>
         
-        <div class="spacer"></div>
+        <div class="option_item spacer"></div>
         
-        <div id="rotator" class="noselect">
+        <div id="rotator" class="option_item noselect">
             <div id="rotator_knob"></div>
         </div>
-        <button class="square_button" onClick="Vis.addEnergySlider()"><div>+</div></button>
-        <button class="square_button" onClick="Vis.removeEnergySlider()"><div>-</div></button>
+        <div id="energy_buttons">
+            <button class="square_button" onClick="Vis.addEnergySlider()"><div>+</div></button>
+            <button class="square_button" onClick="Vis.removeEnergySlider()"><div>-</div></button>
+        </div>
     </div>
 
         </div>
@@ -347,7 +373,7 @@
 
     </div>
     <span id="statusfield"></span>
-    <script type="text/javascript" src="js/intro.min.js"></script>
+    <script type="text/javascript" src="../external_js/intro.js"></script>
     <script type="text/javascript" src="js/three.min.js"></script>
     <script type="text/javascript" src="js/visualize.js"></script>
     <script>
@@ -372,6 +398,20 @@
         function togglePaused(cb) { Vis.setPaused(!cb.checked) }
 
         function startTour() {
+
+          function labelOf(elementId) {
+              if (elementId.startsWith('#')) {
+                  elementId = elementId.slice(1)
+              }
+              var labels = document.getElementsByTagName("label")
+              for (var i=0; i < labels.length; i++) {
+                  if (labels[i].htmlFor === elementId) {
+                      return labels[i]
+                  }
+              }
+              return null
+          }
+
           var intro = introJs()
           intro.setOptions({
             showBullets: false,
@@ -385,7 +425,33 @@
                 element: '#potential_chooser',
                 intro: 'Use the V to select from a list of potentials, or to create your own.',
                 position: 'right'
-              }
+              },
+              {
+                element: '#psi_container',
+                intro: 'The wavefunction and its squared modulus',
+                position: 'right'
+              },
+              {
+                element: '#phi_container',
+                intro: 'The momentum-space wavefunction and its squared modulus',
+                position: 'right'
+              },
+              {
+                element: labelOf('#check_paused'),
+                intro: 'Play or pause the animation',
+                position: 'right'
+              },
+              {
+                element: '#rotator',
+                intro: 'Rotate around the Y axis',
+                position: 'right'
+              },
+              {
+                element: '#energy_buttons',
+                intro: 'Add and remove energies',
+                position: 'right'
+              },
+
             ]
           })
 
