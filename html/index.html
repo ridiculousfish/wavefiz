@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" type="text/css" href="css/introjs.css"> 
+    <link rel="stylesheet" type="text/css" href="css/mods_introjs.css">
     <style>
         body {
             padding-left: 10px;
@@ -289,22 +290,6 @@
         .menu_button:hover .menu, .menu:hover {
             display: block;
         }
-		
-		.introjs-tooltip {
-			background-color: #DDD;
-			border-radius: 7px;
-		}
-		
-		.introjs-arrow {
-		  border: 20px solid #DDD;
-	  	}
-		
-		.introjs-arrow.left, .introjs-arrow.left-bottom {
-		    left: -40px;
-			top: 50%;
-            transform: translateY(-50%);
-			border-right-color: #DDD;
-		}
     </style>
 </head>
 <body>
@@ -397,70 +382,9 @@
 
         function togglePaused(cb) { Vis.setPaused(!cb.checked) }
 
-        function startTour() {
-
-          function labelOf(elementId) {
-              if (elementId.startsWith('#')) {
-                  elementId = elementId.slice(1)
-              }
-              var labels = document.getElementsByTagName("label")
-              for (var i=0; i < labels.length; i++) {
-                  if (labels[i].htmlFor === elementId) {
-                      return labels[i]
-                  }
-              }
-              return null
-          }
-
-          var intro = introJs()
-          intro.setOptions({
-            showBullets: false,
-            steps: [
-              {
-                element: '#vis_container',
-                intro: "Here\'s where the action happens!<br>The visualizer shows the <i>wavefunction</i>, <i>potential</i>, and <i>energies</i>.",
-                position: 'right'
-              },
-              {
-                element: '#potential_chooser',
-                intro: 'Use the V to select from a list of potentials, or to create your own.',
-                position: 'right'
-              },
-              {
-                element: '#psi_container',
-                intro: 'The wavefunction and its squared modulus',
-                position: 'right'
-              },
-              {
-                element: '#phi_container',
-                intro: 'The momentum-space wavefunction and its squared modulus',
-                position: 'right'
-              },
-              {
-                element: labelOf('#check_paused'),
-                intro: 'Play or pause the animation',
-                position: 'right'
-              },
-              {
-                element: '#rotator',
-                intro: 'Rotate around the Y axis',
-                position: 'right'
-              },
-              {
-                element: '#energy_buttons',
-                intro: 'Add and remove energies',
-                position: 'right'
-              },
-
-            ]
-          })
-
-          intro.start()
-        }
-
         window.addEventListener('message', function(evt) {
             if (evt.data === 'start-tour') {
-                startTour()
+                tour.start()
             }
         })
 

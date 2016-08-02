@@ -457,14 +457,17 @@
       tooltipCssClass = this._options.tooltipClass;
     }
 
-    tooltipLayer.className = ('introjs-tooltip ' + tooltipCssClass).replace(/^\s+|\s+$/g, '');
-
     currentTooltipPosition = this._introItems[this._currentStep].position;
     if ((currentTooltipPosition == "auto" || this._options.tooltipPosition == "auto")) {
       if (currentTooltipPosition != "floating") { // Floating is always valid, no point in calculating
         currentTooltipPosition = _determineAutoPosition.call(this, targetElement, tooltipLayer, currentTooltipPosition);
       }
     }
+
+    tooltipLayer.className = ('introjs-tooltip '
+                              + 'introjs-tooltip-' + currentTooltipPosition + ' '
+                              + tooltipCssClass).replace(/^\s+|\s+$/g, '');
+
     targetOffset  = _getOffset(targetElement);
     tooltipOffset = _getOffset(tooltipLayer);
     windowSize    = _getWinSize();
@@ -478,7 +481,7 @@
         break;
       case 'right':
         tooltipLayer.style.left = (targetOffset.width + 20) + 'px';
-        if (targetOffset.top + tooltipOffset.height > windowSize.height) {
+        if (targetOffset.top + tooltipOffset.height + 15 > windowSize.height) {
           // In this case, right would have fallen below the bottom of the screen.
           // Modify so that the bottom of the tooltip connects with the target
           arrowLayer.className = "introjs-arrow left-bottom";

@@ -1,0 +1,68 @@
+
+
+/* Our tooltip class. Make the tooltip bigger and rounder */
+.bigger-tooltip {
+    background-color: #333333;
+    border-radius: 7px;
+    padding: 15px;
+    font-family: 'Helvetica Neue', Arial, Helvetica, sans-serif;
+    font-size: 18px;
+    color:white;
+
+    /* Move it down and make it bigger */
+    min-width: 250px;
+    max-width: 325px;
+}
+
+.introjs-tooltip-left, .introjs-tooltip-right {
+    top: 20%;
+}
+
+/* Make the arrow bigger */
+.introjs-arrow {
+    border: 20px solid #333333;
+    /* Allow clicks to go through */
+    pointer-events: none;
+}
+
+/* Move the arrow down */
+.introjs-arrow.left, .introjs-arrow.left-bottom {
+    left: -40px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-right-color: #333333;
+}
+
+/* Move the arrow down */
+.introjs-arrow.top, .introjs-arrow.bottom {
+    bottom: -40px;
+    left: 50%;
+    transform: translateX(50%);
+    border-top-color: #333333;
+}
+
+/* Defeat a 10 px offset which makes our arrow too big */
+.introjs-arrow.left-bottom {
+    bottom: initial;
+    top: 55%;
+}
+
+/* Make the highlight layer dimmer */
+.dimmer-highlight {
+    background-color: rgba(255, 255, 255, .8);
+}
+
+/* Hide Skip button */
+.introjs-skipbutton {
+    display: none;
+}
+
+/* Other buttons get bigger. Note these are 'a's */
+.introjs-button {
+    padding: 5px 10px;
+    margin: 5px;
+    margin-top: 15px;
+    border: 1px solid #d4d4d4;
+    border-radius: 5px;
+    font-size: 16px;
+}
