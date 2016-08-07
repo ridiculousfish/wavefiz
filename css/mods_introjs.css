@@ -1,7 +1,7 @@
 
 
 /* Our tooltip class. Make the tooltip bigger and rounder */
-.bigger-tooltip {
+.tour-tooltip {
     background-color: #333333;
     border-radius: 7px;
     padding: 15px;
@@ -12,6 +12,16 @@
     /* Move it down and make it bigger */
     min-width: 250px;
     max-width: 325px;
+}
+
+a.light-link {
+    color: #80b3ff;
+}
+
+/* Floating tooltips even bigger */
+.introjs-tooltip-floating {
+    min-width: 375px;
+    max-width: 375px;
 }
 
 .introjs-tooltip-left, .introjs-tooltip-right {

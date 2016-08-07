@@ -1,6 +1,23 @@
 /// <reference path='./visualizer.ts'/>
 
 module ui {
+
+    function setBlockIFrameEvents(flag:boolean) {
+        if (flag) {
+            document.body.classList.add("noselect")
+        } else {
+            document.body.classList.remove("noselect")
+        }
+
+        let elems = document.getElementsByTagName('iframe')
+        for (let i=0; i < elems.length; i++) {
+            if (flag) {
+                elems[i].classList.add('no-pointer-events')
+            } else {
+                elems[i].classList.remove('no-pointer-events')
+            }
+        }
+    }
     
     export function setupRotatorKnob(rotator:HTMLElement, onRotate:(rad:number) => void) {
         let dragging = false
@@ -14,8 +31,9 @@ module ui {
               } else {
                   touchOrMouseEvent = evt
               }
-              const x = touchOrMouseEvent.pageX - rotator.offsetLeft - rotator.offsetWidth/2
-              const y = touchOrMouseEvent.pageY - rotator.offsetTop - rotator.offsetHeight/2
+              const bounds = rotator.getBoundingClientRect()
+              const x = touchOrMouseEvent.pageX - bounds.left - bounds.width/2
+              const y = touchOrMouseEvent.pageY - bounds.top - bounds.height/2
               
               // x is positive east, negative west
               // y is positive north, negative south
@@ -52,6 +70,7 @@ module ui {
                 document.body.classList.add("noselect")
                 document.addEventListener('mousemove', moveHandler)
                 document.addEventListener('touchmove', moveHandler)
+                setBlockIFrameEvents(true)
             }    
         }
         
@@ -60,7 +79,7 @@ module ui {
                 dragging = false
                 document.removeEventListener('mousemove', moveHandler)
                 document.removeEventListener('touchmove', moveHandler)
-                document.body.classList.remove("noselect")
+                setBlockIFrameEvents(false)
             }
         }
         
@@ -182,7 +201,12 @@ module ui {
             }
             evt.preventDefault() // prevents scrolling on mobile?
             const position = this.getEventPosition(evt)
-            const positionChange = position - Slider.lastPosition
+            let positionChange = position - Slider.lastPosition
+            
+            // adjust for the scaling we do when the window size is reduced
+            const scale = this.element.offsetHeight / this.element.getBoundingClientRect().height 
+            positionChange *= scale
+
             Slider.lastPosition = position
             this.unconstrainedPosition += positionChange
             const maxPosition = this.isHorizontal() ? this.container().offsetWidth : this.container().offsetHeight

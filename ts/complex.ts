@@ -1,5 +1,4 @@
 // Support for complex arithmetic
-
 module algorithms {
 
     // Represents a complex number, with fields re and im

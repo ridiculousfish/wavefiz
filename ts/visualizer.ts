@@ -1,5 +1,10 @@
 /// <reference path="../typings/threejs/three.d.ts"/>
 /// <reference path='./potentials.ts'/>
+/// <reference path='./commonvis.ts'/>
+/// <reference path='./potentialvis.ts'/>
+/// <reference path='./wavefunctionvis.ts'/>
+/// <reference path='./energyvis.ts'/>
+/// <reference path='./polyline.ts'/>
 /// <reference path='./ui.ts'/>
 
 module visualizing {

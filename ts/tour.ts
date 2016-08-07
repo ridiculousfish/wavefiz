@@ -15,20 +15,38 @@ module tour {
         return null
     }
 
+    var sCurrentTour = null
+
+    function tourDone() {
+        sCurrentTour = null
+    }
+
+    export function stop() {
+        if (sCurrentTour !== null) {
+            sCurrentTour.exit()
+        }
+    }
+
     /* Start the tour */
     export function start() {
-        var intro = introJs()
-        intro.setOptions({
+        if (sCurrentTour !== null) {
+            // Tour already running
+            return
+        }
+        sCurrentTour = introJs()
+        sCurrentTour.setOptions({
+            onComplete: tourDone,
+            onExit: tourDone, 
             showBullets: false,
             showStepNumbers: false,
             highlightClass: 'dimmer-highlight',
-            tooltipClass: 'bigger-tooltip',
+            tooltipClass: 'tour-tooltip',
             nextLabel: 'Next &rarr;',
             prevLabel: '&larr; Back',
             steps: [
                 {
-                    element: 'null',
-                    intro: "All&nbsp;aboard&nbsp;the&nbsp;quantum&nbsp;tour&nbsp;bus!<br><br>The left and right arrow keys step forwards and backwards.<br><br>Click anywhere else on the site to exit the bus.",
+                    element: null,
+                    intro: "🚌 All&nbsp;aboard&nbsp;the&nbsp;quantum&nbsp;tour&nbsp;bus! 🚌<br><br>The left and right arrow keys step forwards and backwards.<br><br>Click anywhere else on the site to exit the bus.",
                     position: 'right'
                 },
                 {
@@ -76,9 +94,13 @@ module tour {
                     intro: 'Add and remove energies.',
                     position: 'right'
                 },
-
+                {
+                    element: null,
+                    intro: 'Play around, or <a class="light-link" href="javascript:tryExercises()">try the exercises</a> in the text</a>.<br><br>Happy Schrödingering!',
+                    position: 'right'
+                }
             ]
         })
-        intro.start();
+        sCurrentTour.start();
     }
 }
