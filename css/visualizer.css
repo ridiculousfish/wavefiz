@@ -1,0 +1,357 @@
+body {
+    padding: 0;
+    margin: 0;
+}
+
+.options {
+    font-family: Times, serif;
+    display: flex;
+    width: 900px;
+    margin-top: 8px;
+}
+
+.options .option_item,
+.options label,
+.options .square_button,
+.options .menu_button {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.options input[type="checkbox"] {
+    display: none;
+}
+
+.options label {
+    margin-left: 30px;
+}
+
+.options .first-after-sep {
+    margin-left: 0px;
+}
+
+#phi_container {
+    margin-left: 30px;
+}
+
+.options .spacer {
+    flex-grow: 1;
+}
+
+.options .separator {
+    width: 1px;
+    border-left: dotted 2px #999;
+    margin-left: 20px;
+    margin-right: 20px;
+    height: 42px;
+    align-self: center;
+    position: relative;
+    bottom: 2px;
+}
+
+.square_button,
+.menu_button {
+    margin-left: 5px;
+    position: relative;
+    bottom: 2px;
+    /* why */
+}
+
+.options label,
+.square_button div,
+.menu_button div {
+    display: inline-block;
+    height: 38px;
+}
+
+.options label,
+.square_button,
+.menu_button {
+    cursor: pointer;
+    font-size: 28pt;
+    border-radius: 8px;
+    color: #555;
+    width: 45px;
+    text-align: center;
+    border: solid 2px #333;
+    background-color: white;
+    white-space: nowrap;
+    line-height: 38px;
+    padding: 0px 8px 5px 8px;
+}
+
+.menu_button {
+    width: 60px;
+    font-weight: bold;
+    color: #333;
+}
+
+.options sup {
+    font-size: 0.45em;
+    vertical-align: super;
+    line-height: 0;
+}
+
+.playpause {
+    position: relative;
+    top: 5px;
+    left: 2px;
+    font-size: 28pt;
+}
+
+.square_button > div {
+    font-weight: bold;
+    color: #242424;
+}
+
+.square_button:active {
+    background-color: #999;
+    color: black;
+}
+
+.options input[type="checkbox"]:checked + label {
+    background-color: #333;
+    color: #99CCFF;
+    text-shadow: 2px 2px black;
+}
+
+#vis_container {
+    width: 800px;
+    height: 600px;
+    display: inline-block;
+    position: relative;
+    /* allow offsetLeft and offsetTop to work */
+}
+
+#draw_text {
+    position: absolute;
+    color: rgba(219, 219, 219, .66);
+    width: 100%;
+    text-align: center;
+    top: 255px;
+    font-size: 50pt;
+    font-weight: bold;
+    font-family: Helvetica, Arial, sans-serif;
+}
+
+#energy_dragging_container {
+    width: 100px;
+    height: 600px;
+    display: inline-block;
+    margin: 0;
+    position: relative;
+}
+
+#potential_dragging_container {
+    width: 800px;
+    height: 30px;
+    display: block;
+    margin: 0;
+}
+
+#outer_container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+#ui_container {
+    white-space: nowrap;
+    flex: none;
+    padding: 5px;
+}
+
+#ui_scale_target {
+    padding-bottom: 7px;
+}
+
+#tut_wrapper {
+    flex-grow: 1;
+    /* https://coderwall.com/p/c-aqqw/scrollable-iframe-on-mobile-safari */
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    height: 630px;
+    min-width: 200px;
+}
+
+#tut_wrapper iframe {
+    /* Hack around 300px width CSS nonsense */
+    width: 1px;
+    min-width: 100%;
+    border-style: none;
+    display: block;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+}
+
+.no-pointer-events {
+    pointer-events: none;
+}
+
+.dragger,
+#outer_container,
+.noselect,
+.dragger * {
+    /* Defeat text selection */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.dragger {
+    display: inline-block;
+    position: absolute;
+}
+
+.dragger div {
+    display: inline-block;
+    vertical-align: top;
+}
+
+.dragger .grip {
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+    width: 20px;
+    height: 21px;
+    background-image: linear-gradient(180deg, #AAA 80%, black);
+    background-size: 100% 6px;
+    background-position: 0 5px;
+    border-style: solid;
+    border-width: 1px 11px 1px 7px;
+    /* top right bottom left */
+    border-color: #AAA;
+}
+
+.dragger .value_text {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 16pt;
+    user-select: none;
+}
+/* Horizontal dragging */
+
+.horizontal {
+    transform: rotate(90deg);
+}
+
+.horizontal .grip {
+    width: 14px;
+}
+/* Center us vertically */
+
+.dragger > .centerer {
+    position: relative;
+    bottom: 13px;
+}
+
+.horizontal > .centerer {
+    /* Additional horizontal centering */
+    top: 5px;
+}
+
+.dragger .click_event_target,
+.dragger .touch_event_target {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    left: 0px;
+    top: -5px;
+    padding: 5px 0;
+}
+
+.dragger .click_event_target {
+    cursor: ns-resize;
+}
+
+.horizontal .click_event_target {
+    cursor: ew-resize;
+}
+
+.dragger .touch_event_target {
+    /* Bigger touch targets */
+    top: -20px;
+    padding: 20px 5px;
+}
+
+#rotator {
+    position: relative;
+    /* for absolute children */
+    display: inline-block;
+    border-radius: 50%;
+    background: linear-gradient(to bottom, rgba(219, 219, 219, 1) 0%, rgba(74, 74, 74, 1) 100%);
+    border: solid 2px #AAA;
+    width: 44px;
+    height: 44px;
+    margin-right: 5px;
+}
+
+#rotator_knob {
+    display: inline-block;
+    border-radius: 50%;
+    width: 12px;
+    height: 12px;
+    position: absolute;
+    top: 10%;
+    left: 50%;
+    margin-left: -7px;
+    background: linear-gradient(to top, rgba(219, 219, 219, 1) 0%, rgba(74, 74, 74, 1) 100%);
+    border: solid 1px #AAA;
+}
+
+.menu {
+    position: absolute;
+    bottom: 0px;
+    box-shadow: 0 0 8px 0 black;
+    border-radius: 3px;
+    background-color: #DDD;
+    display: none;
+    list-style-type: none;
+    margin: 0;
+    line-height: 75%;
+    text-align: left;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+
+.menu-item .glyph {
+    font-size: 24pt;
+    margin-right: 5px;
+    display: inline-block;
+    width: 40px;
+    text-align: center;
+    position: relative;
+    top: 5px;
+}
+
+.menu-item img {
+    width: 1.7em;
+    vertical-align: bottom;
+    margin-right: 12px;
+    margin-left: 5px;
+    position: relative;
+    bottom: 3px;
+}
+
+.menu-item {
+    font-size: 10pt;
+    padding-left: 5px;
+    padding-right: 8px;
+    padding-top: 0;
+    padding-bottom: 3px;
+    vertical-align: center;
+}
+
+.menu-item:hover {
+    background-color: #777;
+}
+
+.menu_button:hover .menu,
+.menu:hover {
+    display: block;
+}

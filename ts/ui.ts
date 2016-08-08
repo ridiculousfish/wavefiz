@@ -299,6 +299,43 @@ module ui {
                 mouseIsDown = false
             }
         })
+    }
 
+    let sContainerInitialWidth:number = null, sContainerInitialHeight:number = null
+    export function resizeToFitWindowHeight() {
+        let scaleTarget = document.getElementById("ui_scale_target")
+        let container = document.getElementById("ui_container")
+        if (sContainerInitialWidth === null) {
+            sContainerInitialWidth = scaleTarget.offsetWidth
+            sContainerInitialHeight = scaleTarget.offsetHeight
+        }
+
+        // If our window is big enough to accomodate our max height, remove the transform
+        let minHeight = 400, maxHeight = sContainerInitialHeight
+        let windowHeight = window.innerHeight
+        if (windowHeight >= maxHeight) {
+            scaleTarget.style.transform = null
+            container.style.marginRight = null
+            return
+        }
+
+        let height = windowHeight
+        height = Math.max(height, minHeight)
+        height = Math.min(height, maxHeight)
+
+        let aspectRatio = sContainerInitialWidth / sContainerInitialHeight
+        let width = height * aspectRatio
+
+        let ratio = height / maxHeight
+        let dy = (height - maxHeight)/2, dx = aspectRatio * dy
+        let transform = 'translate(' + dx + 'px,' + dy + 'px)'
+        transform += ' scale(' + ratio + ',' + ratio + ')'
+        scaleTarget.style.transform = transform
+
+        // Adjust the marginRight of the container so that the tutorial
+        // can fill the space on the right. This lets us fit both in
+        // with the iPhone in landscape mode.
+        // Note this makes the margin negative
+        container.style.marginRight = (2 * dx) + 'px'
     }
 }    
