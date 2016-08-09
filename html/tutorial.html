@@ -16,7 +16,7 @@ li {
 }
 ol {
     margin-left: 0;
-    padding-left: 15px;
+    padding-left: 19px;
 }
 </style>
 <script type="text/javascript">
@@ -145,13 +145,13 @@ function postStartTourMessage() {
     <h2>Starting Points</h2>
     <p>There is a second wrinkle: the Numerov method requires TWO initial points to get it started. (Indeed, it would be surprising if it did not: the Schrödinger equation is second-order, so we need two boundary conditions.) These points are next to each other: think &psi;(x) and &psi;(x + dx).</p>
     
-    <p>Here we leverage the fact that we can multiply a wavefunction by any nonzero complex number, and we get a physically-identical new solution. This means that the actual starting value of the wavefunction hardly matters: we're just going to scale it anyways. All that matters is whether it's zero or nonzero.</p>
+    <p>Here we leverage the fact that we can multiply a wavefunction by any nonzero complex number, and we get a physically-identical new solution. This means that the actual starting value of the wavefunction hardly matters: we're just going to scale it anyways! All that matters is whether it's zero or nonzero.</p>
 
-    <p>So there are two cases: either exactly one of &psi;(x) and &psi;(x+dx) are zero, or neither of them is zero. (If both are zero, we get the trivial solution &psi; = 0). If &psi;(x+dx) is zero, then we might as well have started at x+dx instead (TODO: needs justification). So we have only two different solutions: &psi;(x) is zero, and &psi;(x) is nonzero. Note that if our potential is symmetric, and we let our starting x be its minimum, these solutions correspond to odd and even wavefunctions.</p>
+    <p>So there are only two interesting cases: either exactly one of &psi;(x) and &psi;(x+dx) are zero, or neither of them is zero. (If both are zero, we get the trivial solution &psi; = 0). Furthermore, if one is zero, it doesn't matter which one (by continuity the solutions must be very close to each other). So either &psi;(x) is zero, and &psi;(x) is nonzero. Note that if our potential is symmetric, and we let our starting x be its minimum, these solutions correspond to odd and even wavefunctions.</p>
 
     <p>So for any given energy, we have two solutions, corresponding conceptually to odd and even wavefunctions. We can mix (linearly combine) these two solutions however we like to get a new wavefunction with that energy. In particular, we can combine them so that one of the kinks cancels out! That is, we choose a linear sum that zeros out the discontinuity in the first derivative, on the left side. If this happens to cancels out the right-side kink too, we have found an eigenenergy, and our solution is physical.</p>
 
-    <p>This has the compelling visual effect of making the wavefunction appear to "extrude" from the right side as the energy changes. This is evocative, but not physically meaningful: only the energy eigenvalues are allowed.</p>
+    <p>This has the compelling visual effect of making the wavefunction appear to "extrude" from the right side as the energy increases. This is evocative, but not physically meaningful: only the energy eigenvalues are allowed.</p>
 
     <h2 id="acknowledgements">Acknowledgements</h2>
     <p>The graphics use WebGL via <a href="http://threejs.org">threejs</a>. The tour uses <a href="http://introjs.com">introjs</a>. The remainder of the code is original.

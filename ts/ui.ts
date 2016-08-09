@@ -176,11 +176,11 @@ module ui {
         private endWatching() {
             let {touch, click} = this.eventTargets()
             Array(touch, click).forEach((target:HTMLElement) => {
-                click.onmousedown = null
-                touch.ontouchstart = null
-                touch.ontouchmove = null
-                touch.ontouchend = null
-                touch.ontouchcancel = null
+                target.onmousedown = null
+                target.ontouchstart = null
+                target.ontouchmove = null
+                target.ontouchend = null
+                target.ontouchcancel = null
             })
         }
         
@@ -324,7 +324,6 @@ module ui {
         height = Math.min(height, maxHeight)
 
         let aspectRatio = sContainerInitialWidth / sContainerInitialHeight
-        let width = height * aspectRatio
 
         let ratio = height / maxHeight
         let dy = (height - maxHeight)/2, dx = aspectRatio * dy

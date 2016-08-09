@@ -35,8 +35,8 @@ module tour {
         }
         sCurrentTour = introJs()
         sCurrentTour.setOptions({
-            onComplete: tourDone,
-            onExit: tourDone, 
+            oncomplete: tourDone,
+            onexit: tourDone, 
             showBullets: false,
             showStepNumbers: false,
             highlightClass: 'dimmer-highlight',

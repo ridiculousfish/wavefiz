@@ -12,7 +12,7 @@ CSS := css
 default: $(VISUALIZE_JS)
 
 .PHONY: lint
-lint: $(JS_SRCS)
+lint: $(JS_SRCS) | $(BUILD_DIR)
 	uglifyjs --lint --output $(VISUALIZE_JS) $^
 
 # Hack to ensure just a single invocation of tsc
