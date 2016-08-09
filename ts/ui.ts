@@ -303,8 +303,8 @@ module ui {
 
     let sContainerInitialWidth:number = null, sContainerInitialHeight:number = null
     export function resizeToFitWindowHeight() {
-        let scaleTarget = document.getElementById("ui_scale_target")
-        let container = document.getElementById("ui_container")
+        let scaleTarget = document.getElementById("ui-scale-target")
+        let container = document.getElementById("ui-container")
         if (sContainerInitialWidth === null) {
             sContainerInitialWidth = scaleTarget.offsetWidth
             sContainerInitialHeight = scaleTarget.offsetHeight

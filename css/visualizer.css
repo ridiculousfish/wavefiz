@@ -3,6 +3,7 @@ body {
     margin: 0;
 }
 
+/* Options is the container of buttons beneath the visualizer */
 .options {
     font-family: Times, serif;
     display: flex;
@@ -10,19 +11,24 @@ body {
     margin-top: 8px;
 }
 
-.options .option_item,
+.options .option-item,
 .options label,
-.options .square_button,
-.options .menu_button {
+.options .square-button,
+.options .menu-button {
     display: inline-block;
     vertical-align: middle;
 }
 
+/* We use checkboxes as the element, but hide the actual button so we can make a custom one */ 
 .options input[type="checkbox"] {
     display: none;
 }
 
-.options label {
+/* Big spacing between our labels, except the first one after a separator.
+   This is because the separator itself has the spacing. This improves the
+   "highlight rectangle" during a tour. */
+.options label,
+#phi-container {
     margin-left: 30px;
 }
 
@@ -30,14 +36,12 @@ body {
     margin-left: 0px;
 }
 
-#phi_container {
-    margin-left: 30px;
-}
-
+/* Spacers can grow */
 .options .spacer {
     flex-grow: 1;
 }
 
+/* Options separator is a thin vertical dottedl ine */
 .options .separator {
     width: 1px;
     border-left: dotted 2px #999;
@@ -49,24 +53,25 @@ body {
     bottom: 2px;
 }
 
-.square_button,
-.menu_button {
+/* Visually align buttons */
+.square-button,
+.menu-button {
     margin-left: 5px;
     position: relative;
     bottom: 2px;
-    /* why */
 }
 
+/* Size our buttons */
 .options label,
-.square_button div,
-.menu_button div {
+.square-button div,
+.menu-button-container div {
     display: inline-block;
     height: 38px;
 }
 
 .options label,
-.square_button,
-.menu_button {
+.square-button,
+.menu-button {
     cursor: pointer;
     font-size: 28pt;
     border-radius: 8px;
@@ -80,18 +85,20 @@ body {
     padding: 0px 8px 5px 8px;
 }
 
-.menu_button {
+.menu-button {
     width: 60px;
     font-weight: bold;
     color: #333;
 }
 
+/* Support for the "squared" text in psi/phi */
 .options sup {
     font-size: 0.45em;
     vertical-align: super;
     line-height: 0;
 }
 
+/* Adjust our big triangle */
 .playpause {
     position: relative;
     top: 5px;
@@ -99,12 +106,12 @@ body {
     font-size: 28pt;
 }
 
-.square_button > div {
+.square-button > div {
     font-weight: bold;
     color: #242424;
 }
 
-.square_button:active {
+.square-button:active {
     background-color: #999;
     color: black;
 }
@@ -115,7 +122,7 @@ body {
     text-shadow: 2px 2px black;
 }
 
-#vis_container {
+#vis-container {
     width: 800px;
     height: 600px;
     display: inline-block;
@@ -123,7 +130,7 @@ body {
     /* allow offsetLeft and offsetTop to work */
 }
 
-#draw_text {
+#draw-text {
     position: absolute;
     color: rgba(219, 219, 219, .66);
     width: 100%;
@@ -134,7 +141,7 @@ body {
     font-family: Helvetica, Arial, sans-serif;
 }
 
-#energy_dragging_container {
+#energy-dragging-container {
     width: 100px;
     height: 600px;
     display: inline-block;
@@ -142,31 +149,31 @@ body {
     position: relative;
 }
 
-#potential_dragging_container {
+#potential-dragging-container {
     width: 800px;
     height: 30px;
     display: block;
     margin: 0;
 }
 
-#outer_container {
+#ui-and-tutorial-container {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
     width: 100%;
 }
 
-#ui_container {
+#ui-container {
     white-space: nowrap;
     flex: none;
-    padding: 5px;
+    padding: 5px 0 5px 5px;
 }
 
-#ui_scale_target {
+#ui-scale-target {
     padding-bottom: 7px;
 }
 
-#tut_wrapper {
+#tut-container {
     flex-grow: 1;
     /* https://coderwall.com/p/c-aqqw/scrollable-iframe-on-mobile-safari */
     overflow: auto;
@@ -175,24 +182,31 @@ body {
     min-width: 200px;
 }
 
-#tut_wrapper iframe {
-    /* Hack around 300px width CSS nonsense */
-    width: 1px;
-    min-width: 100%;
+#tut-container iframe {
     border-style: none;
     display: block;
     height: 100%;
     padding: 0;
     margin: 0;
+    width: 100%;
+    max-width: 900px;
 }
+
+/* Pad the tutorial on the left except when it's adjacent to the UI container */
+#ui-container {
+    margin-right: -25px;
+}
+#tut-container {
+    padding-left: 15px;
+}
+
 
 .no-pointer-events {
     pointer-events: none;
 }
 
-.dragger,
-#outer_container,
 .noselect,
+.dragger,
 .dragger * {
     /* Defeat text selection */
     -webkit-touch-callout: none;
@@ -203,6 +217,7 @@ body {
     user-select: none;
 }
 
+/* Draggers are the grippy tab things */
 .dragger {
     display: inline-block;
     position: absolute;
@@ -222,8 +237,7 @@ body {
     background-size: 100% 6px;
     background-position: 0 5px;
     border-style: solid;
-    border-width: 1px 11px 1px 7px;
-    /* top right bottom left */
+    border-width: 1px 11px 1px 7px; /* top right bottom left */
     border-color: #AAA;
 }
 
@@ -232,8 +246,8 @@ body {
     font-size: 16pt;
     user-select: none;
 }
-/* Horizontal dragging */
 
+/* Horizontal dragging */
 .horizontal {
     transform: rotate(90deg);
 }
@@ -241,7 +255,6 @@ body {
 .horizontal .grip {
     width: 14px;
 }
-/* Center us vertically */
 
 .dragger > .centerer {
     position: relative;
@@ -277,9 +290,9 @@ body {
     padding: 20px 5px;
 }
 
+/* Rotator is the spinning thing to rotate the visualizer */
 #rotator {
-    position: relative;
-    /* for absolute children */
+    position: relative; /* for absolute children */
     display: inline-block;
     border-radius: 50%;
     background: linear-gradient(to bottom, rgba(219, 219, 219, 1) 0%, rgba(74, 74, 74, 1) 100%);
@@ -302,21 +315,25 @@ body {
     border: solid 1px #AAA;
 }
 
+/* menu is used for the potential picker */
 .menu {
     position: absolute;
     bottom: 0px;
+    left: 6px;
     box-shadow: 0 0 8px 0 black;
     border-radius: 3px;
     background-color: #DDD;
     display: none;
     list-style-type: none;
     margin: 0;
-    line-height: 75%;
     text-align: left;
-    padding-left: 0;
-    padding-right: 0;
-    padding-top: 3px;
-    padding-bottom: 3px;
+    padding: 3px 0;
+
+    color: #333;
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    font-weight: bold;
+    line-height: 38px;
 }
 
 .menu-item .glyph {
@@ -325,33 +342,36 @@ body {
     display: inline-block;
     width: 40px;
     text-align: center;
-    position: relative;
-    top: 5px;
+    vertical-align: middle;
 }
 
 .menu-item img {
     width: 1.7em;
-    vertical-align: bottom;
+    vertical-align: middle;
     margin-right: 12px;
     margin-left: 5px;
-    position: relative;
-    bottom: 3px;
 }
 
 .menu-item {
-    font-size: 10pt;
-    padding-left: 5px;
-    padding-right: 8px;
-    padding-top: 0;
-    padding-bottom: 3px;
-    vertical-align: center;
+    padding: 0 8px 3px 5px;
 }
 
 .menu-item:hover {
     background-color: #777;
 }
 
-.menu_button:hover .menu,
+.menu-button-container {
+    /* Allow absolute positioning of child menu */
+    position: relative;
+    cursor: pointer;
+    font-size: 28pt;
+    text-align: center;
+    white-space: nowrap;
+    line-height: 38px;
+}
+
+/* Show menu on hover */
+.menu-button-container:hover .menu,
 .menu:hover {
     display: block;
 }

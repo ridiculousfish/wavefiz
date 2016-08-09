@@ -2,7 +2,7 @@ module visualizing {
 
     // This is the DOM id of the "Draw" text that appears
     // when we start sketching
-    const DRAW_TEXT_ID = "draw_text"
+    const draw_text_ID = "draw-text"
 
     // PotentialVisualiazer is a component responsible for showing the
     // current potential and the "sketched potential"
@@ -104,7 +104,7 @@ module visualizing {
         // Hide or show the "Draw" text overlay
         // Called from state update
         private setDrawTextShown(flag:boolean) {
-            document.getElementById(DRAW_TEXT_ID).style['visibility'] = flag ? 'visible' : 'hidden'
+            document.getElementById(draw_text_ID).style['visibility'] = flag ? 'visible' : 'hidden'
         }
 
         // Draggable implementation

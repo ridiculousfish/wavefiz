@@ -99,7 +99,7 @@ module visualizing {
             // Build our two turning point lines
             // These show the classical turning points, where the energy equals the potential
             let turningPointStyle = {
-                color: 0x000000,
+                color: 0x999999,
                 linewidth: 1,
                 transparent: true,
                 opacity: .5

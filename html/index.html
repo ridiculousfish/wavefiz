@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
+    <title>Schrödinger Visualizer</title>
     <meta charset="UTF-8">
     <link rel="stylesheet" type="text/css" href="css/introjs.css">
     <link rel="stylesheet" type="text/css" href="css/mods_introjs.css">
@@ -9,13 +9,13 @@
 </head>
 <body>
     <!-- Visualizer -->
-    <div id="outer_container">
-        <div id="ui_container">
-            <div id="ui_scale_target">
-                <div id="vis_container">
-                    <div id="draw_text" style="visibility: hidden">Draw</div>
-                </div>
-                <div id="energy_dragging_container">
+    <div id="ui-and-tutorial-container" class="noselect">
+        <div id="ui-container">
+            <div id="ui-scale-target">
+                <div id="vis-container">
+                    <div id="draw-text" style="visibility: hidden">Draw</div>
+                </div><!-- Must have no whitespace here
+                --><div id="energy-dragging-container">
                     <!-- Energy dragger prototype div -->
                     <div class="dragger" id="energy_dragger_prototype" style="display: none">
                         <div class="centerer">
@@ -26,7 +26,7 @@
                         </div>
                     </div>
                 </div>
-                <div id="potential_dragging_container">
+                <div id="potential-dragging-container">
                     <div id="potential_dragger" class="dragger horizontal">
                         <div class="centerer">
                             <div class="grip"></div>
@@ -36,48 +36,50 @@
                     </div>
                 </div>
                 <div class="options noselect">
-                    <button id="potential_chooser" class="menu_button"><div style="position: relative; top: 1px">V</div>
+                    <div class="menu-button-container">
+                        <button id="potential_chooser" class="menu-button"><span style="position: relative; top: 1px">V</span>
+                        </button>
 			            <div style="position: absolute; top:0px; left: 0px;height: 0px;">
 			                <ul class="menu">
-			                    <li class="menu-item" onClick="Vis.loadSHO()"><img src="img/simple_harmonic_oscillator.svg" />Simple Harmonic Oscillator</li>
-			                    <li class="menu-item" onClick="Vis.loadISW()"><img src="img/infinite_square_well.svg" />Infinite Square Well</li>
-			                    <li class="menu-item" onClick="Vis.loadFSW()"><img src="img/finite_square_well.svg" />Finite Square Well</li>
-			                    <li class="menu-item" onClick="Vis.load2SW()"><img src="img/two_square_wells.svg" />Two Square Wells</li>
+			                    <li class="menu-item" onClick="Vis.loadSHO()"><img alt="" src="img/simple_harmonic_oscillator.svg" />Simple Harmonic Oscillator</li>
+			                    <li class="menu-item" onClick="Vis.loadISW()"><img alt="" src="img/infinite_square_well.svg" />Infinite Square Well</li>
+			                    <li class="menu-item" onClick="Vis.loadFSW()"><img alt="" src="img/finite_square_well.svg" />Finite Square Well</li>
+			                    <li class="menu-item" onClick="Vis.load2SW()"><img alt="" src="img/two_square_wells.svg" />Two Square Wells</li>
 			                    <li class="menu-item" onClick="Vis.loadRandomPotential()"><span class="glyph">?</span>Random</li>
 			                    <li class="menu-item" onClick="Vis.sketchPotential()"><span class="glyph">&#x270E;</span>Your Sketch</li>
 			                </ul>
 			            </div>
-			        </button>
-                    <div class="option_item separator"></div>
+                    </div>
+                    <div class="option-item separator"></div>
                     <div id="psi_container">
                         <input type="checkbox" id="check_psi" name="psi" onClick="togglePsi(this)" checked /><label for="check_psi"
                             class="first-after-sep"><i>&psi;</i></label><input type="checkbox" id="check_psiAbs" name="psiAbs"
                             onClick="togglePsiAbs(this)" /><label for="check_psiAbs">|<i>&psi;</i>|<sup>2</sup></label>
                     </div>
-                    <div id="phi_container">
+                    <div id="phi-container">
                         <input type="checkbox" id="check_phi" name="phi" onClick="togglePhi(this)" /><label for="check_phi"
                             class="first-after-sep"><i>&phi;</i></label><input type="checkbox" id="check_phiAbs" name="phiAbs"
                             onClick="togglePhiAbs(this)" /><label for="check_phiAbs">|<i>&phi;</i>|<sup>2</sup></label>
                     </div>
-                    <div class="option_item separator"></div>
+                    <div class="option-item separator"></div>
                     <input type="checkbox" id="check_paused" name="paused" onClick="togglePaused(this)" checked />
                     <label
                         for="check_paused" class="first-after-sep"><span class="playpause">&#x25B6;&#xFE0E;<!-- FE0E prevents emoji --></span></label>
 
-                        <div class="option_item spacer"></div>
+                        <div class="option-item spacer"></div>
 
-                        <div id="rotator" class="option_item noselect">
+                        <div id="rotator" class="option-item noselect">
                             <div id="rotator_knob"></div>
                         </div>
                         <div id="energy_buttons">
-                            <button class="square_button" onClick="Vis.addEnergySlider()"><div>+</div></button>
-                            <button class="square_button" onClick="Vis.removeEnergySlider()"><div>-</div></button>
+                            <button class="square-button" onClick="Vis.addEnergySlider()"><div>+</div></button>
+                            <button class="square-button" onClick="Vis.removeEnergySlider()"><div>-</div></button>
                         </div>
                 </div>
             </div>
 
         </div>
-        <div id="tut_wrapper">
+        <div id="tut-container">
             <iframe id="tut_iframe" src="tutorial.html"></iframe>
         </div>
 
@@ -90,9 +92,9 @@
                             function(rads) { Vis.setRotation(rads) }
         )
         
-        var vis_container = document.getElementById("vis_container")
+        var vis_container = document.getElementById("vis-container")
         var potential_container = document.getElementById("potential_dragger")
-        var energy_container = document.getElementById("energy_dragging_container")
+        var energy_container = document.getElementById("energy-dragging-container")
         var energy_dragger_prototype = document.getElementById("energy_dragger_prototype")
         
         var Vis = new visualizing.Visualizer(vis_container, potential_container, energy_container, energy_dragger_prototype)

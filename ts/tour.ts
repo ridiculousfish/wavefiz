@@ -50,17 +50,17 @@ module tour {
                     position: 'right'
                 },
                 {
-                    element: '#vis_container',
+                    element: '#vis-container',
                     intro: "Here\'s where the action happens!<br><br>The visualizer shows the <i style=\"color: #FF7777\">wavefunction</i>, <i style=\"color: magenta\">potential</i>, and <i style=\"color: red\">energy</i>.",
                     position: 'right'
                 },
                 {
-                    element: '#energy_dragging_container',
+                    element: '#energy-dragging-container',
                     intro: "Adjust the energy by dragging this slider up and down. Try it now!<br><br>You can add more energies with the +/- buttons at the bottom.",
                     position: 'right'
                 },
                 {
-                    element: '#potential_dragging_container',
+                    element: '#potential-dragging-container',
                     intro: "Adjust the width of the potential by dragging this slider left and right. Try it now!",
                     position: 'top'
                 },
@@ -75,7 +75,7 @@ module tour {
                     position: 'right'
                 },
                 {
-                    element: '#phi_container',
+                    element: '#phi-container',
                     intro: 'Toggle the momentum-space wavefunction and its squared modulus. This shows <i>momentum</i>.',
                     position: 'right'
                 },
