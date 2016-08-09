@@ -97,7 +97,7 @@ module visualizing {
 
         // Sets the wavefunction. Note that the wavefunction is not stored in the 'state' object,
         // since it requires some computation
-        public setWavefunction(psi: algorithms.Wavefunction, potentialMinimumIndex: number) {
+        public setWavefunction(psi: algorithms.Wavefunction) {
             if (! psi) {
                 this.psiVis_.valueAt = null
                 this.psiAbsVis_.valueAt = null
@@ -108,11 +108,13 @@ module visualizing {
 
                 // The phi (momentum-space) values are the Fourier transform of the psi (position-space) values
                 // The fourier transform is expensive, so perform it only if requested (and cache the result)
+                // We compute it based on the center, not the potential minimum, because we want to capture
+                // the probability of the particle moving left or right
                 let freqWavefunctionCache: algorithms.Wavefunction = null
                 let freqWavefunction = () => {
                     if (freqWavefunctionCache === null) {
                         freqWavefunctionCache = 
-                            psi.fourierTransform(potentialMinimumIndex, this.params.frequencyScale)
+                            psi.fourierTransform(Math.floor(psi.length/2), this.params.frequencyScale)
                     }
                     return freqWavefunctionCache
                 }

@@ -129,7 +129,7 @@ module visualizing {
         // Called from state update - reflect the state's potential and energies
         private applyStateToWavefunction() {
             if (this.state_.potential.length === 0) {
-                this.wavefunctionAvg_.setWavefunction(null, 0)
+                this.wavefunctionAvg_.setWavefunction(null)
                 return
             }
             
@@ -141,8 +141,6 @@ module visualizing {
             // a mixture of the energies. (Here we always pick an even weighting).
             const energies = this.state_.energyValues()
             if (energies.length > 0) {
-                const center = algorithms.indexOfMinimum(this.state_.potential)
-                
                 // update wavefunctions and collect them all
                 let psis : algorithms.TimeIndependentWavefunction[] = []
                 energies.forEach((energy: number) => {                    
@@ -171,7 +169,7 @@ module visualizing {
                 // Now we have the list of wavfunctions in "psis"
                 // Produce a single (time-dependent) wavefunction by mixing them
                 let timeDependentPsi = new algorithms.Wavefunction(psis)
-                this.wavefunctionAvg_.setWavefunction(timeDependentPsi, center)
+                this.wavefunctionAvg_.setWavefunction(timeDependentPsi)
             }
 
             // Update our turning point lines
@@ -259,6 +257,10 @@ module visualizing {
 
         public load2SW() {
             this.loadPotentialFromBuilder(algorithms.TwoSquareWells)
+        }
+
+        public loadSteppedSW() {
+            this.loadPotentialFromBuilder(algorithms.SteppedSquareWell)
         }
 
         public loadRandomPotential() {

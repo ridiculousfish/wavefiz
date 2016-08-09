@@ -94,6 +94,18 @@ module algorithms {
         return baseEnergy // right well
     }
 
+    // Two-step square well (like a staircase)
+    export const SteppedSquareWell = (x:number, param: number) => {
+        const widthRatio = symmetrize(param)
+        const baseEnergy = 0.05
+        const stepEnergy = 0.4
+        // x is a value in [0, 1)
+        if (x < widthRatio || x > 1.0 - widthRatio) {
+            return 1000 // "infinity"
+        }
+        return x < 0.5 ? stepEnergy : baseEnergy
+    }
+
     // Potential built from sampling at a list of points
     // Takes ownership of the samples array
     // The parameter is unused
