@@ -161,7 +161,7 @@ module visualizing {
             } else {
                 this.line_.setVisible(true)
                 this.line_.update((index: number) => {
-                    const x = this.params_.centerForMeshIndex(index)
+                    const x = this.params_.xCenterForMeshIndex(index)
                     const yz = this.valueAt(index, time)
                     const y = -this.scale * yz.re
                     const z = this.scale * yz.im

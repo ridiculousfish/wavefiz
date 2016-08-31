@@ -93,7 +93,7 @@ module visualizing {
                 assert(mesh.length == this.params.meshDivision, "Bad potential length")
                 this.potentialLine_.update((index: number) => {
                     const value = mesh[index]
-                    const x = this.params.centerForMeshIndex(index)
+                    const x = this.params.xCenterForMeshIndex(index)
                     const y = this.params.convertYToVisualCoordinate(value)
                     const z = 0
                     return vector3(x, y, z)

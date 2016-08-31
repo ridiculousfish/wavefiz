@@ -310,11 +310,13 @@ module algorithms {
         valuesFromCenter: number[] = []
         valuesFromEdge: number[] = []
         potential: number[]
-        // F function used in Numerov
+
+        // F function used in our Numerov algorithm
+        // We need to keep this around for computing the discontinuities
         F: (x: number) => number = null
 
         constructor(potential: number[], public energy: number, public maxX: number) {
-            this.potential = this.potential.slice()
+            this.potential = potential.slice()
         }
 
         length(): number {
@@ -474,14 +476,9 @@ module algorithms {
     export function indexOfMinimum(potential: number[]): number {
         assert(potential.length > 0, "No minimum for empty potential")
 
-        // Determine minimum
-        let minimum = potential[0]
-        for (let i=1; i < potential.length; i++) {
-            minimum = Math.min(minimum, potential[i])
-        }
-
-        // Determine location with that minimum
-        let locationsAtMinimum : number[]
+        // Determine minimum and locations with that minimum
+        const minimum = potential.reduce((a, b) => Math.min(a, b))
+        let locationsAtMinimum : number[] = []
         for (let i=0; i < potential.length; i++) {
             if (potential[i] === minimum) {
                 locationsAtMinimum.push(i)

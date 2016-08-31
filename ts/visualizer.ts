@@ -15,7 +15,7 @@ module visualizing {
 
         // Our parameters and state
         private params_ = new Parameters()
-        private state_ = new State(this.params_)
+        private state_ = new State(this.params_, (st:State) => this.setState(st))
 
         // The full scene that our GL renderer draws and the camera
         private topScene_: THREE.Scene = new THREE.Scene()
@@ -41,10 +41,6 @@ module visualizing {
         private potentialSlider_: ui.Slider
 
         constructor(container: HTMLElement, potentialDragger: HTMLElement, energyContainer: HTMLElement, energyDraggerPrototype: HTMLElement) {
-            // Hackish. Tell State what to do after an update.
-            // This will need to be more sophisticated if we ever have multiple visualizers
-            State.applyStateUpdate = (st:State) => this.setState(st)
-
             // Initialize our renderer
             let renderer = new THREE.WebGLRenderer({ antialias: !true })
             renderer.setClearColor(0x222222, 1)
@@ -202,7 +198,7 @@ module visualizing {
 
             this.applyStateToWavefunction()
             this.applyCameraRotation()
-            this.animator_.setPaused(state.paused)
+            this.animator_.setAnimating(! state.paused)
             this.animator_.scheduleRerender()
         }
 

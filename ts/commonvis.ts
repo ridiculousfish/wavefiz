@@ -2,6 +2,8 @@
 /// <reference path="./algorithms.ts"/>
 /// <reference path="./potentials.ts"/>
 
+// Helper machinery for our visualizers
+
 module visualizing {
 
     export function assert(condition:boolean, message?:string) {
@@ -12,17 +14,18 @@ module visualizing {
         return new THREE.Vector3(x, y, z)
     }
 
-    /* A class to help with animations. Adds callbacks (which trigger requestAnimationFrame) */
     export interface AnimatorClient {
         prepareForRender(time:number)
     }
 
+    // A class to help with animations or just general redrawing
+    // Add clients of type AnimatorClient
     export class Redrawer {
         private clients_: AnimatorClient[] = []
         private rerender_: () => void
         private elapsed_: number
         private lastNow_: number
-        private paused_ = true
+        private animating_ = false
         private rerenderScheduled_ = false
 
         constructor(public params: Parameters, rerender: () => void) {
@@ -31,10 +34,12 @@ module visualizing {
             this.lastNow_ = Redrawer.now()
         }
 
+        // Returns the current time
         private static now(): number {
             return (performance || Date).now()
         }
 
+        // Schedule a new render, if one is not already scheduled  
         scheduleRerender() {
             if (! this.rerenderScheduled_) {
                 this.rerenderScheduled_ = true
@@ -42,32 +47,37 @@ module visualizing {
             }
         }
 
+        // Adds a new client, whose prepareForRender() will be called
         addClient(client: AnimatorClient) {
             this.clients_.push(client)
             this.scheduleRerender()
         }
 
-        setPaused(flag: boolean) {
-            if (this.paused_ && ! flag) {
+        // Toggle pausing
+        setAnimating(flag: boolean) {
+            if (! this.animating_ && flag) {
                 // We are unpausing
                 this.lastNow_ = Redrawer.now()
                 this.scheduleRerender()
             }
-            this.paused_ = flag
+            this.animating_ = flag
         }
 
+        animating(): boolean {
+            return this.animating_
+        }
+
+        // Sets the time back to zero 
         reset() {
             this.elapsed_ = 0
         }
 
-        paused(): boolean {
-            return this.paused_
-        }
-
+        // Callback scheduled with requestAnimationFrame
         private fireClientsAndRerender() {
             this.rerenderScheduled_ = false
             let localClients = this.clients_.slice()
-            if (! this.paused_) {
+            // Increment time if we're animating
+            if (this.animating_) {
                 const now = Redrawer.now()
                 const dt = (now - this.lastNow_) / 1000.
                 this.elapsed_ += dt * this.params.timescale
@@ -75,12 +85,16 @@ module visualizing {
             }
             localClients.forEach((client: AnimatorClient) => client.prepareForRender(this.elapsed_))
             this.rerender_()
-            if (! this.paused_) {
+
+            // Schedule another render if we're animating
+            if (this.animating_) {
                 this.scheduleRerender()
             }
         }
     }
 
+    // Parameters to our visualizion
+    // This is all of the constant data. Parameters never change!
     export class Parameters {
         public width: number = 800 // in "pixels"
         public height: number = 600 // in "pixels"
@@ -93,25 +107,107 @@ module visualizing {
         public psiScale: number = 250 // how much scale we visually apply to the wavefunction
         public psiAbsScale: number = this.psiScale * 1.75 // how much scale we visually apply to the psiAbs and phiAbs
 
-        public centerForMeshIndex(idx: number): number {
+        // Some helper functions based on the visualization
+
+        // Given an index in our mesh, returns the X location of middle of the cell
+        public xCenterForMeshIndex(idx: number): number {
             assert(idx >= 0 && idx < this.meshDivision, "idx out of range")
             let meshWidth = this.width / this.meshDivision
             return idx * meshWidth + meshWidth / 2.0
         }
 
+        // Given a Y value in the range [0, 1], return the "visual coordinate" (pixel)
+        // Output is in the range [0, this.height]
+        // 0 is at top, so we have to flip
         public convertYToVisualCoordinate(y: number) {
-            // 0 is at top
             return this.height * (1.0 - y)
         }
 
+        // Given a Y value in the range [0, this.height], return the Y value
+        // Output is in the range [0, 1]
         public convertYFromVisualCoordinate(y: number) {
             return 1.0 - y / this.height
         }
 
+        // Given an X value in the range [0, 1], return the visual coordinate
+        // in the range [0, width]
         public convertXToVisualCoordinate(x: number) {
             return (x / this.meshDivision) * this.width
         }        
     }
+
+    // State of our visualizion
+    // We use a React-style model where all state is grouped into one big object
+    // and passed down our UI tree. State is immutable.
+    export class State {
+
+        // Constructs a state
+        // The "apply state update" function is invoked on the new state after a call to modify()
+        // This is used to announce changes
+        constructor(private params_:Parameters, private applyStateUpdate : (st:State) => void = () => {}) { }
+
+        // Current camera rotation
+        public cameraRotationRadians: number = 0
+
+        // The potential builder function and the potential
+        // The potential will be automatically rebuilt as necessary
+        public potentialBuilder: algorithms.PotentialBuilderFunc = null
+        public potential: number[] = []
+        public potentialParameter: number = .15 // single draggable parameter in our potential, in the range [0, 1)
+
+        // Whether we are sketching a potential, and the sketch locations
+        public sketching: boolean = false
+        public sketchLocations: THREE.Vector3[] = []
+
+        public showPsi = true // show position psi(x)
+        public showPsiAbs = false // show position probability |psi(x)|^2
+        public showPhi = false; // show momentum phi(x)
+        public showPhiAbs = false // show momentum probability |phi(x)|^2
+
+        // animation pause state
+        public paused = false
+
+        // The energies array is sparse
+        // Keys are energy bar identifiers, values are numbers
+        public energies: { [key:string]:number; } = {}
+
+        // Returns a dense array of the energy values, discarding the identifiers
+        public energyValues(): number[] {
+            return Object.keys(this.energies).map((k) => this.energies[k])
+        }
+
+        // Copies the receiver. Used to preserve immutability.
+        private copy(): State {
+            let clone = new State(this.params_)
+            for (let key in this) {
+                if (this.hasOwnProperty(key)) {
+                    clone[key] = this[key]
+                }
+            }
+            return clone
+        }
+
+        // Builds the potential from the potential builder
+        // This is not a cheap operation, so we only do it if necessary
+        private rebuildPotentialIfNeeded(oldState:State) {
+            if (! this.potentialBuilder) {
+                this.potential = []
+            } else if (this.potentialParameter !== oldState.potentialParameter || 
+                    this.potentialBuilder !== oldState.potentialBuilder) {
+                this.potential = buildPotential(this.params_, this.potentialParameter, this.potentialBuilder)
+            }
+        }
+
+        // Entry point for modification
+        // Creates a new state and then calls its state update function
+        public modify(handler:(st:State) => void) {
+            let cp = this.copy()
+            handler(cp)
+            cp.rebuildPotentialIfNeeded(this)
+            cp.applyStateUpdate(cp)
+        }        
+    }
+
     
     // Builds a potential based on a function
     // let f be a function that accepts an x position, and optionally the x fraction (in the range [0, 1))
@@ -125,72 +221,8 @@ module visualizing {
         return potentialMesh
     }
 
-    export class State {
 
-        constructor(private params_:Parameters) { }
-
-        public static applyStateUpdate: (st:State) => void = () => {}
-
-        public cameraRotationRadians: number = 0
-
-        public potentialBuilder: algorithms.PotentialBuilderFunc = null
-        public potential: number[] = []
-        public potentialParameter: number = .15 // single draggable parameter in our potential, in the range [0, 1)
-
-        public sketching: boolean = false
-        public sketchLocations: THREE.Vector3[] = []
-
-        public showPsi = true // show position psi(x)
-        public showPsiAbs = false // show position probability |psi(x)|^2
-        public showPhi = false; // show momentum phi(x)
-        public showPhiAbs = false // show momentum probability |phi(x)|^2
-
-        public paused = false
-
-        // The energies array is sparse
-        // Keys are energy bar identifiers, values are numbers
-        public energies: { [key:string]:number; } = {}
-
-        // Returns a dense array of the energy values, discarding the identifiers
-        public energyValues(): number[] {
-            return Object.keys(this.energies).map((k) => this.energies[k])
-        }
-
-        // Identifier support
-        // TODO: describe this
-        private static LastUsedIdentifier = 0
-        public static newIdentifier() {
-            return ++State.LastUsedIdentifier
-        }
-
-
-        public copy(): State {
-            let clone = new State(this.params_)
-            for (let key in this) {
-                if (this.hasOwnProperty(key)) {
-                    clone[key] = this[key]
-                }
-            }
-            return clone
-        }
-
-        public modify(handler:(st:State) => void) {
-            let cp = this.copy()
-            handler(cp)
-            cp.rebuildPotentialIfNeeded(this)
-            State.applyStateUpdate(cp)
-        }
-
-        private rebuildPotentialIfNeeded(oldState:State) {
-            if (! this.potentialBuilder) {
-                this.potential = []
-            } else if (this.potentialParameter !== oldState.potentialParameter || 
-                    this.potentialBuilder !== oldState.potentialBuilder) {
-                this.potential = buildPotential(this.params_, this.potentialParameter, this.potentialBuilder)
-            }
-        }
-    }
-
+    // Benchmark and testing machinery
     function timeThing(iters:number, funct: (() => void)) {
         const start = new Date().getTime()
         for (let iter=0; iter < iters; iter++) {

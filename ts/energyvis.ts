@@ -26,6 +26,10 @@ module visualizing {
     // energies in our model State and what's in the UI
     export class EnergyVisualizer {
 
+        // In order to maintain identity of our energy bars,
+        // we have to give them unique identifiers
+        private static sNextEnergyBarIdentifier = 1
+
         // The group containing all of our visual elements
         // The parent visualizer should add this to the appropriate scene
         public group: THREE.Group = new THREE.Group()
@@ -78,7 +82,8 @@ module visualizing {
         public addEnergySlider() {
             const energy = this.nextInterestingEnergy()
             this.state_.modify((st:State) => {
-                st.energies[State.newIdentifier()] = energy
+                const identifier = EnergyVisualizer.sNextEnergyBarIdentifier++
+                st.energies[identifier + ''] = energy
             })
         }
 
