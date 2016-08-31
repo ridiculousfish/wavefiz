@@ -1,3 +1,5 @@
+/* Support for the "Tour" part of the visualizer */
+
 declare function introJs() 
 
 module tour {
@@ -27,6 +29,21 @@ module tour {
         }
     }
 
+    function getIntroText(): String {
+        let introText = "🚌 All&nbsp;aboard&nbsp;the&nbsp;quantum&nbsp;tour&nbsp;bus! 🚌<br><br>"
+        // If the user doesn't have arrow keys, we want to avoid text about arrow keys
+        // Very hard to check this!
+        if (typeof window.orientation !== 'undefined') {
+            // Mobile?
+            introText +=  "Touch anywhere else on the site to exit the bus."
+        } else {
+            // Desktop?
+            introText += "The left and right arrow keys step forwards and backwards.<br><br>"
+            introText +=  "Click anywhere else on the site to exit the bus."
+        }
+        return introText
+    }
+
     /* Start the tour */
     export function start() {
         if (sCurrentTour !== null) {
@@ -34,6 +51,8 @@ module tour {
             return
         }
         sCurrentTour = introJs()
+
+
         sCurrentTour.setOptions({
             oncomplete: tourDone,
             onexit: tourDone, 
@@ -46,7 +65,7 @@ module tour {
             steps: [
                 {
                     element: null,
-                    intro: "🚌 All&nbsp;aboard&nbsp;the&nbsp;quantum&nbsp;tour&nbsp;bus! 🚌<br><br>The left and right arrow keys step forwards and backwards.<br><br>Click anywhere else on the site to exit the bus.",
+                    intro: getIntroText(),
                     position: 'right'
                 },
                 {
@@ -82,17 +101,17 @@ module tour {
                 {
                     element: labelOf('#check_paused'),
                     intro: 'Play or pause the animation.',
-                    position: 'right'
+                    position: 'left'
                 },
                 {
                     element: '#rotator',
                     intro: 'Grab and spin to rotate around the Y axis. Try it now!',
-                    position: 'right'
+                    position: 'left'
                 },
                 {
                     element: '#energy_buttons',
                     intro: 'Add and remove energies.',
-                    position: 'right'
+                    position: 'left'
                 },
                 {
                     element: null,

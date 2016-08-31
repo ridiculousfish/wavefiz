@@ -301,6 +301,25 @@ module ui {
         })
     }
 
+    function isLandscape() {
+        return window.orientation === 0 || window.orientation === 180
+    }
+
+    let sSmallestClientHeightInLandscape:number = null
+    function getEffectiveWindowHeight(): number {
+        let height = window.innerHeight
+        // In landscape, avoid address bar autohiding trickiness
+        let isLandscape = window.orientation === 90 || window.orientation === -90
+        console.log("isLandscape: " + isLandscape)
+        if (isLandscape) {
+            if (sSmallestClientHeightInLandscape === null || sSmallestClientHeightInLandscape > height) {
+                sSmallestClientHeightInLandscape = height
+            }
+            height = Math.min(height, sSmallestClientHeightInLandscape)
+        }
+        return height
+    }
+
     let sContainerInitialWidth:number = null, sContainerInitialHeight:number = null
     export function resizeToFitWindowHeight() {
         let scaleTarget = document.getElementById("ui-scale-target")
@@ -312,7 +331,7 @@ module ui {
 
         // If our window is big enough to accomodate our max height, remove the transform
         let minHeight = 400, maxHeight = sContainerInitialHeight
-        let windowHeight = window.innerHeight
+        let windowHeight = getEffectiveWindowHeight()
         if (windowHeight >= maxHeight) {
             scaleTarget.style.transform = null
             container.style.marginRight = null

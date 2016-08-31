@@ -1,8 +1,27 @@
 /// <reference path="./complex.ts"/>
 module algorithms {
 
+    enum Parity {
+        Even = 1,
+        Odd
+    }
+
     export function assert(condition:boolean, message?:string) {
         if (!condition) throw message || "Assertion failed"
+    }
+
+    // Helper function to fill an array with zeros
+    function zeros(amt: number): number[] {
+        let result = []
+        for (let i = 0; i < amt; i++) result.push(0)
+        return result
+    }
+
+    // Represents the left and right turning points of a potential
+    // These are the points where the energy equals the potential
+    interface TurningPoints {
+        left: number,
+        right: number
     }
 
     // Given a function F, represented as samples in the given ComplexArray,
@@ -68,6 +87,12 @@ module algorithms {
     }
     
     // Naive reference function
+    // Given a list of real values in the space domain, separated by dx,
+    // computes a list of complex values in the frequency domain, separated by dfreq
+    // Note this is NOT the Discrete Fourier Transform. The DFT decomposes the function into
+    // frequencies that are integer multiples of the fundamental frequency. But this decomposes
+    // a function into non-integer multiples.
+    // That is why we cannot use FFT techniques.
     export function fourierTransformNaive(spaceValues: FloatArray, center: number, dx: number, dfreq: number): ComplexArray {
         const length = spaceValues.length
         assert(length > 0 && center < length, "center out of bounds")
@@ -86,11 +111,12 @@ module algorithms {
         return freqValues
     }
 
-    // Computes the Fourier transform of the given function
+    // Optimized variant that computes the Fourier transform of the given space values
+    // See fourierTransformNaive() for comments 
     export function fourierTransform(spaceValues: FloatArray, centerIndex: number, dx: number, dfreq: number): ComplexArray {
         const length = spaceValues.length
         assert(length > 0 && centerIndex < length, "center out of bounds")
-        let freqValues = zerosComplex(length)
+        let freqValues = ComplexArray.zeros(length)
         let freqValuesRe = freqValues.res
         let freqValuesIm = freqValues.ims
 
@@ -154,11 +180,14 @@ module algorithms {
         energy: number
         leftTurningPoint: number
         rightTurningPoint: number
-        leftDerivativeDiscontinuity: number
+        leftDerivativeDiscontinuity: number 
         rightDerivativeDiscontinuity: number
     }
     
     // Represents a solution to the time-independent Schrodinger equation
+    // This is represented as a list of complex values, separated by dx,
+    // with some metadata
+    // Note that this may be in either the spatial domain or frequency domain
     export class TimeIndependentWavefunction {
         constructor(public values: ComplexArray, public dx: number, public md: WavefunctionMetadata) {
             assert(isFinite(md.energy), "Non-finite energy: " + md.energy)
@@ -184,8 +213,9 @@ module algorithms {
 
     }
 
-    // Represents a generalized solution to the Schrodinger equation as a sum of time-independent solutions
-    // Assumes equal weights
+    // Represents a generalized solution to the Schrodinger equation, as a sum of time-independent solutions
+    // Assumes that the time-independent solutions are present with equal weights; this is a wholly artificial
+    // assumption for the purposes of the visualizer. In practice the weights can be arbitrary.
     export class Wavefunction {
         public length: number
         public dx: number
@@ -198,25 +228,23 @@ module algorithms {
             this.dx = this.components[0].dx
         }
 
+        // Returns the complex value at a given location for a given time
+        // This is simply the weighted sum of the valueAts of our components
         valueAt(x: number, time: number): Complex {
             assert(x === +x && x === (x | 0), "Non-integer passed to valueAt")
             let result = new Complex(0, 0)
             this.components.forEach((psi: TimeIndependentWavefunction) => {
                 result.addToSelf(psi.valueAt(x, time))
             })
+            // apply equal weights
             result.re /= this.components.length
             result.im /= this.components.length
             return result
         }
 
-        valuesAtTime(time: number): ComplexArray {
-            let result = ComplexArray.zeros(this.length)
-            for (let i = 0; i < this.length; i++) {
-                result.set(i, this.valueAt(i, time))
-            }
-            return result
-        }
-
+        // Returns the Fourier transform of the given wavefunction
+        // Because the Fourier transform is linear, this is just the Fourier transform
+        // of the sum of our components
         public fourierTransform(center: number, scale: number): Wavefunction {
             let fourierComps = this.components.map((comp) => comp.fourierTransform(center, scale))
             return new Wavefunction(fourierComps)
@@ -225,7 +253,8 @@ module algorithms {
     }
 
     // Given two ResolvedWavefunction, computes an average weighted by the discontinuities in their derivatives
-    export function averageTimeIndependentWavefunctions(first: TimeIndependentWavefunction, second: TimeIndependentWavefunction): TimeIndependentWavefunction {
+    // The average is chosen so as to cancel the left discontinuity
+    export function averageWavefunctionsToCancelDiscontinuities(first: TimeIndependentWavefunction, second: TimeIndependentWavefunction): TimeIndependentWavefunction {
         assert(first.values.length === second.values.length, "Wavefunctions have different lengths")
         const bad1 = first.md.leftDerivativeDiscontinuity
         const bad2 = second.md.leftDerivativeDiscontinuity
@@ -240,7 +269,7 @@ module algorithms {
             // so k = -bad1 / bad2
             const k = -bad1 / bad2
             const length = first.values.length
-            values = zerosComplex(length)
+            values = ComplexArray.zeros(length)
             for (let i = 0; i < length; i++) {
                 values.set(i, first.values.at(i).added(second.values.at(i).multipliedByReal(k)))
             }
@@ -250,12 +279,7 @@ module algorithms {
         return new TimeIndependentWavefunction(values, first.dx, first.md)
     }
 
-    interface TurningPoints {
-        left: number,
-        right: number
-    }
-
-    export function classicalTurningPoints(potential: number[], energy: number): {left:number, right:number} {
+    export function classicalTurningPoints(potential: number[], energy: number): TurningPoints {
         const length = potential.length
         let left, right
         for (left = 0; left < length; left++) {
@@ -278,13 +302,18 @@ module algorithms {
 
     }
 
+    // A ResolvableWavefunction is the output of our Numerov method
+    // It contains both the result of stepping both inside out and outside in
+    // "Resolving" referes to the process of joining these two wavefunctions at a given point
+    // Note that these wavefunctions are real-valued
     class ResolvableWavefunction {
         valuesFromCenter: number[] = []
         valuesFromEdge: number[] = []
+        potential: number[]
         // F function used in Numerov
         F: (x: number) => number = null
 
-        constructor(public potential: number[], public energy: number, public maxX: number) {
+        constructor(potential: number[], public energy: number, public maxX: number) {
             this.potential = this.potential.slice()
         }
 
@@ -304,7 +333,8 @@ module algorithms {
             return (psi[x + 1] + psi[x - 1] - (14. - 12 * this.F(x)) * psi[x]) / dx
         }
 
-        // scale the valuesFromEdge to match the valuesFromCenter at the given turning points,
+        // Resolve the wavefunction by joining the inside-out and outside-in values at the given points
+        // We scale the valuesFromEdge to match the valuesFromCenter at the given turning points,
         // then normalize the whole thing
         resolveAtTurningPoints(tp: TurningPoints): TimeIndependentWavefunction {
             const left = Math.round(tp.left), right = Math.round(tp.right)
@@ -350,63 +380,26 @@ module algorithms {
             return new TimeIndependentWavefunction(complexPsi, dx, md)
         }
 
+        // Resolves us at our classical turning points, which are the points where our energy
+        // reaches the potential
         resolveAtClassicalTurningPoints(): TimeIndependentWavefunction {
             return this.resolveAtTurningPoints(classicalTurningPoints(this.potential, this.energy))
         }
     }
-    
-    export function resolvedAveragedNumerov(input: IntegratorInput, tps: TurningPoints): TimeIndependentWavefunction {
-        let evenVal = numerov(input, true).resolveAtTurningPoints(tps)
-        let oddVal = numerov(input, false).resolveAtTurningPoints(tps)
-        return averageTimeIndependentWavefunctions(evenVal, oddVal)
-    } 
 
+    // Main entry point!
+    // Given IntegratorInput, produce the time independent wavefunction using our numerical method
     export function classicallyResolvedAveragedNumerov(input: IntegratorInput): TimeIndependentWavefunction {
         let tps = classicalTurningPoints(input.potentialMesh, input.energy)
-        return resolvedAveragedNumerov(input, tps)
+        let evenVal = numerov(input, Parity.Even).resolveAtTurningPoints(tps)
+        let oddVal = numerov(input, Parity.Odd).resolveAtTurningPoints(tps)
+        return averageWavefunctionsToCancelDiscontinuities(evenVal, oddVal)
     }
-
-    // calculates the wavefunction from a potential
-    interface Integrator {
-        computeWavefunction(input: IntegratorInput): ResolvableWavefunction
-    }
-    
-    export function NumerovIntegrator(even: boolean): Integrator {
-        return {
-            computeWavefunction: (input) => numerov(input, even)
-        }
-    }
-
-    function zeros(amt: number): number[] {
-        let result = []
-        for (let i = 0; i < amt; i++) result.push(0)
-        return result
-    }
-
-    function zerosComplex(amt: number): ComplexArray {
-        return ComplexArray.zeros(amt)
-    }
-
-    export function indexOfMinimum(potential: number[]): number {
-        assert(potential.length > 0, "No minimum for empty potential")
-        let minIdx = 0, minCount = 1
-        for (let i = 1; i < potential.length; i++) {
-            if (potential[i] < potential[minIdx]) {
-                minIdx = i
-                minCount = 1
-            } else if (potential[i] === potential[minIdx]) {
-                minCount += 1
-            }
-        }
-        let result = (minIdx + minCount / 2) | 0
-        // must not be on the edge
-        result = Math.max(1, result)
-        result = Math.min(potential.length - 2, result)
-        return result
-    }
-
-    function numerov(input: IntegratorInput, even: boolean): ResolvableWavefunction {
+    // The guts of the numerical method!
+    // Given integrator input, compute a resolvable wavefunction
+    function numerov(input: IntegratorInput, parity: Parity): ResolvableWavefunction {
         // We start at the point of minimum energy, and integrate left and right
+        const even = (parity === Parity.Even)
         const potential = input.potentialMesh
         const length = potential.length
         assert(length >= 3, "PotentialMesh is too small")
@@ -476,6 +469,35 @@ module algorithms {
         return wavefunction
     }
 
+    // Helper function: returns the index of the minimum of the given potential
+    // If multiple locations are at the minimum, returns the middlemost location
+    export function indexOfMinimum(potential: number[]): number {
+        assert(potential.length > 0, "No minimum for empty potential")
+
+        // Determine minimum
+        let minimum = potential[0]
+        for (let i=1; i < potential.length; i++) {
+            minimum = Math.min(minimum, potential[i])
+        }
+
+        // Determine location with that minimum
+        let locationsAtMinimum : number[]
+        for (let i=0; i < potential.length; i++) {
+            if (potential[i] === minimum) {
+                locationsAtMinimum.push(i)
+            }
+        }
+
+        // Return the middle location
+        // Do not allow it to be on the edge
+        assert(locationsAtMinimum.length > 0)
+        let result = locationsAtMinimum[(locationsAtMinimum.length/2) | 0]
+        result = Math.max(1, result)
+        result = Math.min(potential.length - 2, result)
+        return result
+    }
+
+    // Some testing machinery
     export function algorithmTest() {
 
         function formatFloat(x: number): string {
@@ -503,7 +525,7 @@ module algorithms {
             energy: 0.5,
             maxX: 25
         }
-        let psi = numerov(input, true).resolveAtClassicalTurningPoints()
+        let psi = numerov(input, Parity.Even).resolveAtClassicalTurningPoints()
 
         lines.push("left discontinuity: " + psi.md.leftDerivativeDiscontinuity.toFixed(4))
         lines.push("right discontinuity: " + psi.md.rightDerivativeDiscontinuity.toFixed(4))

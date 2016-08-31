@@ -43,6 +43,13 @@ a.light-link {
     border-right-color: #333333;
 }
 
+.introjs-arrow.right, .introjs-arrow.right-bottom {
+    right: -40px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-left-color: #333333;
+}
+
 /* Move the arrow down */
 .introjs-arrow.top, .introjs-arrow.bottom {
     bottom: -40px;
@@ -52,9 +59,9 @@ a.light-link {
 }
 
 /* Defeat a 10 px offset which makes our arrow too big */
-.introjs-arrow.left-bottom {
+.introjs-arrow.left-bottom, .introjs-arrow.right-bottom {
     bottom: initial;
-    top: 55%;
+    top: 60%;
 }
 
 /* Make the highlight layer dimmer */

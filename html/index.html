@@ -120,11 +120,9 @@
             }
         })
 
-        window.addEventListener("resize", function(evt) {
-            ui.resizeToFitWindowHeight()
-        })
+        window.addEventListener("resize", ui.resizeToFitWindowHeight)
+        window.addEventListener("orientationchange", ui.resizeToFitWindowHeight)
         ui.resizeToFitWindowHeight()
-
 
         </script>
 </body>
