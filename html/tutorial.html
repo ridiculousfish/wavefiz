@@ -1,5 +1,7 @@
-<html><head>
-<meta charset="UTF-8">
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8" />
+<title>Schrödinger Visualizer</title>
 <style>
 body {
     padding: 2px 0 2px 0;
@@ -15,9 +17,8 @@ body {
 li {
     margin-bottom: .5em;
 }
-ol {
-    margin-left: 0;
-    padding-left: 19px;
+li.headish {
+    list-style-type: none;
 }
 code {
     font-size: smaller;
@@ -27,149 +28,409 @@ code {
 function postStartTourMessage() {
 	parent.postMessage('start-tour', '*')
 }
+
 </script>
 </head>
 <body>
-    <h2>Welcome to the Schrödinger&nbsp;Visualizer</h2>
-    <h3>Time for some quantum intuition!</h3>
-    <p>This visualizer solves and plots the one-dimensional Schrödinger equation in various potentials. The goal is to build your intuition about quantum phenomena, easily relating to pop QM or an undergraduate course.</p>
-    <p><i>Learn by exploration?</i> Click stuff to see what happens.</p>
-    <p><i>Learn by doing?</i> <a class="trigger_link" href="#exercises">Try the exercises</a></p>
-    <p><i>Like sightseeing?</i> <a class="trigger_link" href="#" onClick="javascript:postStartTourMessage();">Take the tour</a></p>
-    <p><i>Know your QM?</i> Read about <a class="trigger_link" href="#numerical_method">our numerical method</a></p>
-    <h2>What is the Schrödinger Equation?</h2>
-    <p>The Schrödinger equation describes how the wavefunction of a system evolves over time.</p>
-    <p>In Newtonian mechanics, you are given some configuration of positions, velocities, masses, and forces, and by solving F=ma, you can determine the system's state at some future time.
-    <p>In quantum mechanics, forces are replaced by a <i>potential</i>. By solving the Schrödinger equation given that potential, you compute the wavefunction &psi; (or more precisely, a set of allowed wavefunctions). The wavefunction, in turn, tells you what results you would get for actual measurements - or the probabilities of those results.
-    <h2>What is a potential?</h2>
-    <p>A potential is a function that tells you how much potential energy you would have at a given position.
-    <p>Imagine a hill. When you ride a bike up the hill, you have to expend effort to lift yourself up, and your potential energy increases. At the top of the hill, your potential energy is maximized. Now, coast down the hill: your potential energy decreases as it is transferred to kinetic energy. Reach the bottom of the valley, and your potential energy is minimized. If you were to plot your potential energy according to your position, the graph would look like the hill itself! This function we just graphed, of energy according to position, is called the potential.</p>
-    <p>Now think about a spring attached to a wall. When you pull the spring away from the wall, it stretches and pulls back (Hooke's Law!) We can put the distance you pull the spring on the X axis, and the energy you need to impart on the Y axis. This is also a potential, and its graph will be a parabola.</p>
-    <p>Potentials arise often in quantum mechanics. For example, the nucleus of a hydrogen atom establishes a potential that affects the electron. We can calculate this potential simply, using Coulomb's Law. We then plug that potential into the Schrödinger equation and solve it; this establishes the wavefunction of the electron, from which we can predict all sorts of neat things, like the colors of light that hydrogen emits!
-    <h2>What is a wavefunction?</h2>
-    <p>A wavefunction represents the state of a system, such as an electron. It is literally a function, whose inputs are time and position, and whose output is a complex number. When written this way, physicists use the Greek letter psi: &psi;(x,t)</p> 
+  <h3>Welcome to the Schrödinger&nbsp;Visualizer</h3>
 
-    <p>It is also possible to express the wavefunction as a function of time and <i>momentum</i>. Here physicists use the Greek letter phi: &phi;(p,t). Other coordinate systems are possible but these two (position and momentum) are the most common.</p></p>
+  <h4>Time for some quantum intuition!</h4>
 
-    <p>You do more than just plug time and space into the wavefunction! You plug the wavefunction itself into all sorts of integrals, from which you determine many dynamical properties: position, velocity, kinetic energy, momentum, and so on. You also do <i>algebra</i> on wavefunctions: add them to each other, multiply them by scalars, and so on. Eventually the wavefunction takes on a life of its own, not merely a function but a value in its own right.</p>
+  <p>This visualizer solves and plots the one-dimensional Schrödinger equation
+  in various potentials. The goal is to build your intuition about quantum phenomena,
+  easily relating to pop QM or an undergraduate course.</p>
 
-    <p>If you know some linear algebra, this notion of adding and multiplying by scalars may remind you of vectors. Indeed, you can think of the wavefunction as a vector, who lives in a type of vector space called Hilbert space.</p>  
-    <p>The output of the wavefunction &psi; is a complex number. If you take the absolute value of that complex number, and you square it, it gives you the probability of finding the particle at that point. (Recall that the absolute value of a complex number is a <i>real</i> number).
-    
-    <p>At this point, you may wonder why we don't just take the squared absolute value of the wavefunction itself, call <i>that</i> the wavefunction, and avoid this annoying complex number two-step? Read on!</p>
+  <p><i>Learn by exploration?</i> Click stuff to see what happens.</p>
 
-    <h2>Properties of wavefunctions</h2>
-    <p>It's not very hard to be a wavefunction. You have to satisfy the Schrödinger equation, and moreover you have to be <i>localized</i>: as we move further away in space, you have to get closer and closer to zero. Otherwise, you get nutty, non-physical results like probabilities that sum to more than 1.
+  <p><i>Learn by doing?</i> <a class="trigger_link" href="#exercises">Try the
+  exercises</a></p>
 
-    <p>The Schrödinger equation is <i>linear</i>. This means that if you have two wavefunctions, you can add them together and get a new wavefunction, and it also satisfies the Schrödinger equation. If you've heard of superposition, that's what that is. The visualizer allows you to create superpositions (click the + button).</p>
+  <p><i>Like sightseeing?</i> <a class="trigger_link" href="#" onclick=
+  "javascript:postStartTourMessage();">Take the tour</a></p>
 
-    <p>Linearity also means you can multiply a wavefunction by whatever constant you want, like 7, and it still satisfies the Schrödinger equation. You can even multiply it by a complex number, like 3 + 5i. When you do this, <i>nothing happens</i>: all wavefunctions that are (complex) multiples of one other represent the same physical state! (Except zero!) This will be a very useful property in our numerical technique.
+  <p><i>Know your QM?</i> Read about <a class="trigger_link" href="#numerical_method">our
+  numerical method</a></p>
 
-    <h2>Wavefunctions as Vectors</h2>
-    <p>Recall that wavefunctions are functions, but it's also natural to treat them as vectors in a vector space. If you know some linear algebra, you may remember that vector spaces have a basis - in fact, many of them. A basis is like the cardinal directions, from which all directions can be given ("Northeast by east"). All wavefunctions are a superposition of the basis wavefunctions! This helps us understand an arbitrary wavefunction by decomposing it into its basis wavefunctions, which may be simpler.</p>
-    <p>Of course, you can come up with a different basis, and it will be just as valid. A superposition isn't inherent, it is just an artifact of which coordinate system you choose to describe the wavefunction.</p>
+  <h3>What is the Schrödinger Equation?</h3>
 
-    <h2>The Energy Basis</h2>
-    <p>One especially interesting coordinate system is called the energy basis. It is called the energy basis because it is the eigenbasis of the energy operator. The "cardinal directions" of our energy basis are wavefunctions of definite energy. These wavefunctions have a very simple time dependence: their absolute value at every point doesn't change!
+  <p>The Schrödinger equation describes how the wavefunction of a system
+  evolves over time.</p>
 
-    <p>This visualizer allows you to build wavefunctions by adding up the energy basis components.
-    <hr />
-    <h1 id="exercises">Exercises</h1>
-    These exercises are designed to be done with only the visualizer and your brain.
-    <ol>
-        <h3>Stationary States</h3>
-        Use the "V" button to load the Simple Harmonic Oscillator potential, with just the single energy bar (the horizontal red line with the slider). Move the energy bar up and down to try to find an energy that eliminates the "kink" in the wavefunction. It might help to pause the simulation by clicking the play (triangle) button.
-        <p><li>What is the <i>smallest</i> energy that eliminates the kink in the wavefunction?
-        <p>Notice the gap between this energy and the bottom of the potential! This is the <i>ground state energy</i>. In a classical world, you can go all the way down to the minimum: your ball can rest at the bottom of the bowl. Not so in a quantum world! Your quantum state must have some kinetic energy.</li>
-        <li>What other energies eliminate the kink in the wavefunction? Can you find a formula for them?</li>
-        <p>The set of allowed energies is <i>quantized</i>. This means that if you want your system to have a definite energy, you can't pick any old energy. You must select from the allowed list of eigenenergies.
-        <p>Does this mean that the system can only have these energies? We can build a system whose energy expectation value is anything we please, as long as we stay above the ground state. However, these systems are necessarily a <i>mixture</i> of states with the quantized energies. If we measure their energy, we will only ever see one of the quantized values.
-        <h3>Tunnelling</h3>
-        <li>Locate the two points where the energy bar crosses the potential. (The thin gray lines help you here). These are the <i>classical turning points</i>.
-        
-        A classical particle cannot reach outside of the turning points, because its kinetic energy would be negative. But a quantum particle may be found in the classically forbidden region. This is <i>quantum tunnelling</i>.
-        <li>Display <i>|&psi;|<sup>2</sup></i>. Locate the classically forbidden region. Does the wavefunction tunnel into this region?</li>
-        <li>Try some other potentials. Which potential has no tunnelling? Why not?</li>
-        <li>Load the Two Square Wells potential. Try to find the energy that maximizes the amount of tunnelling into the potential barrier (the "wall" in the middle). </li>
+  <p>In Newtonian mechanics, you are given some configuration of positions, velocities,
+  masses, and forces, and by solving F=ma, you can determine the system's state at some
+  future time.</p>
 
-        <h3>Time Evolution</h3>
-        <li>Ensure the Play button &#x25b6; is clicked, and enjoy the show. The depth represents the imaginary component of the wavefunction.</li>
-        <li>Does more energy make the wavefunction rotate faster or slower?</li>
-        <li>Display <i>|&psi;|<sup>2</sup></i>. Why doesn't it move?</li>
-        <li>Add another energy by clicking the + button. Can you make <i>|&psi;|<sup>2</sup></i> move now?</li>
-        <p>States with definite energy change their complex phase, but not their complex magnitude (at a given point in space). Informally, the wavefunction doesn't shrink or grow in time, it just goes around.</p>
-        <p>But once you have two states, their phases <i>interfere</i>. When you add two complex numbers, the resulting magnitude may be bigger (constructive interference) or smaller (destructive interference) than the original magnitudes, depending on the phase.</p>
-        <p>And if those states have different energies, their phase goes around at different speeds. This means the type of interference at each point changes in time. Now it is constructive; a moment later it is destructive.
+  <p>In quantum mechanics, forces are replaced by a <i>potential</i>. By solving the
+  Schrödinger equation given that potential, you compute the wavefunction
+  &#968; (or more precisely, a set of allowed wavefunctions). The wavefunction, in turn,
+  tells you what results you would get for actual measurements - or the probabilities of
+  those results.</p>
 
-        <h3>Momentum</h3>
-        <li>Load the Infinite Square Well solution and start at the ground state. Show the momentum magnitude |&psi;|<sup>2</sup>. What does the momentum distribution look like?</li>
-        <p>A momentum spike in the middle means that the particle is most likely to be found with zero momentum. This is the "rest in the bottom of the bowl" state.
-        <li>Now move the energy bar up. What happens to the momentum?</li>
-        <p>A spike to the left or right means the particle is likely to be found moving left or right respectively. The further away the spike is from the center, the faster the particle is moving.
-        <li>Does more energy make the particle move faster or slower?</li>
-        <p>Note this is separate from the rate of oscillation. You answer this by looking at the distribution of the momentum-space wavefunction, not how it moves.
-        <li>Load an asymmetric potential, such as the stepped square well, with a single energy. Notice that the position space wavefunction is asymmetric. Is the momentum space wavefunction asymmetric too? Why or why not?</li>
-        <li>A classical particle in a 1D potential well will "bounce:" roll up one side, then the other. Its momentum thus oscillates left, right, left... Can you make our quantum momentum oscillate? (Hint: you can't do it with just one energy!)</li>
-    </ol>
-    <hr />
-    <h1 id="numerical_method">The Numerical Method</h1>
-    <p>The Schrödinger equation is a second order differential equation. This visualizer numerically solves the Schrödinger equation using the <a href="https://en.wikipedia.org/wiki/Numerov%27s_method">Numerov method</a>, which is fast and accurate. It is a "step" method, meaning that it constructs each point by building on the previous point(s). However, there are a few wrinkles.</p>
+  <h3>What is a potential?</h3>
 
-    <p>The starting point of this work is <a href="http://www.fisica.uniud.it/~giannozz/Corsi/MQ/LectureNotes/mq.pdf">Numerical Methods in Quantum Mechanics</a>, by Paolo Giannozzi.  
+  <p>A potential is a function that tells you how much potential energy you would have at
+  a given position.</p>
 
-    <h2>Blow-up solutions</h2>
-    <p>One problem is that solutions to the Schrödinger equations "want" to blow up to infinity. In physical systems, the particle should be localized to some region (like the lab!), which means the wavefunction of a bound particle must approach zero as you get further away. Only a few solutions to the Schrödinger equation localize the particle in this way, and those solutions only exist for very precise energies. Numerically we are much more likely to "find" a solution that approaches infinity.</p>
+  <p>Imagine a hill. When you ride a bike up the hill, you have to expend effort to lift
+  yourself up, and your potential energy increases. At the top of the hill, your
+  potential energy is maximized. Now, coast down the hill: your potential energy
+  decreases as it is transferred to kinetic energy. Reach the bottom of the valley, and
+  your potential energy is minimized. If you were to plot your potential energy according
+  to your position, the graph would look like the hill itself! This function we just
+  graphed, of energy according to position, is called the potential.</p>
 
-    <p>To prevent this (following Giannozzi), we construct TWO wavefunctions. The "inside out" one starts from inside the potential and steps towards the edge. This solution is well behaved in the center, but probably blows up towards the edge. The "outside in" solution assumes the wavefunction is zero at the boundary, and steps towards the center. This solution does not blow up, but it often decays to zero towards the center.</p>
+  <p>Now think about a spring attached to a wall. When you pull the spring away from the
+  wall, it stretches and pulls back (Hooke's Law!) We can put the distance you pull the
+  spring on the X axis, and the energy you need to impart on the Y axis. This is also a
+  potential, and its graph will be a parabola.</p>
 
-    <p>Once we have these two solutions, we join them into a single wavefunction. Towards the center, this will be our "inside out" wavefunction, and towards the end it will be the "outside in." Unless we are very lucky, they will not have the same value at the point they meet - but we can force them to! This leverages linearity: the remarkable fact that scaling a wavefunction by any complex number produces the same physical result; thus given two wavefunctions, we can always join them at a point by just scaling the first to match the second, at that point (unless it's zero!)</p>
-	
-    <h2>Kinks</h2>
+  <p>Potentials arise often in quantum mechanics. For example, the nucleus of a hydrogen
+  atom establishes a potential that affects the electron. We can calculate this potential
+  simply, using Coulomb's Law. We then plug that potential into the
+  Schrödinger equation and solve it; this establishes the wavefunction of the
+  electron, from which we can predict all sorts of neat things, like the colors of light
+  that hydrogen emits!</p>
 
-    <p>Note that while we can always make our "inside out" and "outside in" wavefunctions agree at the turning points, we cannot force their derivatives to agree. Thus our chimera wavefunction does not actually solve the Schrödinger equation at that point, since the first derivative is not defined! This is a manifestation of the fact that there are <i>no</i> solutions of the Schrödinger equation at the chosen energy, except for the unphysical blow-ups.</p>
+  <h3>What is a wavefunction?</h3>
 
-    <p>At what point should we join them? The natural choice is the "classical turning points:" the (outermost) point where the potential equals the energy, i.e. our particle has zero kinetic energy. Understanding why this point is natural requires understanding a bit of the Schrödinger equation.</p>
+  <p>A wavefunction represents the state of a system, such as an electron. It is
+  literally a function, whose inputs are time and position, and whose output is a complex
+  number. When written this way, physicists use the Greek letter psi: &#968;(x,t)</p>
 
-    <h2>Modes of the Schrödinger Equation</h2>
+  <p>It is also possible to express the wavefunction as a function of time and
+  <i>momentum</i>. Here physicists use the Greek letter phi: &#966;(p,t). Other
+  coordinate systems are possible but these two (position and momentum) are the most
+  common.</p>
 
-	<p>The (time-independent) Schrödinger Equation has the form:</p>
-    <p><code>-d<sup>2</sup>&psi; / dx<sup>2</sup> + PotentialEnergy * &psi; = TotalEnergy * &psi; </code></p>
-    <p>Rearranging, we get:</p>
-    <p><code>-d<sup>2</sup>&psi; / dx<sup>2</sup>  = (TotalEnergy - PotentialEnergy) * &psi; </code></p>
-    <p>which can be understood as:
-	<p><code>-d<sup>2</sup>&psi; / dx<sup>2</sup>  = KineticEnergy * &psi; </code></p>
-	<p>(Note the KineticEnergy is a function of x). Usually the KineticEnergy is positive. Shifting the minus sign to the other side and squinting, we get an equation that is sort of like:</p>
-	<p><code>d<sup>2</sup>&psi; / dx<sup>2</sup>  = SomethingNegative * &psi; </code></p>
-	<p>The solution is a complex exponential: sines and cosines. So in this regime of positive kinetic energy, &psi; is an oscillating sinusoidal.</p>
-	<p>But what if the kinetic energy is negative? Then we get an equation that looks like:</p>
-	<p><code>d<sup>2</sup>&psi; / dx<sup>2</sup>  = SomethingPositive * &psi; </code></p>
-	<p>The solution is a <i>real</i> exponential (hyperbolic sine/cosine). This means we either exponentially blow-up (e<sup>x</sup>) or exponentially decay (e<sup>-x</sup>). The blow-up is non-localized, which is unphysical, so the only physical possibility is exponential decay.</p>
-	<p>(What if the kinetic energy is <i>zero</i>? Then we get that &psi; is a line. A line can only go to zero at infinity if it is already everywhere zero, i.e. no particle at all.)</p>
-	<p>Note that this notion of "negative kinetic energy" is really a mathematical trick. You can measure the position of a particle, and compute what a classical particle's kinetic energy "would have to be" at that point. However it's a mistake to say that the particle has a negative kinetic energy; because of the uncertainty principle we can't say what its energy precisely is at all. Indeed, if you measure the kinetic energy directly, you will never see a negative value (exercise for the reader: prove this!)</p>
-	
-	<p>So to summarize, the Schrödinger Equation for physical states has two modes: oscillating and exponential decay, which correspond to the classically allowed and forbidden regions respectively. The classical turning points represent switching between the two modes. Thus the turning points are a natural place to join our two wavefunctions.
-    
-    <p>This change in the first derivative is visible as a kink in the wavefunction. It's only at very special energies that the first derivatives happen to match and the kink disappears. These are the eigenenergies, and this illustrates how quantization of energy arises.</p>
+  <p>You do more than just plug time and space into the wavefunction! You plug the
+  wavefunction itself into all sorts of integrals, from which you determine many
+  dynamical properties: position, velocity, kinetic energy, momentum, and so on. You also
+  do <i>algebra</i> on wavefunctions: add them to each other, multiply them by scalars,
+  and so on. Eventually the wavefunction takes on a life of its own, not merely a
+  function but a value in its own right.</p>
 
-    <h2>Starting Points</h2>
-    <p>There is a second wrinkle: the Numerov method requires TWO initial points to get it started. (Indeed, it would be surprising if it did not: the Schrödinger equation is second-order, so we need two boundary conditions.) These points are next to each other: think &psi;(x) and &psi;(x + dx).</p>
-    
-    <p>Here we leverage the fact that we can multiply a wavefunction by any nonzero complex number, and we get a physically-identical new solution. This means that the actual starting value of the wavefunction hardly matters: we're just going to scale it anyways! All that matters is whether it's zero or nonzero.</p>
+  <p>If you know some linear algebra, this notion of adding and multiplying by scalars
+  may remind you of vectors. Indeed, you can think of the wavefunction as a vector, who
+  lives in a type of vector space called Hilbert space.</p>
 
-    <p>So there are only two interesting cases: either exactly one of &psi;(x) and &psi;(x+dx) are zero, or neither of them is zero. (If both are zero, we get the trivial solution &psi; = 0). Furthermore, if one is zero, it doesn't matter which one (by continuity the solutions must be very close to each other). So either &psi;(x) is zero, and &psi;(x) is nonzero. Note that if our potential is symmetric, and we let our starting x be its minimum, these solutions correspond to odd and even wavefunctions.</p>
+  <p>The output of the wavefunction &#968; is a complex number. If you take the absolute
+  value of that complex number, and you square it, it gives you the probability of
+  finding the particle at that point. (Recall that the absolute value of a complex number
+  is a <i>real</i> number).</p>
 
-    <p>So for any given energy, we have two solutions, corresponding conceptually to odd and even wavefunctions. We can mix (linearly combine) these two solutions however we like to get a new wavefunction with that energy. In particular, we can combine them so that one of the kinks cancels out! That is, we choose a linear sum that zeros out the discontinuity in the first derivative, on the left side. If this happens to cancels out the right-side kink too, we have found an eigenenergy, and our solution is physical.</p>
+  <p>At this point, you may wonder why we don't just take the squared absolute value of
+  the wavefunction itself, call <i>that</i> the wavefunction, and avoid this annoying
+  complex number two-step? Read on!</p>
 
-    <p>This has the compelling visual effect of making the wavefunction appear to "extrude" from the right side as the energy increases. This is evocative, but not physically meaningful: only the energy eigenvalues are allowed.</p>
+  <h3>Properties of wavefunctions</h3>
 
-    <h2 id="acknowledgements">Acknowledgements</h2>
-    <p>The graphics use WebGL via <a href="http://threejs.org">threejs</a>. The tour uses <a href="http://introjs.com">introjs</a>. The remainder of the code is original.
+  <p>It's not very hard to be a wavefunction. You have to satisfy the
+  Schrödinger equation, and moreover you have to be <i>localized</i>: as we
+  move further away in space, you have to get closer and closer to zero. Otherwise, you
+  get nutty, non-physical results like probabilities that sum to more than 1.</p>
 
-    <p>This work was made by possible thanks to:
-    <ul>
-        <li>Professor <a href="http://www.fisica.uniud.it/~giannozz">Paolo Giannozzi</a> and his numerical methods textbook</li>
-        <li><a href="https://mattdesl.svbtle.com">Matt Deslauriers</a> and his <a href="https://mattdesl.svbtle.com/drawing-lines-is-hard">"Screen-Space Projected Lines"</a> graphical technique.</li>
-    </ul>
-    <br>
+  <p>The Schrödinger equation is <i>linear</i>. This means that if you have
+  two wavefunctions, you can add them together and get a new wavefunction, and it also
+  satisfies the Schrödinger equation. If you've heard of superposition, that's
+  what that is. The visualizer allows you to create superpositions (click the +
+  button).</p>
+
+  <p>Linearity also means you can multiply a wavefunction by whatever constant you want,
+  like 7, and it still satisfies the Schrödinger equation. You can even
+  multiply it by a complex number, like 3 + 5i. When you do this, <i>nothing happens</i>:
+  all wavefunctions that are (complex) multiples of one other represent the same physical
+  state! (Except zero!) This will be a very useful property in our numerical
+  technique.</p>
+
+  <h3>Wavefunctions as Vectors</h3>
+
+  <p>Recall that wavefunctions are functions, but it's also natural to treat them as
+  vectors in a vector space. If you know some linear algebra, you may remember that
+  vector spaces have a basis - in fact, many of them. A basis is like the cardinal
+  directions, from which all directions can be given ("Northeast by east"). All
+  wavefunctions are a superposition of the basis wavefunctions! This helps us understand
+  an arbitrary wavefunction by decomposing it into its basis wavefunctions, which may be
+  simpler.</p>
+
+  <p>Of course, you can come up with a different basis, and it will be just as valid. A
+  superposition isn't inherent, it is just an artifact of which coordinate system you
+  choose to describe the wavefunction.</p>
+
+  <h3>The Energy Basis</h3>
+
+  <p>One especially interesting coordinate system is called the energy basis. It is
+  called the energy basis because it is the eigenbasis of the energy operator. The
+  "cardinal directions" of our energy basis are wavefunctions of definite energy. These
+  wavefunctions have a very simple time dependence: their absolute value at every point
+  doesn't change!</p>
+
+  <p>This visualizer allows you to build wavefunctions by adding up the energy basis
+  components.</p>
+  <hr />
+
+  <h2 id="exercises">Exercises</h2>These exercises are designed to be done with only the
+  visualizer and your brain.
+
+  <ol>
+    <li class="headish">
+      <h4>Stationary States</h4>Use the "V" button to load the Simple Harmonic Oscillator
+      potential, with just the single energy bar (the horizontal red line with the
+      slider). Move the energy bar up and down to try to find an energy that eliminates
+      the "kink" in the wavefunction. It might help to pause the simulation by clicking
+      the play (triangle) button.
+    </li>
+
+    <li>What is the <i>smallest</i> energy that eliminates the kink in the wavefunction?
+
+      <p>Notice the gap between this energy and the bottom of the potential! This is the
+      <i>ground state energy</i>. In a classical world, you can go all the way down to
+      the minimum: your ball can rest at the bottom of the bowl. Not so in a quantum
+      world! Your quantum state must have some kinetic energy.</p>
+    </li>
+
+    <li>What other energies eliminate the kink in the wavefunction? Can you find a
+    formula for them?The set of allowed energies is <i>quantized</i>. This means that if
+    you want your system to have a definite energy, you can't pick any old energy. You
+    must select from the allowed list of eigenenergies.
+
+      <p>Does this mean that the system can only have these energies? We can build a
+      system whose energy expectation value is anything we please, as long as we stay
+      above the ground state. However, these systems are necessarily a <i>mixture</i> of
+      states with the quantized energies. If we measure their energy, we will only ever
+      see one of the quantized values.</p>
+    </li>
+
+    <li class="headish"><h4>Tunnelling</h4></li>
+
+    <li>Locate the two points where the energy bar crosses the potential. (The thin gray
+    lines help you here). These are the <i>classical turning points</i>. A classical
+    particle cannot reach outside of the turning points, because its kinetic energy would
+    be negative. But a quantum particle may be found in the classically forbidden region.
+    This is <i>quantum tunnelling</i>.</li>
+
+    <li>Display <i>|&#968;|<sup>2</sup></i>. Locate the classically forbidden region.
+    Does the wavefunction tunnel into this region?</li>
+
+    <li>Try some other potentials. Which potential has no tunnelling? Why not?</li>
+
+    <li>Load the Two Square Wells potential. Try to find the energy that maximizes the
+    amount of tunnelling into the potential barrier (the "wall" in the middle).
+    </li>
+
+    <li class="headish"><h4>Time Evolution</h4></li>
+
+    <li>Ensure the Play button &#9654; is clicked, and enjoy the show. The depth
+    represents the imaginary component of the wavefunction.</li>
+
+    <li>Does more energy make the wavefunction rotate faster or slower?</li>
+
+    <li>Display <i>|&#968;|<sup>2</sup></i>. Why doesn't it move?</li>
+
+    <li>Add another energy by clicking the + button. Can you make
+    <i>|&#968;|<sup>2</sup></i> move now?
+
+      <p>States with definite energy change their complex phase, but not their complex
+      magnitude (at a given point in space). Informally, the wavefunction doesn't shrink
+      or grow in time, it just goes around.</p>
+
+      <p>But once you have two states, their phases <i>interfere</i>. When you add two
+      complex numbers, the resulting magnitude may be bigger (constructive interference)
+      or smaller (destructive interference) than the original magnitudes, depending on
+      the phase.</p>
+
+      <p>And if those states have different energies, their phase goes around at
+      different speeds. This means the type of interference at each point changes in
+      time. Now it is constructive; a moment later it is destructive.</p>
+
+      <h4>Momentum</h4>
+    </li>
+
+    <li>Load the Infinite Square Well solution and start at the ground state. Show the
+    momentum magnitude |&#968;|<sup>2</sup>. What does the momentum distribution look
+    like?
+
+      <p>A momentum spike in the middle means that the particle is most likely to be
+      found with zero momentum. This is the "rest in the bottom of the bowl" state.</p>
+    </li>
+
+    <li>Now move the energy bar up. What happens to the momentum?
+
+      <p>A spike to the left or right means the particle is likely to be found moving
+      left or right respectively. The further away the spike is from the center, the
+      faster the particle is moving.</p>
+    </li>
+
+    <li>Does more energy make the particle move faster or slower?
+
+      <p>Note this is separate from the rate of oscillation. You answer this by looking
+      at the distribution of the momentum-space wavefunction, not how it moves.</p>
+    </li>
+
+    <li>Load an asymmetric potential, such as the stepped square well, with a single
+    energy. Notice that the position space wavefunction is asymmetric. Is the momentum
+    space wavefunction asymmetric too? Why or why not?</li>
+
+    <li>A classical particle in a 1D potential well will "bounce:" roll up one side, then
+    the other. Its momentum thus oscillates left, right, left... Can you make our quantum
+    momentum oscillate? (Hint: you can't do it with just one energy!)</li>
+  </ol>
+  <hr />
+
+  <h2 id="numerical_method">The Numerical Method</h2>
+
+  <p>The Schrödinger equation is a second order differential equation. This
+  visualizer numerically solves the Schrödinger equation using the <a href=
+  "https://en.wikipedia.org/wiki/Numerov%27s_method">Numerov method</a>, which is fast
+  and accurate. It is a "step" method, meaning that it constructs each point by building
+  on the previous point(s). However, there are a few wrinkles.</p>
+
+  <p>The starting point of this work is <a href=
+  "http://www.fisica.uniud.it/~giannozz/Corsi/MQ/LectureNotes/mq.pdf">Numerical Methods
+  in Quantum Mechanics</a>, by Paolo Giannozzi.</p>
+
+  <h3>Blow-up solutions</h3>
+
+  <p>One problem is that solutions to the Schrödinger equations "want" to blow
+  up to infinity. In physical systems, the particle should be localized to some region
+  (like the lab!), which means the wavefunction of a bound particle must approach zero as
+  you get further away. Only a few solutions to the Schrödinger equation
+  localize the particle in this way, and those solutions only exist for very precise
+  energies. Numerically we are much more likely to "find" a solution that approaches
+  infinity.</p>
+
+  <p>To prevent this (following Giannozzi), we construct TWO wavefunctions. The "inside
+  out" one starts from inside the potential and steps towards the edge. This solution is
+  well behaved in the center, but probably blows up towards the edge. The "outside in"
+  solution assumes the wavefunction is zero at the boundary, and steps towards the
+  center. This solution does not blow up, but it often decays to zero towards the
+  center.</p>
+
+  <p>Once we have these two solutions, we join them into a single wavefunction. Towards
+  the center, this will be our "inside out" wavefunction, and towards the end it will be
+  the "outside in." Unless we are very lucky, they will not have the same value at the
+  point they meet - but we can force them to! This leverages linearity: the remarkable
+  fact that scaling a wavefunction by any complex number produces the same physical
+  result; thus given two wavefunctions, we can always join them at a point by just
+  scaling the first to match the second, at that point (unless it's zero!)</p>
+
+  <h3>Kinks</h3>
+
+  <p>Note that while we can always make our "inside out" and "outside in" wavefunctions
+  agree at the turning points, we cannot force their derivatives to agree. Thus our
+  chimera wavefunction does not actually solve the Schrödinger equation at
+  that point, since the first derivative is not defined! This is a manifestation of the
+  fact that there are <i>no</i> solutions of the Schrödinger equation at the
+  chosen energy, except for the unphysical blow-ups.</p>
+
+  <p>At what point should we join them? The natural choice is the "classical turning
+  points:" the (outermost) point where the potential equals the energy, i.e. our particle
+  has zero kinetic energy. Understanding why this point is natural requires understanding
+  a bit of the Schrödinger equation.</p>
+
+  <h3>Modes of the Schrödinger Equation</h3>
+
+  <p>The (time-independent) Schrödinger Equation has the form:</p>
+
+  <p><code>-d<sup>2</sup>&#968; / dx<sup>2</sup> + PotentialEnergy * &#968; = TotalEnergy
+  * &#968;</code></p>
+
+  <p>Rearranging, we get:</p>
+
+  <p><code>-d<sup>2</sup>&#968; / dx<sup>2</sup> = (TotalEnergy - PotentialEnergy) *
+  &#968;</code></p>
+
+  <p>which can be understood as:</p>
+
+  <p><code>-d<sup>2</sup>&#968; / dx<sup>2</sup> = KineticEnergy * &#968;</code></p>
+
+  <p>(Note the KineticEnergy is a function of x). Usually the KineticEnergy is positive.
+  Shifting the minus sign to the other side and squinting, we get an equation that is
+  sort of like:</p>
+
+  <p><code>d<sup>2</sup>&#968; / dx<sup>2</sup> = SomethingNegative * &#968;</code></p>
+
+  <p>The solution is a complex exponential: sines and cosines. So in this regime of
+  positive kinetic energy, &#968; is an oscillating sinusoidal.</p>
+
+  <p>But what if the kinetic energy is negative? Then we get an equation that looks
+  like:</p>
+
+  <p><code>d<sup>2</sup>&#968; / dx<sup>2</sup> = SomethingPositive * &#968;</code></p>
+
+  <p>The solution is a <i>real</i> exponential (hyperbolic sine/cosine). This means we
+  either exponentially blow-up (e<sup>x</sup>) or exponentially decay (e<sup>-x</sup>).
+  The blow-up is non-localized, which is unphysical, so the only physical possibility is
+  exponential decay.</p>
+
+  <p>(What if the kinetic energy is <i>zero</i>? Then we get that &#968; is a line. A
+  line can only go to zero at infinity if it is already everywhere zero, i.e. no particle
+  at all.)</p>
+
+  <p>Note that this notion of "negative kinetic energy" is really a mathematical trick.
+  You can measure the position of a particle, and compute what a classical particle's
+  kinetic energy "would have to be" at that point. However it's a mistake to say that the
+  particle has a negative kinetic energy; because of the uncertainty principle we can't
+  say what its energy precisely is at all. Indeed, if you measure the kinetic energy
+  directly, you will never see a negative value (exercise for the reader: prove
+  this!)</p>
+
+  <p>So to summarize, the Schrödinger Equation for physical states has two
+  modes: oscillating and exponential decay, which correspond to the classically allowed
+  and forbidden regions respectively. The classical turning points represent switching
+  between the two modes. Thus the turning points are a natural place to join our two
+  wavefunctions.</p>
+
+  <p>This change in the first derivative is visible as a kink in the wavefunction. It's
+  only at very special energies that the first derivatives happen to match and the kink
+  disappears. These are the eigenenergies, and this illustrates how quantization of
+  energy arises.</p>
+
+  <h3>Starting Points</h3>
+
+  <p>There is a second wrinkle: the Numerov method requires TWO initial points to get it
+  started. (Indeed, it would be surprising if it did not: the Schrödinger
+  equation is second-order, so we need two boundary conditions.) These points are next to
+  each other: think &#968;(x) and &#968;(x + dx).</p>
+
+  <p>Here we leverage the fact that we can multiply a wavefunction by any nonzero complex
+  number, and we get a physically-identical new solution. This means that the actual
+  starting value of the wavefunction hardly matters: we're just going to scale it
+  anyways! All that matters is whether it's zero or nonzero.</p>
+
+  <p>So there are only two interesting cases: either exactly one of &#968;(x) and
+  &#968;(x+dx) are zero, or neither of them is zero. (If both are zero, we get the
+  trivial solution &#968; = 0). Furthermore, if one is zero, it doesn't matter which one
+  (by continuity the solutions must be very close to each other). So either &#968;(x) is
+  zero, and &#968;(x) is nonzero. Note that if our potential is symmetric, and we let our
+  starting x be its minimum, these solutions correspond to odd and even
+  wavefunctions.</p>
+
+  <p>So for any given energy, we have two solutions, corresponding conceptually to odd
+  and even wavefunctions. We can mix (linearly combine) these two solutions however we
+  like to get a new wavefunction with that energy. In particular, we can combine them so
+  that one of the kinks cancels out! That is, we choose a linear sum that zeros out the
+  discontinuity in the first derivative, on the left side. If this happens to cancels out
+  the right-side kink too, we have found an eigenenergy, and our solution is
+  physical.</p>
+
+  <p>This has the compelling visual effect of making the wavefunction appear to "extrude"
+  from the right side as the energy increases. This is evocative, but not physically
+  meaningful: only the energy eigenvalues are allowed.</p>
+
+  <h3 id="acknowledgements">Acknowledgements</h3>
+
+  <p>The graphics use WebGL via <a href="http://threejs.org">threejs</a>. The tour uses
+  <a href="http://introjs.com">introjs</a>. The remainder of the code is original.</p>
+
+  <p>This work was made by possible thanks to:</p>
+
+  <ul>
+    <li>Professor <a href="http://www.fisica.uniud.it/~giannozz">Paolo Giannozzi</a> and
+    his numerical methods textbook</li>
+
+    <li><a href="https://mattdesl.svbtle.com">Matt Deslauriers</a> and his <a href=
+    "https://mattdesl.svbtle.com/drawing-lines-is-hard">"Screen-Space Projected
+    Lines"</a> graphical technique.</li>
+  </ul><br />
 </body>
 </html>
