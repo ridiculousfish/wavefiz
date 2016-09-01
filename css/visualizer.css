@@ -179,6 +179,7 @@ body {
     /* https://coderwall.com/p/c-aqqw/scrollable-iframe-on-mobile-safari */
     overflow: auto;
     -webkit-overflow-scrolling: touch;
+    overflow-x: hidden;
     height: 630px;
     min-width: 200px;
 }
@@ -191,14 +192,6 @@ body {
     margin: 0;
     width: 100%;
     max-width: 900px;
-}
-
-/* Pad the tutorial on the left except when it's adjacent to the UI container */
-#ui-container {
-    margin-right: -25px;
-}
-#tut-container {
-    padding-left: 15px;
 }
 
 
@@ -314,6 +307,10 @@ body {
     margin-left: -7px;
     background: linear-gradient(to top, rgba(219, 219, 219, 1) 0%, rgba(74, 74, 74, 1) 100%);
     border: solid 1px #AAA;
+}
+
+#energy_buttons {
+    margin-right: 5px;
 }
 
 /* menu is used for the potential picker */

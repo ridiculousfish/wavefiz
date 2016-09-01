@@ -37,8 +37,7 @@ stage: $(VISUALIZE_JS) $(HTML_SRCS)
 	rm -Rf $(STAGE_DIR)
 	mkdir -p $(STAGE_DIR)
 	cp $(HTML_SRCS) $(STAGE_DIR)
-	cp -r $(IMG_DIR) $(STAGE_DIR)
-	-test -d $(CSS) && cp -r $(CSS) $(STAGE_DIR)
+	cp -r $(IMG_DIR) $(CSS) $(STAGE_DIR)
 	mkdir  $(STAGE_DIR)/js/
 	cp $(VISUALIZE_JS) ./external_js/*.js  $(STAGE_DIR)/js/
 

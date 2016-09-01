@@ -328,12 +328,6 @@ module ui {
         })
     }
 
-    // Support for scaling
-    // We scale our visualizer to make it fit in the window
-    function isLandscape() {
-        return window.orientation === 0 || window.orientation === 180
-    }
-
     let sSmallestClientHeightInLandscape:number = null
     function getEffectiveWindowHeight(): number {
         let height = window.innerHeight
@@ -383,7 +377,8 @@ module ui {
         // Adjust the marginRight of the container so that the tutorial
         // can fill the space on the right. This lets us fit both in
         // with the iPhone in landscape mode.
-        // Note this makes the margin negative
-        container.style.marginRight = (2 * dx) + 'px'
+        // Note this makes the margin negative, because dx is negative,
+        // and Math.floor makes it more negative
+        container.style.marginRight = Math.floor(2 * dx) + 'px'
     }
 }    
