@@ -181,6 +181,7 @@ body {
     -webkit-overflow-scrolling: touch;
     overflow-x: hidden;
     height: 630px;
+    max-height: 90vh;
     min-width: 200px;
 }
 

@@ -6,7 +6,7 @@
     border-radius: 7px;
     padding: 15px;
     font-family: 'Helvetica Neue', Arial, Helvetica, sans-serif;
-    font-size: 18px;
+    font-size: 22px;
     color:white;
 
     /* Move it down and make it bigger */
@@ -20,8 +20,8 @@ a.light-link {
 
 /* Floating tooltips even bigger */
 .introjs-tooltip-floating {
-    min-width: 375px;
-    max-width: 375px;
+    min-width: 390px;
+    max-width: 390px;
 }
 
 .introjs-tooltip-left, .introjs-tooltip-right {

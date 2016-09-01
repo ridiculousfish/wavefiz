@@ -7,7 +7,6 @@ body {
     margin: 0 7px 0 7px;
     font-family: Helvetica, Arial, sans-serif;
     font-size: 13pt;
-    background-color: #DFDFDF; /* needs to match main css for proper rubber banding */
 }
 
 .trigger_link {
@@ -20,6 +19,9 @@ ol {
     margin-left: 0;
     padding-left: 19px;
 }
+code {
+    font-size: smaller;
+}
 </style>
 <script type="text/javascript">
 function postStartTourMessage() {
@@ -28,12 +30,13 @@ function postStartTourMessage() {
 </script>
 </head>
 <body>
-    <h2>Welcome to the Schrödinger&nbsp;Visualizer!</h2>
-    <p>This solves and visualizes the one-dimensional Schrödinger equation in various potentials. The goal is to build your intuition about quantum phenomena, in a way that can easily relate to both pop QM and an undergraduate QM course.</p>
-    <p>Learn by exploration? Click stuff to see what happens.</p>
-    <p>Learn by doing? <a class="trigger_link" href="#exercises">Try the exercises</a></p>
-    <p>Like sightseeing? <a class="trigger_link" href="#" onClick="javascript:postStartTourMessage();">Take the tour</a></p>
-    <p>Know your QM? Read about <a class="trigger_link" href="#numerical_method">our numerical method</a></p>
+    <h2>Welcome to the Schrödinger&nbsp;Visualizer</h2>
+    <h3>Time for some quantum intuition!</h3>
+    <p>This visualizer solves and plots the one-dimensional Schrödinger equation in various potentials. The goal is to build your intuition about quantum phenomena, easily relating to pop QM or an undergraduate course.</p>
+    <p><i>Learn by exploration?</i> Click stuff to see what happens.</p>
+    <p><i>Learn by doing?</i> <a class="trigger_link" href="#exercises">Try the exercises</a></p>
+    <p><i>Like sightseeing?</i> <a class="trigger_link" href="#" onClick="javascript:postStartTourMessage();">Take the tour</a></p>
+    <p><i>Know your QM?</i> Read about <a class="trigger_link" href="#numerical_method">our numerical method</a></p>
     <h2>What is the Schrödinger Equation?</h2>
     <p>The Schrödinger equation describes how the wavefunction of a system evolves over time.</p>
     <p>In Newtonian mechanics, you are given some configuration of positions, velocities, masses, and forces, and by solving F=ma, you can determine the system's state at some future time.
@@ -130,12 +133,16 @@ function postStartTourMessage() {
     <h2>Modes of the Schrödinger Equation</h2>
 
 	<p>The (time-independent) Schrödinger Equation has the form:</p>
-	<p>&nbsp;&nbsp;&nbsp;- <code>d<sup>2</sup>&psi; / dx<sup>2</sup>  = KineticEnergy * &psi; </code></p>
+    <p><code>-d<sup>2</sup>&psi; / dx<sup>2</sup> + PotentialEnergy * &psi; = TotalEnergy * &psi; </code></p>
+    <p>Rearranging, we get:</p>
+    <p><code>-d<sup>2</sup>&psi; / dx<sup>2</sup>  = (TotalEnergy - PotentialEnergy) * &psi; </code></p>
+    <p>which can be understood as:
+	<p><code>-d<sup>2</sup>&psi; / dx<sup>2</sup>  = KineticEnergy * &psi; </code></p>
 	<p>(Note the KineticEnergy is a function of x). Usually the KineticEnergy is positive. Shifting the minus sign to the other side and squinting, we get an equation that is sort of like:</p>
-	<p>&nbsp;&nbsp;&nbsp;<code>d<sup>2</sup>&psi; / dx<sup>2</sup>  = SomethingNegative * &psi; </code></p>
+	<p><code>d<sup>2</sup>&psi; / dx<sup>2</sup>  = SomethingNegative * &psi; </code></p>
 	<p>The solution is a complex exponential: sines and cosines. So in this regime of positive kinetic energy, &psi; is an oscillating sinusoidal.</p>
 	<p>But what if the kinetic energy is negative? Then we get an equation that looks like:</p>
-	<p>&nbsp;&nbsp;&nbsp;<code>d<sup>2</sup>&psi; / dx<sup>2</sup>  = SomethingPositive * &psi; </code></p>
+	<p><code>d<sup>2</sup>&psi; / dx<sup>2</sup>  = SomethingPositive * &psi; </code></p>
 	<p>The solution is a <i>real</i> exponential (hyperbolic sine/cosine). This means we either exponentially blow-up (e<sup>x</sup>) or exponentially decay (e<sup>-x</sup>). The blow-up is non-localized, which is unphysical, so the only physical possibility is exponential decay.</p>
 	<p>(What if the kinetic energy is <i>zero</i>? Then we get that &psi; is a line. A line can only go to zero at infinity if it is already everywhere zero, i.e. no particle at all.)</p>
 	<p>Note that this notion of "negative kinetic energy" is really a mathematical trick. You can measure the position of a particle, and compute what a classical particle's kinetic energy "would have to be" at that point. However it's a mistake to say that the particle has a negative kinetic energy; because of the uncertainty principle we can't say what its energy precisely is at all. Indeed, if you measure the kinetic energy directly, you will never see a negative value (exercise for the reader: prove this!)</p>

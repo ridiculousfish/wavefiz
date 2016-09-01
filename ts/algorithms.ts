@@ -428,7 +428,9 @@ module algorithms {
             const targetX = rightwards ? index + 1 : index - 1 // point we're setting
             const prev1X = index // previous x
             const prev2X = rightwards ? index - 1 : index + 1 // previous previous x
-            psi[targetX] = (((12. - F(prev1X) * 10.) * psi[prev1X] - F(prev2X) * psi[prev2X])) / F(targetX)
+            const psiVal = (((12. - F(prev1X) * 10.) * psi[prev1X] - F(prev2X) * psi[prev2X])) / F(targetX)
+            // We may get NaNs for very narrow potentials; flush them to zero
+            psi[targetX] = isNaN(psiVal) ? 0 : psiVal 
         }
 
         // integrate outwards
