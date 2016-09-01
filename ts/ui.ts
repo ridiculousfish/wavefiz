@@ -1,7 +1,11 @@
 /// <reference path='./visualizer.ts'/>
 
+// HTML and JavaScript UI stuff (not GL)
+
 module ui {
 
+    // Toggle whether events should be routed to iframes
+    // This is used during drag-type maneuvers
     function setBlockIFrameEvents(flag:boolean) {
         if (flag) {
             document.body.classList.add("noselect")
@@ -18,22 +22,43 @@ module ui {
             }
         }
     }
-    
+
+    // Helper function to get the pageX/pageY of a MouseEvent or TouchEvent
+    function getEventPageXY(evt:MouseEvent|TouchEvent): {x:number, y:number} {
+        let target : {pageX:number, pageY:number} = null
+        if ((evt as TouchEvent).targetTouches) {
+            // Touch event
+            target = (evt as TouchEvent).targetTouches[0]
+        } else {
+            // Mouse event
+            target = (evt as MouseEvent)
+        }
+        return {x:target.pageX, y:target.pageY}
+    }
+
+    // Helper function to get the global offset of an HTML element
+    function getElementOffset(elem: HTMLElement): {x:number, y:number} {
+        let result = {x: 0, y: 0}
+        let cursor = elem as any
+        while (cursor != null) {
+            result.x += cursor.offsetLeft
+            result.y += cursor.offsetTop
+            cursor = cursor.offsetParent
+        }
+        return result
+    }
+
+    // Add event handlers for the rotator knob
     export function setupRotatorKnob(rotator:HTMLElement, onRotate:(rad:number) => void) {
         let dragging = false
         let rotation = 0
         
         const moveHandler = (evt:MouseEvent|TouchEvent) => {
           if (dragging) {
-              let touchOrMouseEvent : any
-              if ((evt as any).targetTouches) {
-                  touchOrMouseEvent = (evt as any).targetTouches[0]
-              } else {
-                  touchOrMouseEvent = evt
-              }
+              let pageXY = getEventPageXY(evt)
               const bounds = rotator.getBoundingClientRect()
-              const x = touchOrMouseEvent.pageX - bounds.left - bounds.width/2
-              const y = touchOrMouseEvent.pageY - bounds.top - bounds.height/2
+              const x = pageXY.x - bounds.left - bounds.width/2
+              const y = pageXY.y - bounds.top - bounds.height/2
               
               // x is positive east, negative west
               // y is positive north, negative south
@@ -42,6 +67,7 @@ module ui {
               if (x !== 0 && y !== 0) {
                   rotation = Math.atan2(y, x)
                   // Allow snap-to for the four 90 degree rotations
+                  // If we're within eps of one of those rotations, snap to it 
                   const eps = .1
                   for (let i=-2; i <= 2; i++) {
                       const snapTo = i * Math.PI/2
@@ -67,7 +93,7 @@ module ui {
         let startRotateHandler = () => {
             if (! dragging) {
                 dragging = true
-                document.body.classList.add("noselect")
+                document.body.classList.add('noselect')
                 document.addEventListener('mousemove', moveHandler)
                 document.addEventListener('touchmove', moveHandler)
                 setBlockIFrameEvents(true)
@@ -86,9 +112,9 @@ module ui {
         rotator.addEventListener('mousedown', startRotateHandler)
         rotator.addEventListener('touchstart', startRotateHandler)
          
-        document.addEventListener("mouseup", stopRotateHandler)
-        rotator.addEventListener("touchend", stopRotateHandler)
-        rotator.addEventListener("touchcancel", stopRotateHandler)
+        document.addEventListener('mouseup', stopRotateHandler)
+        rotator.addEventListener('touchend', stopRotateHandler)
+        rotator.addEventListener('touchcancel', stopRotateHandler)
     }
     
     export enum Orientation {
@@ -96,26 +122,29 @@ module ui {
         Vertical
     }
 
-    /* Attach event targets to the element with this class */
-    const SLIDER_TOUCH_EVENT_TARGET_CLASS = "touch_event_target"
-    const SLIDER_CLICK_EVENT_TARGET_CLASS = "click_event_target"
+    // Attach event targets to the element with this class
+    const SLIDER_TOUCH_EVENT_TARGET_CLASS = 'touch_event_target'
+    const SLIDER_CLICK_EVENT_TARGET_CLASS = 'click_event_target'
     
+    // Horizontal and vertical sliders, implemented in HTML
     export class Slider {
+        // The position the slider would have if there were no ends
         private unconstrainedPosition: number = -1
+
+        // The actual position of the slider
         private position: number = 0
 
-        // Target for HTML event handlers
-        private target_: HTMLElement
-        
+        // Shared variables
+        // Only one Slider can be dragged at a time
         static draggedSlider:Slider = null
         static lastPosition:number = -1
         static globalInitDone = false
-
+        
+        // Handler invoked when the slider is dragged
         public draggedToPositionHandler: (position:number) => void = () => {} 
         
-        constructor(public orientation:Orientation, public element:HTMLElement) {
-            this.beginWatching()
-            
+        // Construct a Slider either horizontal or vertical, with a Slider element
+        constructor(public orientation:Orientation, public element:HTMLElement) {            
             if (! Slider.globalInitDone) {
                 Slider.globalInitDone = true
                 document.addEventListener('mousemove', (evt:MouseEvent) => {
@@ -125,14 +154,17 @@ module ui {
                     if (Slider.draggedSlider) Slider.draggedSlider.stopDragging()
                 })
             }
+            this.installEventHandlers()
         }
         
+        // Removes the Slider from its parent and discards event handlers
         public remove() {
-            this.endWatching()
+            this.removeEventHandlers()
             let parent = this.element.parentNode
             if (parent) parent.removeChild(this.element)
         }
         
+        // Updates the position of the Slider
         public setPosition(position:number) {
             this.position = position
             if (this.isHorizontal()) {
@@ -142,6 +174,7 @@ module ui {
             }
         }
         
+        // Sets the value text of the Slider 
         public setValue(value:number) {
             const valueStr = value.toFixed(2)
             const labelFieldNodeList = this.element.getElementsByClassName("value_text")
@@ -150,10 +183,12 @@ module ui {
             }
         }
 
+        // Mark the slider visible or not
         public setVisible(flag:boolean) {
             this.element.style.visibility = flag ? "visible" : "hidden"
         }
 
+        // Helper to return the touch and click event targets
         private eventTargets() : {touch:HTMLElement, click:HTMLElement} {
             const getChild = (cn:string) => this.element.getElementsByClassName(cn)[0]
             return {
@@ -162,7 +197,7 @@ module ui {
             }
         }
 
-        private beginWatching() {
+        private installEventHandlers() {
             let {touch, click} = this.eventTargets()
             click.onmousedown = (evt:MouseEvent) => this.startDragging(evt)
             Array(touch, click).forEach((target:HTMLElement) => {
@@ -173,7 +208,7 @@ module ui {
             })
         }
 
-        private endWatching() {
+        private removeEventHandlers() {
             let {touch, click} = this.eventTargets()
             Array(touch, click).forEach((target:HTMLElement) => {
                 target.onmousedown = null
@@ -184,6 +219,7 @@ module ui {
             })
         }
         
+        // Called from event handlers. Mark this Slider as dragging!
         private startDragging(evt:MouseEvent|TouchEvent) {
             Slider.draggedSlider = this
             Slider.lastPosition = this.getEventPosition(evt)
@@ -195,6 +231,8 @@ module ui {
             Slider.draggedSlider = null
         }
         
+        // Called during a drag
+        // Try to move the Slider to a position
         private tryDrag(evt:MouseEvent|TouchEvent) {
             if (this !== Slider.draggedSlider) {
                 return
@@ -204,7 +242,9 @@ module ui {
             let positionChange = position - Slider.lastPosition
             
             // adjust for the scaling we do when the window size is reduced
-            const scale = this.element.offsetHeight / this.element.getBoundingClientRect().height 
+            // scaling assumed to be uniform
+            let container = this.container()
+            let scale = container.offsetHeight / container.getBoundingClientRect().height
             positionChange *= scale
 
             Slider.lastPosition = position
@@ -214,6 +254,8 @@ module ui {
             this.draggedToPositionHandler(constrainedPosition)
         }
         
+        // The container is used for position calculations
+        // It is either our parent or ourself (TODO: needs justification)
         private container(): HTMLElement {
             return this.element.parentElement || this.element
         }
@@ -222,19 +264,17 @@ module ui {
             return this.orientation == Orientation.Horizontal
         }
         
+        // Returns the event position
         private getEventPosition(evt:MouseEvent|TouchEvent): number {
             const offsetPos = this.isHorizontal() ? this.container().offsetLeft : this.container().offsetTop
-            const pageKey = this.isHorizontal() ? "pageX" : "pageY"
-            if ((evt as TouchEvent).targetTouches) {
-                // Touch event
-                return (evt as TouchEvent).targetTouches[0][pageKey] - offsetPos
-            } else {
-                // Mouse event
-                return (evt as MouseEvent)[pageKey] - offsetPos
-            }
+            const pageXY = getEventPageXY(evt)
+            const pagePos = this.isHorizontal() ? pageXY.x : pageXY.y
+            return pagePos - offsetPos
         }
     }
 
+    // We have a notion of a Draggable which is something that implements the following interface
+    // This is used to support sketching (e.g. sketching a potential)
     export interface Draggable {
         dragStart(raycaster: THREE.Raycaster): void
         dragEnd(): void
@@ -242,33 +282,20 @@ module ui {
         hitTestDraggable(raycaster: THREE.Raycaster): Draggable // or null
     }
 
-    // Helper function
-    // returns the global offset of an HTML element
-    function getElementOffset(elem: HTMLElement) {
-        let x = 0
-        let y = 0
-        let cursor = elem as any
-        while (cursor != null) {
-            x += cursor.offsetLeft
-            y += cursor.offsetTop
-            cursor = cursor.offsetParent
-        }
-        return { x: x, y: y }
-    }
-
-    // Entry point for initializing dragging
+    // Entry point for initializing dragging 
     export function initDragging(container:HTMLElement, camera:THREE.Camera, draggables:[Draggable]) {
         let dragSelection: Draggable = null
         let mouseIsDown = false
-        const getXY = (evt: MouseEvent) => {
-            let offset = getElementOffset(container)
-            return { x: evt.pageX - offset.x, y: evt.pageY - offset.y }
+        const getXY = (evt: MouseEvent|TouchEvent) => {
+            const offset = getElementOffset(container)
+            const pageXY = getEventPageXY(evt)
+            return { x: pageXY.x - offset.x, y: pageXY.y - offset.y }
         }
-        const getRaycaster = (evt: MouseEvent): THREE.Raycaster => {
-            let {x, y} = getXY(evt)
-            let x2 = (x / container.offsetWidth) * 2 - 1
-            let y2 = (y / container.offsetHeight) * 2 - 1
-            let mouse = new THREE.Vector2(x2, y2)
+        const getRaycaster = (evt: MouseEvent|TouchEvent): THREE.Raycaster => {
+            const {x, y} = getXY(evt)
+            const x2 = (x / container.offsetWidth) * 2 - 1
+            const y2 = (y / container.offsetHeight) * 2 - 1
+            const mouse = new THREE.Vector2(x2, y2)
             let raycaster = new THREE.Raycaster()
             raycaster.setFromCamera(mouse, camera)
             return raycaster
@@ -301,6 +328,8 @@ module ui {
         })
     }
 
+    // Support for scaling
+    // We scale our visualizer to make it fit in the window
     function isLandscape() {
         return window.orientation === 0 || window.orientation === 180
     }
@@ -308,9 +337,10 @@ module ui {
     let sSmallestClientHeightInLandscape:number = null
     function getEffectiveWindowHeight(): number {
         let height = window.innerHeight
-        // In landscape, avoid address bar autohiding trickiness
+        // Hack: in landscape, avoid address bar autohiding trickiness
+        // We do this by remembering the smallest height we've seen in landscape
+        // and not using a height larger than that
         let isLandscape = window.orientation === 90 || window.orientation === -90
-        console.log("isLandscape: " + isLandscape)
         if (isLandscape) {
             if (sSmallestClientHeightInLandscape === null || sSmallestClientHeightInLandscape > height) {
                 sSmallestClientHeightInLandscape = height

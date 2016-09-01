@@ -5,7 +5,8 @@ body {
     padding: 2px;
     height: 100%;
     margin: 0 7px 0 7px;
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 13pt;
 }
 
 .trigger_link {
@@ -27,7 +28,7 @@ function postStartTourMessage() {
 </head>
 <body>
     <h2>Welcome to the Schrödinger&nbsp;Visualizer!</h2>
-    <p>This visualizes solutions to the one-dimensional Schrödinger equation in various potentials. The goal is to build your intuition about quantum phenomena, in a way that can easily relate to both popular QM or an undergraduate QM course.</p>
+    <p>This solves and visualizes the one-dimensional Schrödinger equation in various potentials. The goal is to build your intuition about quantum phenomena, in a way that can easily relate to both pop QM and an undergraduate QM course.</p>
     <p>Learn by exploration? Click stuff to see what happens.</p>
     <p>Learn by doing? <a class="trigger_link" href="#exercises">Try the exercises</a></p>
     <p>Like sightseeing? <a class="trigger_link" href="#" onClick="javascript:postStartTourMessage();">Take the tour</a></p>
@@ -82,7 +83,7 @@ function postStartTourMessage() {
         <h3>Tunnelling</h3>
         <li>Locate the two points where the energy bar crosses the potential. (The thin gray lines help you here). These are the <i>classical turning points</i>.
         
-        A classical particle cannot reach outside of the turning points, because its kinetic energy would be negative. But a quantum particle may be found in the classically forbidden region. This is quantum tunnelling.
+        A classical particle cannot reach outside of the turning points, because its kinetic energy would be negative. But a quantum particle may be found in the classically forbidden region. This is <i>quantum tunnelling</i>.
         <li>Display <i>|&psi;|<sup>2</sup></i>. Locate the classically forbidden region. Does the wavefunction tunnel into this region?</li>
         <li>Try some other potentials. Which potential has no tunnelling? Why not?</li>
         <li>Load the Two Square Wells potential. Try to find the energy that maximizes the amount of tunnelling into the potential barrier (the "wall" in the middle). </li>

@@ -176,7 +176,7 @@ module visualizing {
             return Object.keys(this.energies).map((k) => this.energies[k])
         }
 
-        // Copies the receiver. Used to preserve immutability.
+        // Copies the receiver. Implementation detail used to ensure immutability.
         private copy(): State {
             let clone = new State(this.params_)
             for (let key in this) {

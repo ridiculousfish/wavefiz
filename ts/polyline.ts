@@ -1,6 +1,12 @@
 /// <reference path="../typings/threejs/three.d.ts"/>
 
+// Support for drawing "polylines"
+// These are line paths
+
 module visualizing {
+    // We can draw lines either with native GL lines,
+    // or with a shader. Allow the user to override this with a "lines="
+    // parameter in the URL.
     enum LineType {
         None = 0,
         Native = 1,
@@ -25,7 +31,7 @@ module visualizing {
     // Base class for drawing lines
     // "Line" here means a list of 3d points.
     // This could be a fancy function plot, or just a straight line.
-    // Lines have a fixed count of points, but those points can change
+    // Lines have a fixed count of points, but the points can change
     // We have a couple of strategies, depending on our client, hence this base class.
     export abstract class Polyline {
         // Our object is a mesh or similar
@@ -38,7 +44,7 @@ module visualizing {
         
         // Lines have a fixed length. It cannot be updated.
         // This reflects the GL observation that instead of resizing a buffer,
-        // you might as well create a new one
+        // you might as well create a new one - it costs about the same
         constructor(protected length:number) {}
 
         // Entry point for line updates
@@ -84,8 +90,7 @@ module visualizing {
         public static create(length: number, parent: THREE.Group, material: THREE.LineBasicMaterialParameters): Polyline {
             let lineType = explicitLineType()
             if (lineType == LineType.None) {
-                // Hack for native lines
-                // This helps us on mobile
+                // Use native lines when we only have two points
                 if (length == 2) {
                     lineType = LineType.Native
                 } else {

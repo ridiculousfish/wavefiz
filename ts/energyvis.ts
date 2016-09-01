@@ -1,5 +1,6 @@
 /// <reference path='./ui.ts'/>
 
+// The energy visualizer manages both the sliders and the energy bars
 module visualizing {
     
     // Private class representing a single energy
@@ -14,6 +15,7 @@ module visualizing {
         }
 
         // Sets the energy, which means updating our line and slider 
+        // Energy is in the range [0, 1]
         public setEnergy(energy: number) {
             const yPosition = this.params.convertYToVisualCoordinate(energy)
             this.line.makeHorizontal(this.params.width, yPosition)
@@ -63,7 +65,7 @@ module visualizing {
             // pretend there's a point at each end
             usedEnergies.push(0, 1)
 
-            // Find the longest interval, then pick its midpoint
+            // Find the longest interval between energies, then pick its midpoint
             usedEnergies.sort()
             let longestIntervalMidpoint = -1
             let longestIntervalLength = -1
@@ -93,7 +95,7 @@ module visualizing {
         public removeEnergySlider() {
             const energyIDs = Object.keys(this.state_.energies).map((val) => parseInt(val, 10))
             if (energyIDs.length > 1) {
-                const maxID = energyIDs.reduce((a, b) => Math.max(a, b), 0)
+                const maxID = energyIDs.reduce((a, b) => Math.max(a, b))
                 this.state_.modify((st:State) => {                      
                     delete st.energies[maxID]
                 })

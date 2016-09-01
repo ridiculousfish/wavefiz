@@ -1,4 +1,6 @@
 // Set of interesting potentials
+// Infinite square well, simple harmonic oscillator,
+// and all the other favorites from your youth!
 
 module algorithms {
 
@@ -9,9 +11,11 @@ module algorithms {
 
     function smoothstep(p1: Point2, p2:Point2, x: number): number {
         // Given a x value between two points, returns the lerp'd y value
-        if (x <= p1.x) return p1.y
-        else if (x >= p2.x) return p2.y
-        else {
+        if (x <= p1.x) {
+            return p1.y
+        } else if (x >= p2.x) {
+            return p2.y
+        } else {
             const percent = (x - p1.x) / (p2.x - p1.x)
             return p1.y * (1.0 - percent) + p2.y * percent
         }

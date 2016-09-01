@@ -1,9 +1,10 @@
-/* Support for the "Tour" part of the visualizer */
+// Support for the "Tour" part of the visualizer,
+// using introJs!
 
 declare function introJs() 
 
 module tour {
-    /* Helper to get the element which a given label references */
+    // Helper to get the element which a given label references
     function labelOf(elementId) {
         if (elementId.startsWith('#')) {
             elementId = elementId.slice(1)
@@ -17,18 +18,22 @@ module tour {
         return null
     }
 
-    var sCurrentTour = null
-
+    // Track whether a tour is extant 
+    let sCurrentTour = null
+    
+    // Clear the tour when we're done
     function tourDone() {
         sCurrentTour = null
     }
 
+    // Called externally to stop the current tour if there is one
     export function stop() {
         if (sCurrentTour !== null) {
             sCurrentTour.exit()
         }
     }
 
+    // Return the intro text for the tour
     function getIntroText(): String {
         let introText = "🚌 All&nbsp;aboard&nbsp;the&nbsp;quantum&nbsp;tour&nbsp;bus! 🚌<br><br>"
         // If the user doesn't have arrow keys, we want to avoid text about arrow keys
@@ -44,14 +49,12 @@ module tour {
         return introText
     }
 
-    /* Start the tour */
+    // Start the tour if it's not already running
     export function start() {
         if (sCurrentTour !== null) {
-            // Tour already running
             return
         }
         sCurrentTour = introJs()
-
 
         sCurrentTour.setOptions({
             oncomplete: tourDone,
