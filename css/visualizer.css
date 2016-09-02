@@ -176,23 +176,16 @@ body {
 
 #tut-container {
     flex-grow: 1;
+    flex-shrink: 0;
+    flex-basis: 250px;
     /* https://coderwall.com/p/c-aqqw/scrollable-iframe-on-mobile-safari */
-    overflow: auto;
-    -webkit-overflow-scrolling: touch;
+    overflow-y: auto;
     overflow-x: hidden;
     height: 630px;
-    max-height: 90vh;
-    min-width: 200px;
+    width: 100%;
 }
 
-#tut-container iframe {
-    border-style: none;
-    display: block;
-    height: 100%;
-    padding: 0;
-    margin: 0;
-    width: 100%;
-    max-width: 900px;
+#tutorial-receiver {
 }
 
 

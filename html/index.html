@@ -6,6 +6,7 @@
     <link rel="stylesheet" type="text/css" href="css/introjs.css">
     <link rel="stylesheet" type="text/css" href="css/mods_introjs.css">
     <link rel="stylesheet" type="text/css" href="css/visualizer.css">
+    <link rel="import" href="tutorial.html">
 </head>
 <body>
     <!-- Visualizer -->
@@ -81,7 +82,8 @@
 
         </div>
         <div id="tut-container">
-            <iframe id="tut_iframe" src="tutorial.html"></iframe>
+            <!--<iframe id="tut_iframe" src="tutorial.html"></iframe>-->
+            <div id="tutorial-receiver"></div>
         </div>
 
     </div>
@@ -124,7 +126,13 @@
         window.addEventListener("orientationchange", ui.resizeToFitWindowHeight)
         ui.resizeToFitWindowHeight()
 
+        window.addEventListener('HTMLImportsLoaded', function() {
+            var content = document.querySelector('link[rel="import"]').import
+            var el = content.getElementById('tutorial-content')
+            document.getElementById('tutorial-receiver').appendChild(el.cloneNode(true))
+        })
         </script>
+        <script src="js/HTMLImports.min.js"></script>
 </body>
 
 </html>
