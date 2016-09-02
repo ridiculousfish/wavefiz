@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="utf-8">
     <title>Schrödinger Visualizer</title>
-    <meta charset="UTF-8">
     <link rel="stylesheet" type="text/css" href="css/introjs.css">
     <link rel="stylesheet" type="text/css" href="css/mods_introjs.css">
     <link rel="stylesheet" type="text/css" href="css/visualizer.css">
@@ -26,8 +26,8 @@
                             <div class="click_event_target"></div>
                         </div>
                     </div>
-                </div>
-                <div id="potential-dragging-container">
+                </div><!-- Must have no whitespace here
+                --><div id="potential-dragging-container">
                     <div id="potential_dragger" class="dragger horizontal">
                         <div class="centerer">
                             <div class="grip"></div>
@@ -113,7 +113,7 @@
 
         function tryExercises() {
             tour.stop()
-            document.getElementById("tut_iframe").contentWindow.location.hash = "#exercises";
+            window.location.hash = "#exercises";
         }
 
         window.addEventListener('message', function(evt) {

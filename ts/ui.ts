@@ -328,14 +328,22 @@ module ui {
         })
     }
 
+    const IPHONE6_INNERHEIGHT_ADDRESS_BAR_HIDDEN = 551
+    const IPHONE6_INNERHEIGHT_ADDRESS_BAR_VISIBLE = 486
+
     let sSmallestClientHeightInLandscape:number = null
     function getEffectiveWindowHeight(): number {
         let height = window.innerHeight
+        const isLandscape = window.orientation === 90 || window.orientation === -90
         // Hack: in landscape, avoid address bar autohiding trickiness
         // We do this by remembering the smallest height we've seen in landscape
         // and not using a height larger than that
-        let isLandscape = window.orientation === 90 || window.orientation === -90
         if (isLandscape) {
+            // Hack for iPhone 6
+            // Pretend the address bar is hidden
+            if (height === IPHONE6_INNERHEIGHT_ADDRESS_BAR_HIDDEN) {
+                height = IPHONE6_INNERHEIGHT_ADDRESS_BAR_VISIBLE
+            }
             if (sSmallestClientHeightInLandscape === null || sSmallestClientHeightInLandscape > height) {
                 sSmallestClientHeightInLandscape = height
             }

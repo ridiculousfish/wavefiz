@@ -2,6 +2,22 @@ body {
     padding: 0;
     margin: 0;
     background-color: #DFDFDF;
+    font-size: 14pt;
+}
+
+/* Text bigger on mobile? */
+@media only screen and (max-device-width: 640px) 
+                   and (orientation: landscape) {
+    body {
+        font-size:18pt;
+    }
+}
+
+@media only screen and (max-device-width: 640px) 
+                   and (orientation: portrait) {
+    body {
+        font-size:22pt;
+    }
 }
 
 /* Options is the container of buttons beneath the visualizer */
@@ -178,11 +194,12 @@ body {
     flex-grow: 1;
     flex-shrink: 0;
     flex-basis: 250px;
-    /* https://coderwall.com/p/c-aqqw/scrollable-iframe-on-mobile-safari */
-    overflow-y: auto;
+    overflow-y: scroll;
     overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
     height: 630px;
     width: 100%;
+    max-width: 900px;
 }
 
 #tutorial-receiver {
@@ -303,8 +320,9 @@ body {
     border: solid 1px #AAA;
 }
 
+/* Shift energy buttons left a bit so they don't run into the tutorial */
 #energy_buttons {
-    margin-right: 5px;
+    margin-right: 40px;
 }
 
 /* menu is used for the potential picker */
