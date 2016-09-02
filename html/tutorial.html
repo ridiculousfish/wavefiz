@@ -20,7 +20,8 @@ li.headish {
     list-style-type: none;
 }
 code {
-    font-size: smaller;
+    font-size: medium;
+    white-space: nowrap;
 }
 </style>
 <script type="text/javascript">
@@ -37,36 +38,34 @@ function postStartTourMessage() {
   <h4>Time for some quantum intuition!</h4>
 
   <p>This visualizer solves and plots the one-dimensional Schrödinger equation
-  in various potentials. It also has some fun exercises that don't require any math. The goal is to build your intuition about quantum phenomena in a way that
-  easily relates to pop QM or an undergraduate course.</p>
+  in various potentials. It also has fun exercises that don't require any math. The goal is to build your intuition about the quantum world in a way that
+  easily relates to both pop QM and an undergraduate course.</p>
 
-  <p><i>Learn by exploration?</i>&nbsp; Click stuff to see what happens.</p>
+  <p><i>Learn by exploration?</i>&nbsp; Click stuff to see what happens, then read on!</p>
 
   <p><i>Learn by doing?</i> <a class="trigger_link" href="#exercises">Try&nbsp;the&nbsp;exercises</a></p>
 
   <p><i>Like sightseeing?</i> <a class="trigger_link" href="#" onclick=
   "javascript:postStartTourMessage();">Take&nbsp;the&nbsp;tour</a></p>
 
-  <p><i>Know your QM?</i> Read about <a class="trigger_link" href="#numerical_method">our&nbsp;numerical&nbsp;method</a></p>
+  <p><i>Know your QM?</i> Read about our <a class="trigger_link" href="#numerical_method">numerical&nbsp;method</a></p>
 
   <h3>What the heck am I looking at?</h3>
 
-  <p>This is the quantum analog of a ball on a spring. Affix a ball to a spring and give it a tug, and you'll get motion, described by Newton's Laws. Do the same with a quantum ball, and the result is described by the Schrödinger Equation.
+  <p>This is the quantum analog of a ball on a spring. Stick an ordinary ball on a spring and give it a tug, and you'll get oscillations described by Newton's Laws. Do the same with a quantum ball, and the result is described by the Schrödinger Equation.
 
   <h3>What is the Schrödinger Equation?</h3>
 
-  <p>Quantum mechanics is a theory of Nature at the scale of individual particles, like electrons. Such particles cannot easily be described like a marble, with a position and a speed. Instead we describe them with something called a <i>wavefunction</i>, from which position and speed can be determined - maybe probabilistically! The Schrödinger equation describes how the wavefunction of a system
-  evolves over time.</p>
+  <p>Quantum mechanics is a theory of Nature at the scale of individual particles, like electrons. Such particles cannot easily be described like a marble, with a position and a speed. Instead we describe them with something called a <i>wavefunction</i>, from which position and speed can be derived. The Schrödinger equation describes how the wavefunction of a system evolves over time.</p>
 
   <p>In Newtonian mechanics, you are given some configuration of positions, velocities,
   masses, and forces, and by solving F=ma, you can determine the system's state at some
   future time.</p>
 
-  <p>In quantum mechanics, forces are replaced by a potential. By solving the
-  Schrödinger equation given that potential, you compute the wavefunction
+  <p>In quantum mechanics, forces are instead described by a potential. By plugging that
+  potential into the Schrödinger equation, you compute the wavefunction
   &#968; (or more precisely, a set of allowed wavefunctions). The wavefunction, in turn,
-  tells you what results you would get for actual measurements - or the probabilities of
-  those results.</p>
+  tells you what result you would actually measure - or their probabilities!</p>
 
   <h3>What is a potential?</h3>
 
@@ -175,7 +174,10 @@ function postStartTourMessage() {
 
   <ol>
     <li class="headish">
-      <h4>Stationary States</h4>Use the "V" button to load the Simple Harmonic Oscillator
+      <h4>Stationary States</h4>
+    </li>
+    <li value="1">
+      Use the "V" button to load the Simple Harmonic Oscillator
       potential, with just the single energy bar (the horizontal red line with the
       slider). Move the energy bar up and down to try to find an energy that eliminates
       the "kink" in the wavefunction. It might help to pause the simulation by clicking
@@ -204,7 +206,7 @@ function postStartTourMessage() {
 
     <li class="headish"><h4>Tunnelling</h4></li>
 
-    <li>Locate the two points where the energy bar crosses the potential. (The thin gray
+    <li value="4">Locate the two points where the energy bar crosses the potential. (The thin gray
     lines help you here). These are the <i>classical turning points</i>. A classical
     particle cannot reach outside of the turning points, because its kinetic energy would
     be negative. But a quantum particle may be found in the classically forbidden region.
@@ -221,7 +223,7 @@ function postStartTourMessage() {
 
     <li class="headish"><h4>Time Evolution</h4></li>
 
-    <li>Ensure the Play button &#9654; is clicked, and enjoy the show. The depth
+    <li value="8">Ensure the Play button &#9654; is clicked, and enjoy the show. The depth
     represents the imaginary component of the wavefunction.</li>
 
     <li>Does more energy make the wavefunction rotate faster or slower?</li>
@@ -244,10 +246,11 @@ function postStartTourMessage() {
       different speeds. This means the type of interference at each point changes in
       time. Now it is constructive; a moment later it is destructive.</p>
 
-      <h4>Momentum</h4>
     </li>
 
-    <li>Load the Infinite Square Well solution and start at the ground state. Show the
+    <li class="headish"><h4>Momentum</h4></li>
+
+    <li value="12">Load the Infinite Square Well solution and start at the ground state. Show the
     momentum magnitude |&#968;|<sup>2</sup>. What does the momentum distribution look
     like?
 
@@ -265,7 +268,7 @@ function postStartTourMessage() {
     <li>Does more energy make the particle move faster or slower?
 
       <p>Note this is separate from the rate of oscillation. You answer this by looking
-      at the distribution of the momentum-space wavefunction, not how it moves.</p>
+      at the <i>distribution</i> of the momentum-space wavefunction, not how it moves.</p>
     </li>
 
     <li>Load an asymmetric potential, such as the stepped square well, with a single
