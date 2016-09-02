@@ -24,7 +24,7 @@ body {
 .options {
     font-family: Times, serif;
     display: flex;
-    width: 900px;
+    width: 841px;
     margin-top: 8px;
 }
 
@@ -164,7 +164,7 @@ body {
     height: 600px;
     display: inline-block;
     vertical-align: bottom;
-    margin: 0;
+    margin-left: -38px;
     position: relative;
 }
 
@@ -172,7 +172,10 @@ body {
     width: 800px;
     height: 30px;
     display: block;
-    margin: 0;
+    margin-bottom: -30px;
+    position: relative;
+    z-index: 2;
+    opacity: .9;
 }
 
 #ui-and-tutorial-container {
@@ -237,8 +240,8 @@ body {
 
 /* Vertical dragger */
 .v-draggers .dragger .grip {
-    border-top-right-radius: 5px;
-    border-bottom-right-radius: 5px;
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
     width: 20px;
     height: 21px;
     background-image: linear-gradient(180deg, #AAA 80%, black);
@@ -269,10 +272,15 @@ body {
     user-select: none;
 }
 
-/* Center the vertical dragger so its middle is the value we want */
+/* Center the draggers so their middle is the value we want */
 .v-draggers .dragger > .centerer {
     position: relative;
     bottom: 13px;
+}
+
+.h-draggers .dragger > .centerer {
+    position: relative;
+    right: 13px;
 }
 
 .dragger .click_event_target,
