@@ -367,6 +367,7 @@ module ui {
         if (windowHeight >= maxHeight) {
             scaleTarget.style.transform = null
             container.style.marginRight = null
+            container.style.marginBottom = null
             return
         }
 
@@ -387,6 +388,8 @@ module ui {
         // with the iPhone in landscape mode.
         // Note this makes the margin negative, because dx is negative,
         // and Math.floor makes it more negative
+        // Do the same with the marginBottom
         container.style.marginRight = Math.floor(2 * dx) + 'px'
+        container.style.marginBottom = Math.floor(2 * dy) + 'px'
     }
 }    
