@@ -85,7 +85,7 @@ module tour {
                 {
                     element: '#potential-dragging-container',
                     intro: "Adjust the width of the potential by dragging this slider left and right. Try it now!",
-                    position: 'top'
+                    position: 'bottom'
                 },
                 {
                     element: '#potential_chooser',

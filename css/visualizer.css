@@ -293,19 +293,34 @@ body {
     padding: 5px 0;
 }
 
+.v-draggers .touch_event_target,
 .v-draggers .click_event_target {
     cursor: ns-resize;
+    left: 0px;
+    top: -5px;
+    padding: 5px 0;
 }
 
+.h-draggers .touch_event_target,
 .h-draggers .click_event_target {
     cursor: ew-resize;
+    left: -5px;
+    top: 0px;
+    padding: 0 5px;
 }
 
-.dragger .touch_event_target {
+.v-draggers .touch_event_target {
     /* Bigger touch targets! */
     top: -20px;
     padding: 20px 5px;
 }
+
+.h-draggers .touch_event_target {
+    /* Bigger touch targets! */
+    left: -20px;
+    padding: 5px 20px;
+}
+
 
 /* Rotator is the spinning thing to rotate the visualizer */
 #rotator {

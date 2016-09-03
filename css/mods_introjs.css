@@ -50,12 +50,19 @@ a.light-link {
     border-left-color: #333333;
 }
 
-/* Move the arrow down */
-.introjs-arrow.top, .introjs-arrow.bottom {
+/* Move the arrow left */
+.introjs-arrow.bottom {
     bottom: -40px;
     left: 50%;
     transform: translateX(50%);
     border-top-color: #333333;
+}
+
+.introjs-arrow.top {
+    top: -40px;
+    left: 50%;
+    transform: translateX(50%);
+    border-bottom-color: #333333;    
 }
 
 /* Defeat a 10 px offset which makes our arrow too big */
