@@ -4,13 +4,23 @@
 
 module algorithms {
 
+    // Potentials are represented in the range [0, 1]
+    // Here's our "infinity" value
+    export const Infinityish = 1000
+
     interface Point2 {
         x: number,
         y: number
     }
 
-    function smoothstep(p1: Point2, p2:Point2, x: number): number {
+    export function smoothstep(p1: Point2, p2:Point2, x: number): number {
         // Given a x value between two points, returns the lerp'd y value
+        if (p1.x > p2.x) {
+            // swap them
+            const tmp = p1
+            p1 = p2
+            p2 = tmp
+        }
         if (x <= p1.x) {
             return p1.y
         } else if (x >= p2.x) {
@@ -58,7 +68,7 @@ module algorithms {
         const baseEnergy = 0.05
         // x is a value in [0, 1)
         if (x < widthRatio || x > 1.0 - widthRatio) {
-            return 1000 // "infinity"
+            return Infinityish
         }
         return baseEnergy
     }
@@ -84,7 +94,7 @@ module algorithms {
         
         // If we're outside both wells, return "infinity""
         if (x < widthFactor || x >= 1.0 - widthFactor) {
-            return 1000
+            return Infinityish
         }
         const intervalLength = 1.0 - 2 * widthFactor
         let vx = (x - widthFactor) / intervalLength
@@ -105,28 +115,41 @@ module algorithms {
         const stepEnergy = 0.4
         // x is a value in [0, 1)
         if (x < widthRatio || x > 1.0 - widthRatio) {
-            return 1000 // "infinity"
+            return Infinityish
         }
         return x < 0.5 ? stepEnergy : baseEnergy
     }
 
     // Potential built from sampling at a list of points
-    // Takes ownership of the samples array
     // The parameter is unused
     export function SampledPotential(samples:Point2[]) : PotentialBuilderFunc {
         assert(samples.length > 0)
-        // we are going to binary search on samples, so it better be sorted
-        samples.sort((a: Point2, b:Point2) => a.x - b.x)
+
+        // Note that the samples are likely multivalued!
+        // Thus we can't be too clever and try to binary search or anything
+        // Hence this ugly naive algorithm. Given an X location, find all the
+        // sample pairs that are on either side of it, lerp them, and then
+        // pick the largest
         return (x:number) => {
-            const idx = binarySearch(samples, x)
-            const sample = samples[idx]
-            if (x < sample.x || idx + 1 >= samples.length) {
+            let result = 0
+            let foundSample = false
+            for (let i=1; i < samples.length; i++) {
+                const beforeSign = x > samples[i-1].x
+                const afterSign = x > samples[i].x
+                if (beforeSign !== afterSign) {
+                    // We're between these two points
+                    // Pick the largest such value
+                    let lerpedSample = smoothstep(samples[i-1], samples[i], x)
+                    result = Math.max(result, lerpedSample)
+                    foundSample = true
+                }
+            }
+            if (! foundSample) {
                 // this corresponds to starting or ending the sample midway through our box
-                // flush it to "infinity""
-                return 1000
+                // flush it to "infinity"
+                return Infinityish
             } else {
-                const next = samples[idx + 1]
-                return smoothstep(sample, next, x)
+                return result
             }
         }
     }

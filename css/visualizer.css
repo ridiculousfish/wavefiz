@@ -167,6 +167,7 @@ body {
     vertical-align: bottom;
     margin-left: -38px;
     position: relative;
+    pointer-events: none;
 }
 
 #potential-dragging-container {
@@ -177,6 +178,7 @@ body {
     position: relative;
     z-index: 2;
     opacity: .9;
+    pointer-events: none;
 }
 
 #ui-and-tutorial-container {
@@ -232,6 +234,7 @@ body {
 .dragger {
     display: inline-block;
     position: absolute;
+    pointer-events: auto;
 }
 
 .dragger div {
