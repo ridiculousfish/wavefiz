@@ -74,7 +74,7 @@ module tour {
                 },
                 {
                     element: '#vis-container',
-                    intro: "Here\'s where the action happens!<br><br>The visualizer shows the <i style=\"color: #FF7777\">wavefunction</i>, <i style=\"color: magenta\">potential</i>, and <i style=\"color: red\">energy</i>.",
+                    intro: "Here\'s where the action happens!<br><br>The visualizer shows the <i style=\"color: #FFD633\">wavefunction</i>, <i style=\"color: magenta\">potential</i>, and <i style=\"color: red\">energy</i>.",
                     position: 'right'
                 },
                 {
