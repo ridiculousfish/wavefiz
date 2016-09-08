@@ -300,14 +300,17 @@ module ui {
             raycaster.setFromCamera(mouse, camera)
             return raycaster
         }
-        container.addEventListener('mousemove', (evt: MouseEvent) => {
+
+        let moveHandler = (evt: MouseEvent|TouchEvent) => {
             if (mouseIsDown) {
                 if (dragSelection) {
                     dragSelection.dragged(getRaycaster(evt))
+                    evt.preventDefault()
                 }
             }
-        })
-        container.addEventListener('mousedown', (evt) => {
+        }
+
+        let downHandler = (evt: MouseEvent|TouchEvent) => {
             dragSelection = null
             const raycaster = getRaycaster(evt)
             for (let i = 0; i < draggables.length && dragSelection === null; i++) {
@@ -318,14 +321,25 @@ module ui {
                 dragSelection.dragStart(raycaster)
             }
             mouseIsDown = true
-        })
-        document.addEventListener('mouseup', () => {
+        }
+
+        let upHandler = () => {
             if (dragSelection) {
                 dragSelection.dragEnd()
                 dragSelection = null
                 mouseIsDown = false
             }
-        })
+        }
+
+        container.addEventListener('mousemove', moveHandler)
+        container.addEventListener('touchmove', moveHandler)
+
+        container.addEventListener('mousedown', downHandler)
+        container.addEventListener('touchstart', downHandler)
+
+        document.addEventListener('mouseup', upHandler)
+        document.addEventListener('touchend', upHandler)
+        document.addEventListener('touchcancel', upHandler)
     }
 
     const IPHONE6_INNERHEIGHT_ADDRESS_BAR_HIDDEN = 551
