@@ -111,7 +111,6 @@ module visualizing {
         public psiColor: number = 0xFFD633
         public phiColor: number = 0x0077FF 
 
-
         // Some helper functions based on the visualization
 
         // Given an index in our mesh, returns the X location of middle of the cell

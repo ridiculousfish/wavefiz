@@ -9,7 +9,7 @@ HTML_SRCS := html/index.html html/tutorial.html
 CSS := css
 
 .PHONY: default
-default: $(VISUALIZE_JS)
+default: stage
 
 .PHONY: lint
 lint: $(JS_SRCS) | $(BUILD_DIR)
@@ -29,8 +29,8 @@ $(INTERMEDIATE_DIR) $(BUILD_DIR):
 	mkdir -p $@
 
 prerequisites:
-	echo "npm install -g typescript"
-	echo "npm install uglify-js -g"
+	@echo "npm install -g typescript"
+	@echo "npm install -g uglify-js"
 
 .PHONY: stage
 stage: $(VISUALIZE_JS) $(HTML_SRCS)
