@@ -23,7 +23,7 @@ body {
 
 /* Options is the container of buttons beneath the visualizer */
 .options {
-    font-family: Times, serif;
+    font-family: Times, 'Times New Roman', serif;
     display: flex;
     width: 841px;
     margin-top: 8px;
@@ -36,6 +36,7 @@ body {
     display: inline-block;
     vertical-align: middle;
 }
+
 
 /* We use checkboxes as the element, but hide the actual button so we can make a custom one */ 
 .options input[type="checkbox"] {
@@ -94,7 +95,7 @@ body {
     font-size: 28pt;
     border-radius: 8px;
     color: #555;
-    width: 45px;
+    min-width: 45px;
     text-align: center;
     border: solid 2px #333;
     background-color: white;
@@ -114,6 +115,8 @@ body {
     font-size: 0.45em;
     vertical-align: super;
     line-height: 0;
+    display: inline-block;
+    width: 4px;
 }
 
 /* Adjust our big triangle */
