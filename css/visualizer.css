@@ -3,6 +3,7 @@ body {
     margin: 0;
     background-color: #DFDFDF;
     font-size: 14pt;
+    font-family: Georgia, 'Times New Roman', Times, serif;
 }
 
 /* Text bigger on mobile? */

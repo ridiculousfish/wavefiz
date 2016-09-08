@@ -7,7 +7,7 @@ body {
     padding: 2px 0 2px 0;
     height: 100%;
     margin: 0 7px 0 7px;
-    font-family: Helvetica, Arial, sans-serif;
+    font-family: Georgia, 'Times New Roman', Times, serif;
 }
 
 .trigger_link {
@@ -52,7 +52,11 @@ function postStartTourMessage() {
 
   <h3>What the heck am I looking at?</h3>
 
-  <p>This is the quantum analog of a ball on a spring. Stick an ordinary ball on a spring and give it a tug, and you'll get oscillations described by Newton's Laws. Do the same with a quantum ball, and the result is described by the Schrödinger Equation.
+  <p>This is the quantum version of a ball on a spring. Stick an ordinary ball on a spring and give it a tug, and it will bounce back and forth. Same with a quantum ball (like an electron)!
+
+  <p>In the visualizer, the purple U shape represents the potential (if you don't know what that is, think potential energy). The force is high when the potential is steep. The red line is the level of energy
+    
+  <p>A key difference is that the classical oscillations are described by Newton's Laws, while the quantum ones are described by the <i>Schrödinger Equation</i>.
 
   <h3>What is the Schrödinger Equation?</h3>
 
@@ -179,9 +183,9 @@ function postStartTourMessage() {
     <li value="1">
       Use the "V" button to load the Simple Harmonic Oscillator
       potential, with just the single energy bar (the horizontal red line with the
-      slider). Move the energy bar up and down to try to find an energy that eliminates
-      the "kink" in the wavefunction. It might help to pause the simulation by clicking
-      the play (triangle) button.
+      slider). Pause the simulation by clicking the play (triangle) button. Move the
+      energy bar up and down to try to find an energy that eliminates the "kink" in
+      the wavefunction (on its right side).
     </li>
 
     <li>What is the <i>smallest</i> energy that eliminates the kink in the wavefunction?
@@ -204,9 +208,16 @@ function postStartTourMessage() {
       see one of the quantized values.</p>
     </li>
 
+    <li>In the ground state, is the particle more likely to be found in the center or near the edges?
+        How about for the next-smallest energy? To answer these questions, turn on <i>|&#968;|<sup>2</sup></i>. Its graph shows you where the particle is most likely to be found.
+
+      <p>A classical harmonic oscillator ("ball-on-a-spring") spends most of its time at the edges..</p>
+    </li>
+
+
     <li class="headish"><h4>Tunnelling</h4></li>
 
-    <li value="4">Locate the two points where the energy bar crosses the potential. (The thin gray
+    <li value="5">Locate the two points where the energy bar crosses the potential. (The thin gray
     lines help you here). These are the <i>classical turning points</i>. A classical
     particle cannot reach outside of the turning points, because its kinetic energy would
     be negative. But a quantum particle may be found in the classically forbidden region.
@@ -223,7 +234,7 @@ function postStartTourMessage() {
 
     <li class="headish"><h4>Time Evolution</h4></li>
 
-    <li value="8">Ensure the Play button &#9654; is clicked, and enjoy the show. The depth
+    <li value="9">Ensure the Play button &#9654; is clicked, and enjoy the show. The z-axis (depth)
     represents the imaginary component of the wavefunction.</li>
 
     <li>Does more energy make the wavefunction rotate faster or slower?</li>
@@ -250,7 +261,7 @@ function postStartTourMessage() {
 
     <li class="headish"><h4>Momentum</h4></li>
 
-    <li value="12">Load the Infinite Square Well solution and start at the ground state. Show the
+    <li value="13">Load the Infinite Square Well solution and start at the ground state. Show the
     momentum magnitude |&#968;|<sup>2</sup>. What does the momentum distribution look
     like?
 

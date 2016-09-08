@@ -107,6 +107,11 @@ module visualizing {
         public psiScale: number = 250 // how much scale we visually apply to the wavefunction
         public psiAbsScale: number = this.psiScale * 1.75 // how much scale we visually apply to the psiAbs and phiAbs
 
+        // Colors of psi (position-space) and phi (momentum-space) wavefunctions
+        public psiColor: number = 0xFFD633
+        public phiColor: number = 0x0077FF 
+
+
         // Some helper functions based on the visualization
 
         // Given an index in our mesh, returns the X location of middle of the cell

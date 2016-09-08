@@ -79,9 +79,10 @@ module visualizing {
             this.group_.add(this.potentialVisualizer_.group)
 
             // Build a wavefunction visualizer
-            // This draws the line showing the wavefunction
+            // This draws the line showing the
+            // wavefunctions respectively
             // Center it vertically
-            this.wavefunctionAvg_ = new WavefunctionVisualizer(this.params_, 0xFF7777, this.animator_)
+            this.wavefunctionAvg_ = new WavefunctionVisualizer(this.params_, this.animator_)
             const centerY = this.params_.height / 2
             this.wavefunctionAvg_.group.position.y = centerY
             this.group_.add(this.wavefunctionAvg_.group)

@@ -38,36 +38,38 @@ module visualizing {
         // The state tracks which of our four graphs are visible
         private state_ = new State(this.params)
 
-        constructor(public params: Parameters, public color: number, public animator: Redrawer) {
+        constructor(public params: Parameters, public animator: Redrawer) {
+            const psiColor = params.psiColor
+            const phiColor = params.phiColor
             // Set up materials for our four graphs, and the baseline
             const psiMaterial = {
-                color: this.color,
+                color: psiColor,
                 linewidth: 5,
                 depthTest: false
             }
             const psiAbsMaterial = {
-                color: this.color,
+                color: psiColor,
                 linewidth: 8,
                 transparent: true,
                 opacity: .75,
                 depthTest: false
             }
             const phiMaterial = {
-                color: 0x0077FF, // this.color,
+                color: phiColor,
                 linewidth: 5,
                 transparent: true,
                 opacity: .75,
                 depthTest: false
             }
             const phiAbsMaterial = {
-                color: 0x0077FF, // this.color,
+                color: phiColor,
                 linewidth: 8,
                 transparent: true,
                 opacity: .75,
                 depthTest: false
             }
             const baselineMaterial = {
-                color: this.color,
+                color: psiColor,
                 linewidth: .5,
                 depthTest: false
             }
