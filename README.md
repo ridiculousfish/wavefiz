@@ -1,6 +1,4 @@
-# Wavefiz
-
-## Wavefunction Visualizer
+# Wavefiz – Wavefunction Visualizer
 
 This repository implements the wavefunction visualizer seen at [ridiculousfish.com/wavefiz](http://ridiculousfish.com/wavefiz/).
 
