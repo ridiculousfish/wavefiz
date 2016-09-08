@@ -2,7 +2,7 @@ INTERMEDIATE_DIR := ./intermediates
 BUILD_DIR := ./build
 IMG_DIR := ./img
 STAGE_DIR := ./staged
-VISUALIZE_JS := $(BUILD_DIR)/visualize.js
+VISUALIZE_JS := $(BUILD_DIR)/visualize.min.js
 TS_SRCS := $(shell echo ts/*.ts)
 JS_SRCS := $(patsubst ts/%.ts,$(INTERMEDIATE_DIR)/%.js,$(TS_SRCS))
 HTML_SRCS := html/index.html html/tutorial.html
@@ -39,7 +39,7 @@ stage: $(VISUALIZE_JS) $(HTML_SRCS)
 	cp $(HTML_SRCS) $(STAGE_DIR)
 	cp -r $(IMG_DIR) $(CSS) $(STAGE_DIR)
 	mkdir  $(STAGE_DIR)/js/
-	cp $(VISUALIZE_JS) ./external_js/*.js  $(STAGE_DIR)/js/
+	cp $(VISUALIZE_JS) ./external_js/*.min.js  $(STAGE_DIR)/js/
 
 .PHONY: deploy
 deploy: stage
