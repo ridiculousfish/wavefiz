@@ -35,7 +35,7 @@ module tour {
 
     // Return the intro text for the tour
     function getIntroText(): String {
-        let introText = "🚌 All&nbsp;aboard&nbsp;the&nbsp;quantum&nbsp;tour&nbsp;bus! 🚌<br><br>"
+        let introText = "All&nbsp;aboard&nbsp;the&nbsp;quantum&nbsp;tour&nbsp;bus!<br><br>"
         // If the user doesn't have arrow keys, we want to avoid text about arrow keys
         // Very hard to check this!
         if (typeof window.orientation !== 'undefined') {
