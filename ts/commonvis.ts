@@ -185,7 +185,7 @@ module visualizing {
             let clone = new State(this.params_)
             for (let key in this) {
                 if (this.hasOwnProperty(key)) {
-                    clone[key] = this[key]
+                    (clone as any)[key] = (this as any)[key]
                 }
             }
             return clone
